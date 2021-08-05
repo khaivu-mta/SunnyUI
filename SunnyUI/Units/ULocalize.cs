@@ -23,107 +23,99 @@ namespace Sunny.UI
 {
     public static class UILocalize
     {
-        /// <summary>
-        /// 提示
-        /// </summary>
-        public static string InfoTitle = "提示";
+        public static string InfoTitle = "Thông báo";
+        public static string SuccessTitle = "Thành công";
+        public static string WarningTitle = "Cảnh cáo";
+        public static string ErrorTitle = "Lỗi";
+        public static string AskTitle = "Truy suất";
+        public static string InputTitle = "Nhập";
+        public static string SelectTitle = "Chọn";
+        public static string CloseAll = "Đóng toàn bộ";
+        public static string OK = "OK";
+        public static string Cancel = "Huỷ bỏ";
+        public static string GridNoData = "[ Không có dữ liệu ]";
+        public static string GridDataLoading = "Đang tải ...";
+        public static string GridDataSourceException = "Nguồn dữ liệu phải được định nghĩa trong DataTable hoặc List";
+        public static string SystemProcessing = "Hệ thống đang xử lý ...";
 
-        /// <summary>
-        /// 正确
-        /// </summary>
-        public static string SuccessTitle = "正确";
+        public static string Monday = "T2";
+        public static string Tuesday = "T3";
+        public static string Wednesday = "T4";
+        public static string Thursday = "T5";
+        public static string Friday = "T6";
+        public static string Saturday = "T7";
+        public static string Sunday = "CN";
 
-        /// <summary>
-        /// 警告
-        /// </summary>
-        public static string WarningTitle = "警告";
+        public static string Prev = "Trước";
+        public static string Next = "Sau";
+        public static string SelectPageLeft = "Trái";
+        public static string SelectPageRight = "Phải";
 
-        /// <summary>
-        /// 错误
-        /// </summary>
-        public static string ErrorTitle = "错误";
+        public static string January = "Th.1";
+        public static string February = "Th.2";
+        public static string March = "Th.3";
+        public static string April = "Th.4";
+        public static string May = "Th.5";
+        public static string June = "Th.6";
+        public static string July = "Th.7";
+        public static string August = "Th.8";
+        public static string September = "Th.9";
+        public static string October = "Th.10";
+        public static string November = "Th.11";
+        public static string December = "Th.12";
 
-        /// <summary>
-        /// 提示
-        /// </summary>
-        public static string AskTitle = "提示";
-
-        /// <summary>
-        /// 输入
-        /// </summary>
-        public static string InputTitle = "输入";
-
-        /// <summary>
-        /// 选择
-        /// </summary>
-        public static string SelectTitle = "选择";
-
-        /// <summary>
-        /// 全部关闭
-        /// </summary>
-        public static string CloseAll = "全部关闭";
-
-        /// <summary>
-        /// 确定
-        /// </summary>
-        public static string OK = "确定";
-
-        /// <summary>
-        /// 取消
-        /// </summary>
-        public static string Cancel = "取消";
-
-        /// <summary>
-        /// [ 无数据 ]
-        /// </summary>
-        public static string GridNoData = "[ 无数据 ]";
-
-        /// <summary>
-        /// 数据加载中，请稍候...
-        /// </summary>
-        public static string GridDataLoading = "数据加载中，请稍候...";
-
-        /// <summary>
-        /// 数据源必须为DataTable或者List
-        /// </summary>
-        public static string GridDataSourceException = "数据源必须为DataTable或者List";
-
-        /// <summary>
-        /// "系统正在处理中，请稍候..."
-        /// </summary>
-        public static string SystemProcessing = "系统正在处理中，请稍候...";
-
-        public static string Monday = "一";
-        public static string Tuesday = "二";
-        public static string Wednesday = "三";
-        public static string Thursday = "四";
-        public static string Friday = "五";
-        public static string Saturday = "六";
-        public static string Sunday = "日";
-
-        public static string Prev = "上一页";
-        public static string Next = "下一页";
-        public static string SelectPageLeft = "第";
-        public static string SelectPageRight = "页";
-
-        public static string January = "一月";
-        public static string February = "二月";
-        public static string March = "三月";
-        public static string April = "四月";
-        public static string May = "五月";
-        public static string June = "六月";
-        public static string July = "七月";
-        public static string August = "八月";
-        public static string September = "九月";
-        public static string October = "十月";
-        public static string November = "十一月";
-        public static string December = "十二月";
-
-        public static string Today = "今天";
+        public static string Today = "Hôm nay";
     }
 
     public static class UILocalizeHelper
     {
+        public static void SetVI()
+        {
+            UILocalize.InfoTitle = "Thông báo";
+            UILocalize.SuccessTitle = "Thành công";
+            UILocalize.WarningTitle = "Cảnh cáo";
+            UILocalize.ErrorTitle = "Lỗi";
+            UILocalize.AskTitle = "Truy suất";
+            UILocalize.InputTitle = "Nhập";
+            UILocalize.SelectTitle = "Chọn";
+            UILocalize.CloseAll = "Đóng toàn bộ";
+            UILocalize.OK = "OK";
+            UILocalize.Cancel = "Huỷ bỏ";
+            UILocalize.GridNoData = "[ Không có dữ liệu ]";
+            UILocalize.GridDataLoading = "Đang tải ...";
+            UILocalize.GridDataSourceException = "Nguồn dữ liệu phải được định nghĩa trong DataTable hoặc List";
+            UILocalize.SystemProcessing = "Hệ thống đang xử lý ...";
+
+            UILocalize.Monday = "T2";
+            UILocalize.Tuesday = "T3";
+            UILocalize.Wednesday = "T4";
+            UILocalize.Thursday = "T5";
+            UILocalize.Friday = "T6";
+            UILocalize.Saturday = "T7";
+            UILocalize.Sunday = "CN";
+
+            UILocalize.Prev = "Trước";
+            UILocalize.Next = "Sau";
+            UILocalize.SelectPageLeft = "Trái";
+            UILocalize.SelectPageRight = "Phải";
+
+            UILocalize.January = "Th.1";
+            UILocalize.February = "Th.2";
+            UILocalize.March = "Th.3";
+            UILocalize.April = "Th.4";
+            UILocalize.May = "Th.5";
+            UILocalize.June = "Th.6";
+            UILocalize.July = "Th.7";
+            UILocalize.August = "Th.8";
+            UILocalize.September = "Th.9";
+            UILocalize.October = "Th.10";
+            UILocalize.November = "Th.11";
+            UILocalize.December = "Th.12";
+
+            UILocalize.Today = "Hôm nay";
+
+            UIStyles.Translate();
+        }
         public static void SetEN()
         {
             UILocalize.InfoTitle = "Info";
