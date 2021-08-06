@@ -421,12 +421,12 @@ namespace Sunny.UI
             }
         }
 
-        protected bool CheckEmpty(UITextBox edit, string desc)
+        protected bool CheckEmpty(UserControl edit, string desc)
         {
             bool result = edit.Text.IsValid();
             if (!result)
             {
-                this.ShowWarningDialog(desc);
+                UIMessageTip.ShowWarning(edit, desc);
                 edit.Focus();
             }
 
@@ -438,7 +438,7 @@ namespace Sunny.UI
             bool result = edit.IntValue >= min && edit.IntValue <= max;
             if (!result)
             {
-                this.ShowWarningDialog(desc);
+                UIMessageTip.ShowWarning(edit, desc);
                 edit.Focus();
             }
 
@@ -450,31 +450,7 @@ namespace Sunny.UI
             bool result = edit.DoubleValue >= min && edit.IntValue <= max;
             if (!result)
             {
-                this.ShowWarningDialog(desc);
-                edit.Focus();
-            }
-
-            return result;
-        }
-
-        protected bool CheckEmpty(UIComboBox edit, string desc)
-        {
-            bool result = edit.Text.IsValid();
-            if (!result)
-            {
-                this.ShowWarningDialog(desc);
-                edit.Focus();
-            }
-
-            return result;
-        }
-
-        protected bool CheckEmpty(UIDatePicker edit, string desc)
-        {
-            bool result = edit.Text.IsValid();
-            if (!result)
-            {
-                this.ShowWarningDialog(desc);
+                UIMessageTip.ShowWarning(edit, desc);
                 edit.Focus();
             }
 
