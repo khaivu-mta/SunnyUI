@@ -22,6 +22,7 @@
 
 using System;
 using System.ComponentModel;
+using System.Linq;
 
 namespace Sunny.UI
 {
@@ -36,6 +37,7 @@ namespace Sunny.UI
         {
             InitializeComponent();
             Value = DateTime.Now;
+            Watermark = dateFormat;
             MaxLength = 10;
             EditorLostFocus += UIDatePicker_LostFocus;
             TextChanged += UIDatePicker_TextChanged;
@@ -51,6 +53,23 @@ namespace Sunny.UI
 
         private void UIDatePicker_TextChanged(object sender, EventArgs e)
         {
+            if (Text.Length <= 0)
+                return;
+
+            if (!"1234567890/".Any(m => m == Text[Text.Length - 1]))
+            {
+                Text = Text.Remove(Text.Length - 1);
+                SelectionStart = Text.Length;
+            }
+
+            if (Text.Length < dateFormat.Length
+                && "/".Any(m => m == dateFormat[Text.Length - 1])
+                && Text[Text.Length - 1] != dateFormat[Text.Length - 1])
+            {
+                Text = $"{Text.Substring(0, Text.Length - 1)}{dateFormat[Text.Length - 1]}{Text[Text.Length - 1]}";
+                SelectionStart = Text.Length;
+            }
+
             if (Text.Length == MaxLength)
             {
                 try
@@ -60,7 +79,8 @@ namespace Sunny.UI
                 }
                 catch
                 {
-                    Value = DateTime.Now.Date;
+                    Value = DateTime.Now;
+                    Text = null;
                 }
             }
         }
@@ -122,10 +142,10 @@ namespace Sunny.UI
             ItemForm.Show(this);
         }
 
-        private string dateFormat = "yyyy-MM-dd";
+        private string dateFormat = "dd/MM/yyyy";
 
         [Description("日期格式化掩码"), Category("SunnyUI")]
-        [DefaultValue("yyyy-MM-dd")]
+        [DefaultValue("dd/MM/yyyy")]
         public string DateFormat
         {
             get => dateFormat;

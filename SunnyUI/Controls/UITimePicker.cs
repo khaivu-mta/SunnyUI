@@ -23,6 +23,7 @@
 
 using System;
 using System.ComponentModel;
+using System.Linq;
 
 namespace Sunny.UI
 {
@@ -50,6 +51,7 @@ namespace Sunny.UI
         {
             InitializeComponent();
             Value = DateTime.Now;
+            Watermark = timeFormat;
 
             EditorLostFocus += UIDatePicker_LostFocus;
             TextChanged += UIDatePicker_TextChanged;
@@ -62,6 +64,23 @@ namespace Sunny.UI
 
         private void UIDatePicker_TextChanged(object sender, EventArgs e)
         {
+            if (Text.Length <= 0)
+                return;
+
+            if (!"1234567890:".Any(m => m == Text[Text.Length - 1]))
+            {
+                Text = Text.Remove(Text.Length - 1);
+                SelectionStart = Text.Length;
+            }
+
+            if (Text.Length < timeFormat.Length
+                && ":".Any(m => m == timeFormat[Text.Length - 1])
+                && Text[Text.Length - 1] != timeFormat[Text.Length - 1])
+            {
+                Text = $"{Text.Substring(0, Text.Length - 1)}{timeFormat[Text.Length - 1]}{Text[Text.Length - 1]}";
+                SelectionStart = Text.Length;
+            }
+
             if (Text.Length == MaxLength)
             {
                 try
