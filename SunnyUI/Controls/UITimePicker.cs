@@ -67,7 +67,7 @@ namespace Sunny.UI
             if (Text.Length <= 0)
                 return;
 
-            if (!"1234567890:".Any(m => m == Text[Text.Length - 1]))
+            if (!"1234567890".Any(m => m == Text[Text.Length - 1]))
             {
                 Text = Text.Remove(Text.Length - 1);
                 SelectionStart = Text.Length;

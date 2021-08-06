@@ -75,14 +75,14 @@ namespace Sunny.UI
             if (Text.Length <= 0)
                 return;
 
-            if (!"1234567890:/".Any(m => m == Text[Text.Length - 1]))
+            if (!"1234567890".Any(m => m == Text[Text.Length - 1]))
             {
                 Text = Text.Remove(Text.Length - 1);
                 SelectionStart = Text.Length;
             }
 
             if (Text.Length < dateFormat.Length
-                && "/: ".Any(m => m == dateFormat[Text.Length - 1])
+                && "/: -".Any(m => m == dateFormat[Text.Length - 1])
                 && Text[Text.Length - 1] != dateFormat[Text.Length - 1])
             {
                 Text = $"{Text.Substring(0, Text.Length - 1)}{dateFormat[Text.Length - 1]}{Text[Text.Length - 1]}";
