@@ -57,6 +57,34 @@ namespace Sunny.UI
             Version = UIGlobal.Version;
         }
 
+        private int radius;
+
+        [DefaultValue(0)]
+        [Description("显示选择项圆角"), Category("SunnyUI")]
+        public int Radius
+        {
+            get => radius;
+            set
+            {
+                radius = Math.Max(0, value);
+                Invalidate();
+            }
+        }
+
+        private bool showItemsArrow = true;
+
+        [DefaultValue(true)]
+        [Description("显示子节点提示箭头"), Category("SunnyUI")]
+        public bool ShowItemsArrow
+        {
+            get => showItemsArrow;
+            set
+            {
+                showItemsArrow = value;
+                Invalidate();
+            }
+        }
+
         protected override void OnSizeChanged(EventArgs e)
         {
             base.OnSizeChanged(e);
@@ -399,7 +427,16 @@ namespace Sunny.UI
 
                 if (i == ActiveIndex)
                 {
-                    e.Graphics.FillRectangle(MenuHoverColor, rect);
+                    if (radius == 0)
+                    {
+                        e.Graphics.FillRectangle(MenuHoverColor, rect);
+                    }
+                    else
+                    {
+                        var path = rect.CreateRoundedRectanglePath(Radius, UICornerRadiusSides.LeftTop | UICornerRadiusSides.RightTop);
+                        e.Graphics.FillPath(MenuHoverColor, path);
+                    }
+
                     textColor = SelectedForeColor;
                 }
 
@@ -407,7 +444,15 @@ namespace Sunny.UI
                 {
                     if (MenuSelectedColorUsed)
                     {
-                        e.Graphics.FillRectangle(MenuSelectedColor, rect.X, Height - NodeSize.Height, rect.Width, NodeSize.Height);
+                        if (radius == 0)
+                        {
+                            e.Graphics.FillRectangle(MenuSelectedColor, rect.X, Height - NodeSize.Height, rect.Width, NodeSize.Height);
+                        }
+                        else
+                        {
+                            var path = new Rectangle(rect.X, Height - NodeSize.Height, rect.Width, NodeSize.Height).CreateRoundedRectanglePath(Radius, UICornerRadiusSides.LeftTop | UICornerRadiusSides.RightTop);
+                            e.Graphics.FillPath(MenuSelectedColor, path);
+                        }
                     }
 
                     if (!NavBarMenu.Visible && SelectedHighColorSize > 0)
@@ -438,7 +483,7 @@ namespace Sunny.UI
                     e.Graphics.DrawString(node.Text, Font, textColor, NodeX + i * NodeSize.Width + (NodeSize.Width - sf.Width) / 2.0f, NodeY + (NodeSize.Height - sf.Height) / 2);
                 }
 
-                if (node.Nodes.Count > 0)
+                if (ShowItemsArrow && node.Nodes.Count > 0)
                 {
                     SizeF imageSize = e.Graphics.GetFontImageSize(61703, 24);
                     if (i != SelectedIndex)
