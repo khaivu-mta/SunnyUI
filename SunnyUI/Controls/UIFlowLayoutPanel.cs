@@ -64,6 +64,35 @@ namespace Sunny.UI
             timer.Stop();
         }
 
+        [DefaultValue(System.Windows.Forms.FlowDirection.LeftToRight)]
+        [Localizable(true)]
+        public FlowDirection FlowDirection
+        {
+            get => Panel.FlowDirection;
+            set => Panel.FlowDirection = value;
+        }
+
+        [DefaultValue(true)]
+        [Localizable(true)]
+        public bool WrapContents
+        {
+            get => Panel.WrapContents;
+            set => Panel.WrapContents = value;
+        }
+
+        [DefaultValue(false)]
+        [DisplayName("FlowBreak")]
+        public bool GetFlowBreak(Control control)
+        {
+            return Panel.GetFlowBreak(control);
+        }
+
+        [DisplayName("FlowBreak")]
+        public void SetFlowBreak(Control control, bool value)
+        {
+            Panel.SetFlowBreak(control, value);
+        }
+
         protected override void OnControlAdded(ControlEventArgs e)
         {
             if (e.Control is UIHorScrollBarEx bar1)
@@ -183,21 +212,7 @@ namespace Sunny.UI
         {
         }
 
-        [DefaultValue(FlowDirection.LeftToRight)]
-        [Localizable(true)]
-        public FlowDirection FlowDirection
-        {
-            get => Panel.FlowDirection;
-            set => Panel.FlowDirection = value;
-        }
 
-        [DefaultValue(true)]
-        [Localizable(true)]
-        public bool WrapContents
-        {
-            get => Panel.WrapContents;
-            set => Panel.WrapContents = value;
-        }
 
         public override void SetStyleColor(UIBaseStyle uiColor)
         {
@@ -331,7 +346,6 @@ namespace Sunny.UI
 
             SetScrollPos();
         }
-
         public FlowLayoutPanel Panel => flowLayoutPanel;
 
         private void InitializeComponent()
