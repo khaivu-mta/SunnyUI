@@ -1,4 +1,6 @@
-﻿namespace Sunny.UI.Demo
+﻿using System;
+
+namespace Sunny.UI.Demo
 {
     public partial class FMeter : UIPage
     {
@@ -11,19 +13,18 @@
 
         public override void Init()
         {
-            uiLedStopwatch1.Active = true;
             value = 0;
-            timer1.ReStart();
+            uiMillisecondTimer1.ReStart();
         }
 
-        private void timer1_Tick(object sender, System.EventArgs e)
+        private void uiMillisecondTimer1_Tick(object sender, System.EventArgs e)
         {
             value++;
             uiRoundMeter1.Angle = value * 10;
             uiRoundMeter2.Angle = value * 10;
             uiAnalogMeter1.Value = value;
-            uiBattery1.Power = value;
-            uiLedDisplay1.Text = value + " Ω";
+
+            Console.WriteLine(DateTime.Now.ToString(DateTimeEx.DateTimeFormatEx));
         }
     }
 }
