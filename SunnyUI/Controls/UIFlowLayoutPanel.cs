@@ -17,6 +17,9 @@
  * 创建日期: 2020-09-29
  *
  * 2020-09-29: V2.2.8 增加文件说明
+ * 2021-07-10: V3.0.4 增加滚动条颜色属性 
+ * 2021-07-31: V3.0.5 可像原生控件一样通过Controls.Add增加
+ * 2021-08-11: V3.0.5 删除点击的Focus事件
 ******************************************************************************/
 
 using System;
@@ -27,7 +30,7 @@ using System.Windows.Forms;
 
 namespace Sunny.UI
 {
-    public class UIFlowLayoutPanel : UIPanel
+    public class UIFlowLayoutPanel : UIPanel,IToolTip
     {
         private UIVerScrollBarEx VBar;
         private UIHorScrollBarEx HBar;
@@ -56,6 +59,11 @@ namespace Sunny.UI
             timer.Interval = 100;
             timer.Tick += Timer_Tick;
             timer.Start();
+        }
+
+        public Control ExToolTipControl()
+        {
+            return Panel;
         }
 
         public new void Focus()

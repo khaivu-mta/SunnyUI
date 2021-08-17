@@ -19,6 +19,7 @@
  * 2020-01-01: V2.2.0 增加文件说明
  * 2020-04-25: V2.2.4 更新主题配置类
  * 2020-05-21: V2.2.5 增加鼠标滑过高亮
+ * 2021-08-07: V3.0.5 从文件载入图片，并且解除占用
 ******************************************************************************/
 
 using System;
@@ -32,7 +33,7 @@ using System.Windows.Forms;
 namespace Sunny.UI
 {
     [DefaultEvent("ItemClick")]
-    public sealed partial class UIImageListBox : UIPanel
+    public sealed partial class UIImageListBox : UIPanel,IToolTip
     {
         private readonly ImageListBox listbox = new ImageListBox();
         private readonly UIScrollBar bar = new UIScrollBar();
@@ -67,6 +68,11 @@ namespace Sunny.UI
             listbox.MouseMove += Listbox_MouseMove;
         }
 
+
+        public Control ExToolTipControl()
+        {
+            return listbox;
+        }
         public int IndexFromPoint(Point p)
         {
             return listbox.IndexFromPoint(p);

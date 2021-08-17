@@ -18,18 +18,21 @@
  *
  * 2020-01-01: V2.2.0 增加文件说明
  * 2020-08-07: V2.2.7 可编辑输入，日期范围控制以防止出错
+ * 2021-04-15: V3.0.3 增加ShowToday显示今日属性
+ * 2021-08-14: V3.0.6 增加可选择年、年月、年月日
 ******************************************************************************/
 
 using System;
 using System.ComponentModel;
 using System.Linq;
+using System.Windows.Forms;
 
 namespace Sunny.UI
 {
     [ToolboxItem(true)]
     [DefaultProperty("Value")]
     [DefaultEvent("ValueChanged")]
-    public sealed partial class UIDatePicker : UIDropControl
+    public sealed partial class UIDatePicker : UIDropControl,IToolTip
     {
         public delegate void OnDateTimeChanged(object sender, DateTime value);
 
@@ -74,6 +77,11 @@ namespace Sunny.UI
                         break;
                 }
             }
+        }
+
+        public Control ExToolTipControl()
+        {
+            return edit;
         }
 
         public int Year => Value.Year;

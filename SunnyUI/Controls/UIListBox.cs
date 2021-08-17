@@ -20,6 +20,10 @@
  * 2020-04-25: V2.2.4 更新主题配置类
  * 2020-05-21: V2.2.5 增加鼠标滑过高亮
  *                    开发日志：https://www.cnblogs.com/yhuse/p/12933885.html
+ * 2021-06-03: V3.0.4 修改对象绑定的显示问题
+ * 2021-07-29: V3.0.5 增加多选行
+ * 2021-07-30: V3.0.5 选中项显示方角
+ * 2021-08-04: V3.0.5 增加Items变更的事件
 ******************************************************************************/
 
 using System;
@@ -33,7 +37,7 @@ namespace Sunny.UI
 {
     [DefaultEvent("ItemClick")]
     [DefaultProperty("Items")]
-    public sealed partial class UIListBox : UIPanel
+    public sealed partial class UIListBox : UIPanel,IToolTip
     {
         private readonly ListBoxEx listbox = new ListBoxEx();
         private readonly UIScrollBar bar = new UIScrollBar();
@@ -77,6 +81,11 @@ namespace Sunny.UI
 
             timer.Tick += Timer_Tick;
             timer.Start();
+        }
+
+        public Control ExToolTipControl()
+        {
+            return listbox;
         }
 
         private void Listbox_MouseClick(object sender, MouseEventArgs e)

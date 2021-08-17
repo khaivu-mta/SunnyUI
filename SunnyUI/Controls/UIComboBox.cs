@@ -18,6 +18,10 @@
  *
  * 2020-01-01: V2.2.0 增加文件说明
  * 2020-06-11: V2.2.5 增加DataSource，支持数据绑定
+ * 2021-05-06: V3.0.3 解决鼠标下拉选择，触发SelectedIndexChanged两次的问题
+ * 2021-06-03: V3.0.4 更新了数据绑定相关代码
+ * 2021-08-03: V3.0.5 Items.Clear后清除显示
+ * 2021-08-15: V3.0.6 重写了水印文字的画法，并增加水印文字颜色
 ******************************************************************************/
 
 using System;
@@ -32,7 +36,7 @@ namespace Sunny.UI
     [DefaultEvent("SelectedIndexChanged")]
     [ToolboxItem(true)]
     [LookupBindingProperties("DataSource", "DisplayMember", "ValueMember", "SelectedValue")]
-    public sealed partial class UIComboBox : UIDropControl
+    public sealed partial class UIComboBox : UIDropControl,IToolTip
     {
         public UIComboBox()
         {
@@ -47,6 +51,11 @@ namespace Sunny.UI
             edit.TextChanged += Edit_TextChanged;
             DropDownWidth = 150;
             fullControlSelect = true;
+        }
+
+        public Control ExToolTipControl()
+        {
+            return edit;
         }
 
         [DefaultValue(false)]

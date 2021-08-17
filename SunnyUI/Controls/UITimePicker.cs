@@ -23,6 +23,7 @@
 
 using System;
 using System.ComponentModel;
+using System.Windows.Forms;
 using System.Linq;
 
 namespace Sunny.UI
@@ -30,7 +31,7 @@ namespace Sunny.UI
     [ToolboxItem(true)]
     [DefaultProperty("Value")]
     [DefaultEvent("ValueChanged")]
-    public sealed partial class UITimePicker : UIDropControl
+    public sealed partial class UITimePicker : UIDropControl,IToolTip
     {
         private void InitializeComponent()
         {
@@ -45,6 +46,11 @@ namespace Sunny.UI
             this.ButtonClick += new System.EventHandler(this.UITimePicker_ButtonClick);
             this.ResumeLayout(false);
             this.PerformLayout();
+        }
+
+        public Control ExToolTipControl()
+        {
+            return edit;
         }
 
         public UITimePicker()

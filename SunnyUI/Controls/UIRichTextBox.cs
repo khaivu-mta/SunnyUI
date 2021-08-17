@@ -17,6 +17,8 @@
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
+ * 2021-05-25: V3.0.4 支持可改背景色
+ * 2021-07-29: V3.0.5 修改滚动条没有文字时自动隐藏
 ******************************************************************************/
 
 using System;
@@ -30,7 +32,7 @@ namespace Sunny.UI
 {
     [DefaultEvent("TextChanged")]
     [DefaultProperty("Text")]
-    public sealed class UIRichTextBox : UIPanel
+    public sealed class UIRichTextBox : UIPanel,IToolTip
     {
         private UIScrollBar bar;
         private RichTextBox edit;
@@ -65,6 +67,11 @@ namespace Sunny.UI
             edit.SelectionChanged += Edit_SelectionChanged;
 
             edit.ScrollBars = RichTextBoxScrollBars.Vertical;
+        }
+
+        public Control ExToolTipControl()
+        {
+            return edit;
         }
 
         public RichTextBox RichTextBox => edit;

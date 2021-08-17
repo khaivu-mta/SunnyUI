@@ -18,6 +18,7 @@
  *
  * 2020-07-21: V2.2.6 增加控件
  * 2020-07-25: V2.2.6 更新绘制
+ * 2021-08-16: V3.0.6 增加ToolTip接口，解决类似UITextBox这类的组合控件无法显示ToolTip的问题
 ******************************************************************************/
 
 using System;
@@ -93,6 +94,11 @@ namespace Sunny.UI
                 ToolTipControls.TryAdd(control, ctrl);
             }
 
+            if (control is IToolTip toolTip)
+            {
+                SetToolTip(toolTip.ExToolTipControl(), description, title, symbol, symbolSize, symbolColor);
+            }
+
             base.SetToolTip(control, description);
         }
 
@@ -117,6 +123,11 @@ namespace Sunny.UI
                 ToolTipControls.TryAdd(control, ctrl);
             }
 
+            if (control is IToolTip toolTip)
+            {
+                SetToolTip(toolTip.ExToolTipControl(), description, title);
+            }
+
             base.SetToolTip(control, description);
         }
 
@@ -139,13 +150,25 @@ namespace Sunny.UI
                 ToolTipControls.TryAdd(control, ctrl);
             }
 
+            if (control is IToolTip toolTip)
+            {
+                SetToolTip(toolTip.ExToolTipControl(), description);
+            }
+
             base.SetToolTip(control, description);
         }
 
         public void RemoveToolTip(Control control)
         {
             if (ToolTipControls.ContainsKey(control))
+            {
                 ToolTipControls.TryRemove(control, out _);
+            }
+
+            if (control is IToolTip toolTip)
+            {
+                RemoveToolTip(toolTip.ExToolTipControl());
+            }
         }
 
         public new string GetToolTip(Control control)

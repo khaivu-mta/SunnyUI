@@ -17,6 +17,10 @@
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
+ * 2021-05-21: V3.0.4 更改了下页面切换重复执行的Init事件调用
+ * 2021-06-20: V3.0.4 增加标题行，替代UITitlePage
+ * 2021-07-18: V3.0.5 修复OnLoad在加载时重复加载两次的问题，增加Final函数，每次页面切换，退出页面都会执行
+ * 2021-08-17: V3.0.6 增加TitleFont属性
 ******************************************************************************/
 
 using System;
@@ -341,8 +345,8 @@ namespace Sunny.UI
                 e.Graphics.DrawFontImage(Symbol, SymbolSize, TitleForeColor, new Rectangle(ImageInterval, 0, SymbolSize, TitleHeight), SymbolOffset.X, SymbolOffset.Y);
             }
 
-            SizeF sf = e.Graphics.MeasureString(Text, Font);
-            e.Graphics.DrawString(Text, Font, TitleForeColor,
+            SizeF sf = e.Graphics.MeasureString(Text, TitleFont);
+            e.Graphics.DrawString(Text, TitleFont, TitleForeColor,
                 Symbol > 0 ? ImageInterval * 2 + SymbolSize : ImageInterval, (TitleHeight - sf.Height) / 2);
 
             e.Graphics.SetHighQuality();
@@ -416,6 +420,26 @@ namespace Sunny.UI
             set
             {
                 titleForeColor = value;
+                Invalidate();
+            }
+        }
+
+        /// <summary>
+        /// 标题字体
+        /// </summary>
+        private Font titleFont = UIFontColor.Font;
+
+        /// <summary>
+        /// 标题字体
+        /// </summary>
+        [Description("标题字体"), Category("SunnyUI")]
+        [DefaultValue(typeof(Font), "微软雅黑, 12pt")]
+        public Font TitleFont
+        {
+            get => titleFont;
+            set
+            {
+                titleFont = value;
                 Invalidate();
             }
         }
