@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,10 +13,12 @@
  ******************************************************************************
  * 文件名称: UISymbolLabel.cs
  * 文件说明: 带字体图标的标签
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-04-23: V2.2.4 增加UISymbolLabel
+ * 2021-12-24: V3.0.9 修复Dock和AutoSize同时设置的Bug
+ * 2022-03-19: V3.1.1 重构主题配色
 ******************************************************************************/
 
 using System;
@@ -36,14 +38,14 @@ namespace Sunny.UI
         private int _symbolSize = 24;
         private int _imageInterval = 2;
 
-        private Color symbolColor = UIFontColor.Primary;
+        private Color symbolColor;
 
         public UISymbolLabel()
         {
             SetStyleFlags(true, false);
             ShowRect = false;
-            foreColor = UIFontColor.Primary;
-            symbolColor = UIFontColor.Primary;
+            symbolColor = UIStyles.Blue.LabelForeColor;
+            foreColor = UIStyles.Blue.LabelForeColor;
             Width = 170;
             Height = 35;
         }
@@ -62,6 +64,9 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 字体图标颜色
+        /// </summary>
         [Description("图标颜色"), Category("SunnyUI")]
         [DefaultValue(typeof(Color), "48, 48, 48")]
         public Color SymbolColor
@@ -85,8 +90,11 @@ namespace Sunny.UI
             set => SetForeColor(value);
         }
 
+        /// <summary>
+        /// 字体图标大小
+        /// </summary>
         [DefaultValue(24)]
-        [Description("字体大小"), Category("SunnyUI")]
+        [Description("字体图标大小"), Category("SunnyUI")]
         public int SymbolSize
         {
             get => _symbolSize;
@@ -133,8 +141,11 @@ namespace Sunny.UI
 
         private int _symbol = FontAwesomeIcons.fa_check;
 
+        /// <summary>
+        /// 字体图标
+        /// </summary>
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
-        [Editor(typeof(UIImagePropertyEditor), typeof(UITypeEditor))]
+        [Editor("Sunny.UI.UIImagePropertyEditor, " + AssemblyRefEx.SystemDesign, typeof(UITypeEditor))]
         [DefaultValue(61452)]
         [Description("字体图标"), Category("SunnyUI")]
         public int Symbol
@@ -149,6 +160,9 @@ namespace Sunny.UI
 
         private Point symbolOffset = new Point(0, 0);
 
+        /// <summary>
+        /// 字体图标的偏移位置
+        /// </summary>
         [DefaultValue(typeof(Point), "0, 0")]
         [Description("字体图标的偏移位置"), Category("SunnyUI")]
         public Point SymbolOffset
@@ -161,6 +175,11 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 绘制填充颜色
+        /// </summary>
+        /// <param name="g">绘图图面</param>
+        /// <param name="path">绘图路径</param>
         protected override void OnPaintFill(Graphics g, GraphicsPath path)
         {
             g.FillRectangle(BackColor, Bounds);
@@ -180,6 +199,11 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 绘制边框颜色
+        /// </summary>
+        /// <param name="g">绘图图面</param>
+        /// <param name="path">绘图路径</param>
         protected override void OnPaintRect(Graphics g, GraphicsPath path)
         {
             if (IsCircle)
@@ -196,6 +220,11 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 绘制前景颜色
+        /// </summary>
+        /// <param name="g">绘图图面</param>
+        /// <param name="path">绘图路径</param>
         protected override void OnPaintFore(Graphics g, GraphicsPath path)
         {
             Padding = new Padding(_symbolSize + _imageInterval * 2, Padding.Top, Padding.Right, Padding.Bottom);
@@ -203,12 +232,21 @@ namespace Sunny.UI
             g.DrawString(Text, Font, foreColor, Size, Padding, TextAlign);
         }
 
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="uiColor">主题样式</param>
         public override void SetStyleColor(UIBaseStyle uiColor)
         {
             base.SetStyleColor(uiColor);
-            symbolColor = foreColor = uiColor.LabelForeColor;
+            symbolColor = uiColor.LabelForeColor;
+            foreColor = uiColor.LabelForeColor;
         }
 
+        /// <summary>
+        /// 重载绘图
+        /// </summary>
+        /// <param name="e">绘图参数</param>
         protected override void OnPaint(PaintEventArgs e)
         {
             //重绘父类
@@ -219,10 +257,12 @@ namespace Sunny.UI
             SizeF ImageSize = e.Graphics.GetFontImageSize(Symbol, SymbolSize);
             SizeF TextSize = e.Graphics.MeasureString(Text, Font);
 
-            if (autoSize)
+            if (Dock == DockStyle.None && autoSize)
             {
-                Width = (int)(SymbolSize + ImageInterval * 3 + TextSize.Width);
-                Height = (int)Math.Max(SymbolSize, TextSize.Height);
+                int width = (int)(SymbolSize + ImageInterval * 3 + TextSize.Width);
+                int height = (int)Math.Max(SymbolSize, TextSize.Height);
+                if (Width != width) Width = width;
+                if (Height != height) Height = height;
             }
 
             if (TextAlign == ContentAlignment.TopCenter || TextAlign == ContentAlignment.TopLeft || TextAlign == ContentAlignment.TopRight)

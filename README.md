@@ -1,35 +1,41 @@
 ![SunnyUI](https://images.gitee.com/uploads/images/2021/0324/213615_54240ba9_416720.png "SunnyUI.png")
 
 [![star](https://gitee.com/yhuse/SunnyUI/badge/star.svg?theme=gvp)](https://gitee.com/yhuse/SunnyUI/stargazers)
-[![fork](https://gitee.com/yhuse/SunnyUI/badge/fork.svg?theme=gvp)](https://gitee.com/yhuse/SunnyUI/members)
-- 帮助文档: https://gitee.com/yhuse/SunnyUI/wikis/pages
-- Gitee:  https://gitee.com/yhuse/SunnyUI
-- GitHub: https://github.com/yhuse/SunnyUI
-- Nuget:  https://www.nuget.org/packages/SunnyUI/ 
-- Blog:   https://www.cnblogs.com/yhuse
-
+[![fork](https://gitee.com/yhuse/SunnyUI/badge/fork.svg?theme=gvp)](https://gitee.com/yhuse/SunnyUI/members)    
+- 帮助文档: https://gitee.com/yhuse/SunnyUI/wikis/pages    
+- Gitee:  https://gitee.com/yhuse/SunnyUI    
+- GitHub: https://github.com/yhuse/SunnyUI    
+- Nuget:  https://www.nuget.org/packages/SunnyUI/    
+- Blog:   https://www.cnblogs.com/yhuse    
+- 因为评论没有查找，不利于解决问题，故关闭项目评论功能。如果是问题或者建议，请按照Issues模版添加Issue。    
+- 添加Issue: [https://gitee.com/yhuse/SunnyUI/issues/new](https://gitee.com/yhuse/SunnyUI/issues/new)    
+    
 欢迎交流，QQ群： 56829229  (SunnyUI技术交流群)，请给源码项目点个Star吧！！！  
+**个人学习交流免费，商业应用需要授权**，联系QQ：**17612584** 咨询授权事宜。  
 
 #### 感谢码云
 ![GVP](https://images.gitee.com/uploads/images/2021/0526/214138_85647268_416720.png "QQ图片20210526213958.png")  
-
+    
 #### 特别声明
 SunnyUI.Net项目已加入[dotNET China](https://gitee.com/dotnetchina) 组织。<br/>
 ![dotnetchina](https://images.gitee.com/uploads/images/2021/0324/120117_2da9922c_416720.png "132645_21007ea0_974299.png")
 
 #### 软件介绍
-- SunnyUI.Net 是基于.Net Framework 4.0+、.Net Core3.1、.Net 5 框架的 C# WinForm 开源控件库、工具类库、扩展类库、多页面开发框架。
-- 源码编译环境：VS2019 16.8+，.Net5，.Net Core3.1
-- 动态库应用环境：VS2010及以上，.Net Framework 4.0及以上（不包括.Net Framework 4 Client Profile），.Net Core 3.1，.Net 5.0
-- **推荐通过Nuget安装：Install-Package SunnyUI，或者通过Nuget搜索SunnyUI安装。** 
-
+- SunnyUI.Net, 是基于.Net Framework 4.0~4.8、.Net 6 框架的 C# WinForm 开源控件库、工具类库、扩展类库、多页面开发框架。
+- 源码编译环境：    
+  1. **VS2019** 16.8+ （16.8.0是支持.Net5的最低版本）    
+  2. **VS2022**，安装.NetFramework4.0目标包的方法见：https://www.cnblogs.com/yhuse/p/15536393.html    
+- 动态库应用环境： **VS2010**及以上均可，支持.Net Framework 4.0+、.Net 5、.Net 6    
+  1. 推荐通过Nuget安装：Install-Package SunnyUI，或者通过Nuget搜索SunnyUI安装。    
+  2. 不支持（.Net Framework 4 **Client Profile**）。     
+    
 #### 软件框架
 ![思维导图](https://images.gitee.com/uploads/images/2020/0627/210016_f3203a8b_416720.png "0.png")
 
 #### 支持开源
-- 希望SunnyUI对您有用，您的支持也是SunnyUI开源的动力，SunnyUI有你更精彩！
-- **个人学习交流免费，商业应用需要授权，联系QQ：17612584 咨询授权事宜。** 
+- 希望SunnyUI对您有用，您的支持也是SunnyUI开源的动力，SunnyUI有您更精彩！
 ![感谢您的支持](https://images.gitee.com/uploads/images/2021/0409/201558_9a0993a3_416720.png "SupportSunnyUI.png")
+- 多多打赏，喝点咖啡提提神，或者防脱洗发水保养下头发，哈哈哈！~
 
 1、开源控件库  
 
@@ -61,3 +67,7 @@ SunnyUI.Net项目已加入[dotNET China](https://gitee.com/dotnetchina) 组织�
 
   - 参考Element，包括7种常用框架风格，只需几行简单的代码即可创建多页面程序，其支撑组件包括UIForm，UIPage，UIFrame，集合常用控件库即可快速开发WinForm应用程序。
 ![多页面框架](https://images.gitee.com/uploads/images/2020/0627/210832_a1a766ac_416720.png "21.png")
+
+#### 项目说明
+- 个人学习交流免费，商业应用需要授权。个人承接外包项目、个人开发商业项目等，公司内部使用、开发项目等均属于商业应用范畴。联系QQ：**17612584** 咨询授权事宜。      
+- 禁止使用SunnyUI控件库开发违法应用，或使用从事其他非法目的违法犯罪行为。因此产生的法律责任与SunnyUI无关。     

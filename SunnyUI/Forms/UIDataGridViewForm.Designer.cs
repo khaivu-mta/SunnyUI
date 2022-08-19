@@ -80,12 +80,10 @@
             dataGridViewCellStyle4.SelectionForeColor = System.Drawing.Color.White;
             dataGridViewCellStyle4.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
             this.Grid.RowHeadersDefaultCellStyle = dataGridViewCellStyle4;
-            this.Grid.RowHeight = 29;
             dataGridViewCellStyle5.BackColor = System.Drawing.Color.White;
             this.Grid.RowsDefaultCellStyle = dataGridViewCellStyle5;
             this.Grid.RowTemplate.Height = 29;
             this.Grid.SelectedIndex = -1;
-            this.Grid.ShowGridLine = true;
             this.Grid.Size = new System.Drawing.Size(1034, 511);
             this.Grid.TabIndex = 0;
             // 
@@ -102,7 +100,7 @@
             this.Panel.MinimumSize = new System.Drawing.Size(1, 1);
             this.Panel.Name = "Panel";
             this.Panel.RadiusSides = Sunny.UI.UICornerRadiusSides.None;
-            this.Panel.RectSides = ((System.Windows.Forms.ToolStripStatusLabelBorderSides)(((System.Windows.Forms.ToolStripStatusLabelBorderSides.Left | System.Windows.Forms.ToolStripStatusLabelBorderSides.Right) 
+            this.Panel.RectSides = ((System.Windows.Forms.ToolStripStatusLabelBorderSides)(((System.Windows.Forms.ToolStripStatusLabelBorderSides.Left | System.Windows.Forms.ToolStripStatusLabelBorderSides.Right)
             | System.Windows.Forms.ToolStripStatusLabelBorderSides.Bottom)));
             this.Panel.Size = new System.Drawing.Size(1034, 55);
             this.Panel.TabIndex = 1;
@@ -132,7 +130,7 @@
             this.uiSymbolButton3.Name = "uiSymbolButton3";
             this.uiSymbolButton3.ShowFocusColor = true;
             this.uiSymbolButton3.Size = new System.Drawing.Size(100, 35);
-            this.uiSymbolButton3.Symbol = 61544;
+            this.uiSymbolButton3.Symbol = 361544;
             this.uiSymbolButton3.TabIndex = 2;
             this.uiSymbolButton3.Text = "删除";
             // 
@@ -158,7 +156,7 @@
             this.uiSymbolButton1.Name = "uiSymbolButton1";
             this.uiSymbolButton1.ShowFocusColor = true;
             this.uiSymbolButton1.Size = new System.Drawing.Size(100, 35);
-            this.uiSymbolButton1.Symbol = 61543;
+            this.uiSymbolButton1.Symbol = 361543;
             this.uiSymbolButton1.TabIndex = 0;
             this.uiSymbolButton1.Text = "增加";
             // 

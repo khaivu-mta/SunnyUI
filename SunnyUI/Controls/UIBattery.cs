@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,11 +13,12 @@
  ******************************************************************************
  * 文件名称: UIBattery.cs
  * 文件说明: 电池电量图标
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-06-04
  *
  * 2020-06-04: V2.2.5 增加文件
  * 2021-06-18: V3.0.4 修改可自定义背景色
+ * 2022-03-19: V3.1.1 重构主题配色
 ******************************************************************************/
 
 using System;
@@ -27,6 +28,9 @@ using System.Drawing.Drawing2D;
 
 namespace Sunny.UI
 {
+    /// <summary>
+    /// 电池电量图标
+    /// </summary>
     [DefaultProperty("Power")]
     [ToolboxItem(true)]
     public sealed class UIBattery : UIControl
@@ -43,6 +47,9 @@ namespace Sunny.UI
 
         private int symbolSize = 36;
 
+        /// <summary>
+        /// 构造函数
+        /// </summary>
         public UIBattery()
         {
             SetStyleFlags(true, false);
@@ -51,6 +58,9 @@ namespace Sunny.UI
             Height = 24;
         }
 
+        /// <summary>
+        /// 电量
+        /// </summary>
         [DefaultValue(100), Description("电量"), Category("SunnyUI")]
         public int Power
         {
@@ -63,7 +73,10 @@ namespace Sunny.UI
             }
         }
 
-        [DefaultValue(36), Description("图标大小"), Category("SunnyUI")]
+        /// <summary>
+        /// 字体图标大小
+        /// </summary>
+        [DefaultValue(36), Description("字体图标大小"), Category("SunnyUI")]
         public int SymbolSize
         {
             get => symbolSize;
@@ -75,6 +88,9 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 多种颜色显示电量
+        /// </summary>
         [DefaultValue(true), Description("多种颜色"), Category("SunnyUI")]
         public bool MultiColor
         {
@@ -86,6 +102,9 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 电量为空颜色
+        /// </summary>
         [DefaultValue(typeof(Color), "230, 80, 80"), Description("电量为空颜色"), Category("SunnyUI")]
         public Color ColorEmpty
         {
@@ -97,6 +116,9 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 电量少时颜色
+        /// </summary>
         [DefaultValue(typeof(Color), "220, 155, 40"), Description("电量少时颜色"), Category("SunnyUI")]
         public Color ColorDanger
         {
@@ -108,6 +130,9 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 电量安全颜色
+        /// </summary>
         [DefaultValue(typeof(Color), "110, 190, 40"), Description("电量安全颜色"), Category("SunnyUI")]
         public Color ColorSafe
         {
@@ -120,7 +145,7 @@ namespace Sunny.UI
         }
 
         /// <summary>
-        ///     默认电量颜色
+        /// 默认电量颜色
         /// </summary>
         [Description("默认电量颜色")]
         [Category("SunnyUI")]
@@ -132,28 +157,42 @@ namespace Sunny.UI
         }
 
         /// <summary>
-        ///     填充颜色，当值为背景色或透明色或空值则不填充
+        /// 填充颜色，当值为背景色或透明色或空值则不填充
         /// </summary>
         [Description("填充颜色")]
         [Category("SunnyUI")]
-        [DefaultValue(typeof(Color), "235, 243, 255")]
+        [DefaultValue(typeof(Color), "243, 249, 255")]
         public Color FillColor
         {
             get => fillColor;
             set => SetFillColor(value);
         }
 
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="uiColor">主题样式</param>
         public override void SetStyleColor(UIBaseStyle uiColor)
         {
             base.SetStyleColor(uiColor);
-            fillColor = uiColor.PlainColor;
+            fillColor = uiColor.BatteryFillColor;
         }
 
+        /// <summary>
+        /// 绘制填充颜色
+        /// </summary>
+        /// <param name="g">绘图图面</param>
+        /// <param name="path">绘图路径</param>
         protected override void OnPaintFill(Graphics g, GraphicsPath path)
         {
             g.FillPath(fillColor, path);
         }
 
+        /// <summary>
+        /// 绘制前景颜色
+        /// </summary>
+        /// <param name="g">绘图图面</param>
+        /// <param name="path">绘图路径</param>
         protected override void OnPaintFore(Graphics g, GraphicsPath path)
         {
             var fa_battery_empty = 0xf244;

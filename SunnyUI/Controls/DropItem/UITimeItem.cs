@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,7 +13,7 @@
  ******************************************************************************
  * 文件名称: UIDateTimeItem.cs
  * 文件说明: 时间选择框弹出窗体
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-05-29
  *
  * 2020-05-29: V2.2.5 创建
@@ -438,6 +438,22 @@ namespace Sunny.UI
             btnCancel.Text = UILocalize.Cancel;
         }
 
+        public override void SetDPIScale()
+        {
+            if (!IsScaled)
+            {
+                foreach (var label in this.GetControls<UILabel>())
+                {
+                    label.SetDPIScaleFont();
+                }
+
+                btnOK.SetDPIScaleFont();
+                btnCancel.SetDPIScaleFont();
+            }
+
+            base.SetDPIScale();
+        }
+
         private void UITimeItem_MouseWheel(object sender, System.Windows.Forms.MouseEventArgs e)
         {
             if (e.Delta < 0)
@@ -571,28 +587,42 @@ namespace Sunny.UI
         {
             time = new DateTime(DateTime.MinValue.Year, DateTime.MinValue.Month, DateTime.MinValue.Day, Hour, Minute, Second);
             DoValueChanged(this, time);
-            CloseParent();
+            Close();
         }
 
         private void btnCancel_Click(object sender, EventArgs e)
         {
-            CloseParent();
+            Close();
         }
 
-        public override void SetStyle(UIBaseStyle style)
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="uiColor">主题样式</param>
+        public override void SetStyleColor(UIBaseStyle uiColor)
         {
-            base.SetStyle(style);
-            btnOK.SetStyleColor(style);
-            btnCancel.SetStyleColor(style);
-        }
+            base.SetStyleColor(uiColor);
 
-        public override void SetRectColor(Color color)
-        {
-            base.SetRectColor(color);
-            RectColor = color;
-            h1.ForeColor = h2.ForeColor = color;
-            m1.ForeColor = m2.ForeColor = color;
-            s1.ForeColor = s2.ForeColor = color;
+            btnOK.SetStyleColor(uiColor);
+            btnCancel.SetStyleColor(uiColor);
+
+            h1.SetStyleColor(uiColor);
+            h2.SetStyleColor(uiColor);
+            m1.SetStyleColor(uiColor);
+            m2.SetStyleColor(uiColor);
+            s1.SetStyleColor(uiColor);
+            s2.SetStyleColor(uiColor);
+
+            FillColor = Color.White;
+            h1.FillColor = h2.FillColor = m1.FillColor = m2.FillColor = s1.FillColor = s2.FillColor = Color.White;
+
+            RectColor = uiColor.RectColor;
+            h1.ForeColor = h2.ForeColor = RectColor;
+            m1.ForeColor = m2.ForeColor = RectColor;
+            s1.ForeColor = s2.ForeColor = RectColor;
+            h1.SymbolColor = h2.SymbolColor = RectColor;
+            m1.SymbolColor = m2.SymbolColor = RectColor;
+            s1.SymbolColor = s2.SymbolColor = RectColor;
         }
 
         private void hc_DoubleClick(object sender, EventArgs e)

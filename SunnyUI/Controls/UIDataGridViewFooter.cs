@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,10 +13,12 @@
  ******************************************************************************
  * 文件名称: UIDataGridViewFooter
  * 文件说明: DataGridView页脚，可做统计显示
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2021-04-20
  *
  * 2021-04-20: V3.0.3 增加文件说明
+ * 2021-09-24: V3.0.7 文字显示方向与Column列显示方向一致
+ * 2021-11-22: V3.0.9 修复一处可能不显示的问题 
 ******************************************************************************/
 
 using System;
@@ -36,11 +38,11 @@ namespace Sunny.UI
             SetStyleFlags(true, false, true);
             Height = 29;
             RadiusSides = UICornerRadiusSides.None;
-            RectSides = ToolStripStatusLabelBorderSides.None;
 
-            Font = UIFontColor.Font;
-            foreColor = UIFontColor.Primary;
-            fillColor = UIColor.LightBlue;
+            Font = UIFontColor.Font();
+            foreColor = UIStyles.Blue.DataGridViewFooterForeColor;
+            fillColor = UIStyles.Blue.PlainColor;
+            rectColor = UIStyles.Blue.RectColor;
         }
 
         private UIDataGridView dgv;
@@ -90,61 +92,99 @@ namespace Sunny.UI
             Invalidate();
         }
 
+        /// <summary>
+        /// 绘制前景颜色
+        /// </summary>
+        /// <param name="g">绘图图面</param>
+        /// <param name="path">绘图路径</param>
         protected override void OnPaintFore(Graphics g, GraphicsPath path)
         {
             if (dgv != null && dgv.ColumnCount > 0 && dgv.RowCount > 0)
             {
-                if (dgv.ShowGridLine)
-                {
-                    g.DrawLine(dgv.GridColor, 0, 0, 0, Height);
-                }
-
                 foreach (DataGridViewColumn column in dgv.Columns)
                 {
+                    bool ShowGridLine = dgv.CellBorderStyle == DataGridViewCellBorderStyle.Single;
                     Rectangle rect = dgv.GetCellDisplayRectangle(column.Index, 0, false);
-                    int minleft = dgv.ShowGridLine ? 1 : 0;
+                    int minleft = ShowGridLine ? 1 : 0;
 
                     if (rect.Left == minleft && rect.Width == 0) continue;
-                    if (rect.Left >= minleft && dgv.ShowGridLine)
+                    if (rect.Left >= minleft && ShowGridLine)
                     {
                         g.DrawLine(dgv.GridColor, rect.Left - minleft, 0, rect.Left - minleft, Height);
                         g.DrawLine(dgv.GridColor, rect.Right - minleft, 0, rect.Right - minleft, Height);
-                        g.DrawLine(dgv.GridColor, rect.Left - minleft, 0, rect.Right - minleft, 0);
-                        g.DrawLine(dgv.GridColor, rect.Left - minleft, Height - 1, rect.Right - minleft, Height - 1);
                     }
 
                     string str = this[column.Name];
                     if (str.IsNullOrEmpty()) continue;
 
+                    var align = column.DefaultCellStyle.Alignment;
                     SizeF sf = g.MeasureString(str, Font);
 
                     if (rect.Left == 0 && rect.Width == 0) continue;
-                    if (rect.Left == minleft && rect.Width < column.Width)
+                    switch (align)
                     {
-                        g.DrawString(str, Font, ForeColor, rect.Width - column.Width + (column.Width - sf.Width) / 2.0f, (Height - sf.Height) / 2.0f);
-                    }
-                    else
-                    {
-                        g.DrawString(str, Font, ForeColor, rect.Left + (column.Width - sf.Width) / 2.0f, (Height - sf.Height) / 2.0f);
+                        case DataGridViewContentAlignment.NotSet:
+                        case DataGridViewContentAlignment.TopLeft:
+                        case DataGridViewContentAlignment.MiddleLeft:
+                        case DataGridViewContentAlignment.BottomLeft:
+                            if (rect.Left == minleft && rect.Width < column.Width)
+                            {
+                                g.DrawString(str, Font, ForeColor, rect.Width - column.Width, (Height - sf.Height) / 2.0f);
+                            }
+                            else
+                            {
+                                g.DrawString(str, Font, ForeColor, rect.Left, (Height - sf.Height) / 2.0f);
+                            }
+
+                            break;
+                        case DataGridViewContentAlignment.TopCenter:
+                        case DataGridViewContentAlignment.MiddleCenter:
+                        case DataGridViewContentAlignment.BottomCenter:
+                            if (rect.Left == minleft && rect.Width < column.Width)
+                            {
+                                g.DrawString(str, Font, ForeColor, rect.Width - column.Width + (column.Width - sf.Width) / 2.0f, (Height - sf.Height) / 2.0f);
+                            }
+                            else
+                            {
+                                g.DrawString(str, Font, ForeColor, rect.Left + (column.Width - sf.Width) / 2.0f, (Height - sf.Height) / 2.0f);
+                            }
+
+                            break;
+                        case DataGridViewContentAlignment.TopRight:
+                        case DataGridViewContentAlignment.MiddleRight:
+                        case DataGridViewContentAlignment.BottomRight:
+                            if (rect.Left == minleft && rect.Width < column.Width)
+                            {
+                                g.DrawString(str, Font, ForeColor, rect.Width - column.Width + column.Width - sf.Width, (Height - sf.Height) / 2.0f);
+                            }
+                            else
+                            {
+                                g.DrawString(str, Font, ForeColor, rect.Left + column.Width - sf.Width, (Height - sf.Height) / 2.0f);
+                            }
+
+                            break;
                     }
                 }
             }
         }
 
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="uiColor">主题样式</param>
         public override void SetStyleColor(UIBaseStyle uiColor)
         {
             base.SetStyleColor(uiColor);
-            foreColor = UIFontColor.Primary;
+            foreColor = uiColor.DataGridViewFooterForeColor;
             fillColor = uiColor.PlainColor;
-
-            Invalidate();
+            rectColor = uiColor.RectColor;
         }
 
         /// <summary>
         /// 填充颜色，当值为背景色或透明色或空值则不填充
         /// </summary>
         [Description("填充颜色"), Category("SunnyUI")]
-        [DefaultValue(typeof(Color), "235, 243, 255")]
+        [DefaultValue(typeof(Color), "243, 249, 255")]
         public Color FillColor
         {
             get => fillColor;

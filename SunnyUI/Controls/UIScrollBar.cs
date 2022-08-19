@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,11 +13,12 @@
  ******************************************************************************
  * 文件名称: UIScrollBar.cs
  * 文件说明: 滚动条
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
  * 2020-04-25: V2.2.4 更新主题配置类
+ * 2022-03-19: V3.1.1 重构主题配色
 ******************************************************************************/
 
 using System;
@@ -37,16 +38,17 @@ namespace Sunny.UI
             SetStyleFlags(true, false);
             Maximum = 100;
             up_state = value_state = down_state = DrawItemState.None;
+            timer = new Timer();
             timer.Interval = 150;
             timer.Tick += TimerTick;
             Width = SystemInformation.VerticalScrollBarWidth + 2;
             Height = 300;
             ShowText = false;
 
-            fillColor = UIColor.LightBlue;
-            foreColor = UIColor.Blue;
-            fillHoverColor = Color.FromArgb(111, 168, 255);
-            fillPressColor = Color.FromArgb(74, 131, 229);
+            fillColor = UIStyles.Blue.ScrollBarFillColor;
+            foreColor = UIStyles.Blue.ScrollBarForeColor;
+            fillHoverColor = UIStyles.Blue.ScrollBarFillHoverColor;
+            fillPressColor = UIStyles.Blue.ScrollBarFillPressColor;
         }
 
         private int scrollValue;
@@ -59,16 +61,17 @@ namespace Sunny.UI
         private int dragOffset;
         private int barHeight;
         private double percentValue;
-        private readonly Timer timer = new Timer();
+        private readonly Timer timer;
         private bool isScrollUp = true;
         private bool largeChange = true;
 
         public event EventHandler ValueChanged;
 
-        ~UIScrollBar()
+        protected override void Dispose(bool disposing)
         {
-            timer.Stop();
-            timer.Dispose();
+            base.Dispose(disposing);
+            timer?.Stop();
+            timer?.Dispose();
         }
 
         [DefaultValue(0)]
@@ -102,6 +105,10 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 重载控件尺寸变更
+        /// </summary>
+        /// <param name="e">参数</param>
         protected override void OnSizeChanged(EventArgs e)
         {
             base.OnSizeChanged(e);
@@ -164,12 +171,31 @@ namespace Sunny.UI
             return clip;
         }
 
+        /// <summary>
+        /// 重载绘图
+        /// </summary>
+        /// <param name="e">绘图参数</param>
         protected override void OnPaint(PaintEventArgs e)
         {
             e.Graphics.Clear(fillColor);
             DrawUpDownArrow(e.Graphics, up_state, GetUpRect(), true);
             DrawUpDownArrow(e.Graphics, down_state, GetDownRect(), false);
             DrawValueBar(e.Graphics, value_state);
+            if (ShowLeftLine)
+            {
+                e.Graphics.DrawLine(RectColor, 0, 0, 0, Height);
+            }
+        }
+
+        private bool showLeftLine;
+        [DefaultValue(false)]
+        public bool ShowLeftLine
+        {
+            get => showLeftLine; set
+            {
+                showLeftLine = value;
+                Invalidate();
+            }
         }
 
         private void DrawValueBar(Graphics g, DrawItemState state)
@@ -257,7 +283,7 @@ namespace Sunny.UI
             }
 
             scrollValue = value;
-            ValueChanged?.Invoke(this, null);
+            ValueChanged?.Invoke(this, EventArgs.Empty);
             Invalidate();
         }
 
@@ -283,6 +309,10 @@ namespace Sunny.UI
             timer.Stop();
         }
 
+        /// <summary>
+        /// 重载鼠标按下事件
+        /// </summary>
+        /// <param name="e">鼠标参数</param>
         protected override void OnMouseDown(MouseEventArgs e)
         {
             if (e.Button != MouseButtons.Left)
@@ -348,6 +378,10 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 重载鼠标抬起事件
+        /// </summary>
+        /// <param name="e">鼠标参数</param>
         protected override void OnMouseUp(MouseEventArgs e)
         {
             IsPress = false;
@@ -358,6 +392,10 @@ namespace Sunny.UI
 
         private int MousePos;
 
+        /// <summary>
+        /// 重载鼠标移动事件
+        /// </summary>
+        /// <param name="e">鼠标参数</param>
         protected override void OnMouseMove(MouseEventArgs e)
         {
             MousePos = e.Y;
@@ -391,6 +429,10 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 重载鼠标离开事件
+        /// </summary>
+        /// <param name="e">鼠标参数</param>
         protected override void OnMouseLeave(EventArgs e)
         {
             base.OnMouseLeave(e);
@@ -428,14 +470,18 @@ namespace Sunny.UI
                 return -1;
         }
 
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="uiColor">主题样式</param>
         public override void SetStyleColor(UIBaseStyle uiColor)
         {
             base.SetStyleColor(uiColor);
-            fillColor = uiColor.PlainColor;
+
+            fillColor = uiColor.ScrollBarFillColor;
             foreColor = uiColor.ScrollBarForeColor;
-            fillHoverColor = uiColor.ButtonFillHoverColor;
-            fillPressColor = uiColor.ButtonFillPressColor;
-            Invalidate();
+            fillHoverColor = uiColor.ScrollBarFillHoverColor;
+            fillPressColor = uiColor.ScrollBarFillPressColor;
         }
 
         /// <summary>
@@ -450,25 +496,36 @@ namespace Sunny.UI
         }
 
         /// <summary>
+        /// 字体颜色
+        /// </summary>
+        [Description("字体颜色"), Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "80, 160, 255")]
+        public Color RectColor
+        {
+            get => rectColor;
+            set => SetRectColor(value);
+        }
+
+        /// <summary>
         /// 填充颜色，当值为背景色或透明色或空值则不填充
         /// </summary>
         [Description("填充颜色"), Category("SunnyUI")]
-        [DefaultValue(typeof(Color), "235, 243, 255")]
+        [DefaultValue(typeof(Color), "243, 249, 255")]
         public Color FillColor
         {
             get => fillColor;
             set => SetFillColor(value);
         }
 
-        [DefaultValue(typeof(Color), "111, 168, 255")]
+        [DefaultValue(typeof(Color), "115, 179, 255")]
         [Description("鼠标移上颜色"), Category("SunnyUI")]
         public Color HoverColor
         {
             get => fillHoverColor;
-            set => SetFillHoveColor(value);
+            set => SetFillHoverColor(value);
         }
 
-        [DefaultValue(typeof(Color), "74, 131, 229")]
+        [DefaultValue(typeof(Color), "64, 128, 204")]
         [Description("鼠标按下颜色"), Category("SunnyUI")]
         public Color PressColor
         {

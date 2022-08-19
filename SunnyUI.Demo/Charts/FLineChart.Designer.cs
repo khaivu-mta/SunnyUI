@@ -1,4 +1,4 @@
-﻿namespace Sunny.UI.Demo.Charts
+﻿namespace Sunny.UI.Demo
 {
     partial class FLineChart
     {
@@ -36,6 +36,9 @@
             this.LineChart = new Sunny.UI.UILineChart();
             this.uiSymbolButton2 = new Sunny.UI.UISymbolButton();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
+            this.cbPoints = new Sunny.UI.UICheckBox();
+            this.cbContainsNan = new Sunny.UI.UICheckBox();
+            this.uiSymbolButton3 = new Sunny.UI.UISymbolButton();
             ((System.ComponentModel.ISupportInitialize)(this.uiImageButton3)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.uiImageButton2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.uiImageButton1)).BeginInit();
@@ -50,9 +53,11 @@
             this.uiSymbolButton1.Name = "uiSymbolButton1";
             this.uiSymbolButton1.Padding = new System.Windows.Forms.Padding(28, 0, 0, 0);
             this.uiSymbolButton1.Size = new System.Drawing.Size(100, 27);
-            this.uiSymbolButton1.Symbol = 61952;
+            this.uiSymbolButton1.Symbol = 61953;
             this.uiSymbolButton1.TabIndex = 34;
-            this.uiSymbolButton1.Text = "数据";
+            this.uiSymbolButton1.Text = "单Y轴";
+            this.uiSymbolButton1.TipsFont = new System.Drawing.Font("微软雅黑", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.uiSymbolButton1.ZoomScaleRect = new System.Drawing.Rectangle(0, 0, 0, 0);
             this.uiSymbolButton1.Click += new System.EventHandler(this.uiSymbolButton1_Click);
             // 
             // uiImageButton3
@@ -67,6 +72,7 @@
             this.uiImageButton3.TabStop = false;
             this.uiImageButton3.Text = "      Dark";
             this.uiImageButton3.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.uiImageButton3.ZoomScaleRect = new System.Drawing.Rectangle(0, 0, 0, 0);
             this.uiImageButton3.Click += new System.EventHandler(this.uiImageButton3_Click);
             // 
             // uiImageButton2
@@ -81,6 +87,7 @@
             this.uiImageButton2.TabStop = false;
             this.uiImageButton2.Text = "      Plain";
             this.uiImageButton2.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.uiImageButton2.ZoomScaleRect = new System.Drawing.Rectangle(0, 0, 0, 0);
             this.uiImageButton2.Click += new System.EventHandler(this.uiImageButton2_Click);
             // 
             // uiImageButton1
@@ -95,26 +102,28 @@
             this.uiImageButton1.TabStop = false;
             this.uiImageButton1.Text = "      Default";
             this.uiImageButton1.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.uiImageButton1.ZoomScaleRect = new System.Drawing.Rectangle(0, 0, 0, 0);
             this.uiImageButton1.Click += new System.EventHandler(this.uiImageButton1_Click);
             // 
             // LineChart
             // 
-            this.LineChart.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(244)))), ((int)(((byte)(244)))), ((int)(((byte)(244)))));
             this.LineChart.Font = new System.Drawing.Font("微软雅黑", 12F);
-            this.LineChart.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(54)))), ((int)(((byte)(54)))), ((int)(((byte)(54)))));
+            this.LineChart.LegendFont = new System.Drawing.Font("微软雅黑", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.LineChart.Location = new System.Drawing.Point(30, 55);
             this.LineChart.MinimumSize = new System.Drawing.Size(1, 1);
             this.LineChart.Name = "LineChart";
             this.LineChart.Size = new System.Drawing.Size(670, 430);
+            this.LineChart.SubFont = new System.Drawing.Font("微软雅黑", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.LineChart.TabIndex = 35;
             this.LineChart.Text = "uiLineChart1";
+            this.LineChart.ZoomScaleRect = new System.Drawing.Rectangle(0, 0, 0, 0);
             this.LineChart.PointValue += new Sunny.UI.UILineChart.OnPointValue(this.LineChart_PointValue);
             // 
             // uiSymbolButton2
             // 
             this.uiSymbolButton2.Cursor = System.Windows.Forms.Cursors.Hand;
             this.uiSymbolButton2.Font = new System.Drawing.Font("微软雅黑", 12F);
-            this.uiSymbolButton2.Location = new System.Drawing.Point(454, 505);
+            this.uiSymbolButton2.Location = new System.Drawing.Point(560, 505);
             this.uiSymbolButton2.MinimumSize = new System.Drawing.Size(1, 1);
             this.uiSymbolButton2.Name = "uiSymbolButton2";
             this.uiSymbolButton2.Padding = new System.Windows.Forms.Padding(28, 0, 0, 0);
@@ -122,17 +131,67 @@
             this.uiSymbolButton2.Symbol = 61463;
             this.uiSymbolButton2.TabIndex = 36;
             this.uiSymbolButton2.Text = "实时";
+            this.uiSymbolButton2.TipsFont = new System.Drawing.Font("微软雅黑", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.uiSymbolButton2.ZoomScaleRect = new System.Drawing.Rectangle(0, 0, 0, 0);
             this.uiSymbolButton2.Click += new System.EventHandler(this.uiSymbolButton2_Click);
             // 
             // timer1
             // 
             this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
             // 
+            // cbPoints
+            // 
+            this.cbPoints.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.cbPoints.Font = new System.Drawing.Font("微软雅黑", 12F);
+            this.cbPoints.Location = new System.Drawing.Point(348, 538);
+            this.cbPoints.MinimumSize = new System.Drawing.Size(1, 1);
+            this.cbPoints.Name = "cbPoints";
+            this.cbPoints.Padding = new System.Windows.Forms.Padding(22, 0, 0, 0);
+            this.cbPoints.Size = new System.Drawing.Size(95, 27);
+            this.cbPoints.TabIndex = 37;
+            this.cbPoints.Text = "只显示点";
+            this.cbPoints.ZoomScaleRect = new System.Drawing.Rectangle(0, 0, 0, 0);
+            this.cbPoints.CheckedChanged += new System.EventHandler(this.uiCheckBox1_CheckedChanged);
+            // 
+            // cbContainsNan
+            // 
+            this.cbContainsNan.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.cbContainsNan.Font = new System.Drawing.Font("微软雅黑", 12F);
+            this.cbContainsNan.Location = new System.Drawing.Point(571, 535);
+            this.cbContainsNan.MinimumSize = new System.Drawing.Size(1, 1);
+            this.cbContainsNan.Name = "cbContainsNan";
+            this.cbContainsNan.Padding = new System.Windows.Forms.Padding(22, 0, 0, 0);
+            this.cbContainsNan.Size = new System.Drawing.Size(95, 27);
+            this.cbContainsNan.TabIndex = 38;
+            this.cbContainsNan.Text = "包含Nan";
+            this.cbContainsNan.Visible = false;
+            this.cbContainsNan.ZoomScaleRect = new System.Drawing.Rectangle(0, 0, 0, 0);
+            this.cbContainsNan.CheckedChanged += new System.EventHandler(this.uiCheckBox2_CheckedChanged);
+            // 
+            // uiSymbolButton3
+            // 
+            this.uiSymbolButton3.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.uiSymbolButton3.Font = new System.Drawing.Font("微软雅黑", 12F);
+            this.uiSymbolButton3.Location = new System.Drawing.Point(454, 505);
+            this.uiSymbolButton3.MinimumSize = new System.Drawing.Size(1, 1);
+            this.uiSymbolButton3.Name = "uiSymbolButton3";
+            this.uiSymbolButton3.Padding = new System.Windows.Forms.Padding(28, 0, 0, 0);
+            this.uiSymbolButton3.Size = new System.Drawing.Size(100, 27);
+            this.uiSymbolButton3.Symbol = 61953;
+            this.uiSymbolButton3.TabIndex = 39;
+            this.uiSymbolButton3.Text = "双Y轴";
+            this.uiSymbolButton3.TipsFont = new System.Drawing.Font("微软雅黑", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.uiSymbolButton3.ZoomScaleRect = new System.Drawing.Rectangle(0, 0, 0, 0);
+            this.uiSymbolButton3.Click += new System.EventHandler(this.uiSymbolButton3_Click_1);
+            // 
             // FLineChart
             // 
             this.AllowShowTitle = true;
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.ClientSize = new System.Drawing.Size(800, 574);
+            this.Controls.Add(this.uiSymbolButton3);
+            this.Controls.Add(this.cbContainsNan);
+            this.Controls.Add(this.cbPoints);
             this.Controls.Add(this.uiSymbolButton2);
             this.Controls.Add(this.uiSymbolButton1);
             this.Controls.Add(this.uiImageButton3);
@@ -160,5 +219,8 @@
         private UILineChart LineChart;
         private UISymbolButton uiSymbolButton2;
         private System.Windows.Forms.Timer timer1;
+        private UICheckBox cbPoints;
+        private UICheckBox cbContainsNan;
+        private UISymbolButton uiSymbolButton3;
     }
 }

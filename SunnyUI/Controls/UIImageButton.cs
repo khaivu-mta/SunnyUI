@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,10 +13,11 @@
  ******************************************************************************
  * 文件名称: UIImageButton.cs
  * 文件说明: 图像按钮
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
+ * 2022-03-19: V3.1.1 重构主题配色
 ******************************************************************************/
 
 using System;
@@ -29,7 +30,7 @@ namespace Sunny.UI
     /// <summary>
     /// 图像按钮
     /// </summary>
-    public sealed class UIImageButton : PictureBox
+    public sealed class UIImageButton : PictureBox, IStyleInterface, IZoomScale
     {
         private bool IsPress;
         private bool IsHover;
@@ -44,11 +45,70 @@ namespace Sunny.UI
         private Color foreColor = UIFontColor.Primary;
 
         /// <summary>
+        /// 禁止控件跟随窗体缩放
+        /// </summary>
+        [DefaultValue(false), Category("SunnyUI"), Description("禁止控件跟随窗体缩放")]
+        public bool ZoomScaleDisabled { get; set; }
+
+        /// <summary>
+        /// 控件缩放前在其容器里的位置
+        /// </summary>
+        [Browsable(false)]
+        public Rectangle ZoomScaleRect { get; set; }
+
+        /// <summary>
+        /// 设置控件缩放比例
+        /// </summary>
+        /// <param name="scale">缩放比例</param>
+        public void SetZoomScale(float scale)
+        {
+
+        }
+
+        /// <summary>
+        /// 主题样式
+        /// </summary>
+        [DefaultValue(UIStyle.Blue), Description("主题样式"), Category("SunnyUI")]
+        public UIStyle Style
+        {
+            get => _style;
+            set => SetStyle(value);
+        }
+
+        /// <summary>
         /// Tag字符串
         /// </summary>
         [DefaultValue(null)]
         [Description("获取或设置包含有关控件的数据的对象字符串"), Category("SunnyUI")]
         public string TagString { get; set; }
+
+        public void SetStyleColor(UIBaseStyle uiColor)
+        {
+            foreColor = uiColor.ImageButtonForeColor;
+        }
+
+        public void SetStyle(UIStyle style)
+        {
+            if (!style.IsCustom())
+            {
+                SetStyleColor(style.Colors());
+                Invalidate();
+            }
+
+            _style = style;
+        }
+
+        private UIStyle _style = UIStyle.Blue;
+        public bool IsScaled { get; private set; }
+
+        public void SetDPIScale()
+        {
+            if (!IsScaled)
+            {
+                this.SetDPIScaleFont();
+                IsScaled = true;
+            }
+        }
 
         [Category("SunnyUI")]
         [Description("按钮文字")]
@@ -131,8 +191,15 @@ namespace Sunny.UI
             Height = 35;
             Version = UIGlobal.Version;
             Cursor = Cursors.Hand;
-            base.Font = UIFontColor.Font;
+            base.Font = UIFontColor.Font();
         }
+
+        /// <summary>
+        /// 自定义主题风格
+        /// </summary>
+        [DefaultValue(false)]
+        [Description("获取或设置可以自定义主题风格"), Category("SunnyUI")]
+        public bool StyleCustomMode { get; set; }
 
         public string Version { get; }
 
@@ -227,9 +294,9 @@ namespace Sunny.UI
         }
 
         /// <summary>
-        /// 鼠标按下
+        /// 重载鼠标按下事件
         /// </summary>
-        /// <param name="e">e</param>
+        /// <param name="e">鼠标参数</param>
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
@@ -238,9 +305,9 @@ namespace Sunny.UI
         }
 
         /// <summary>
-        /// 鼠标弹起
+        /// 重载鼠标抬起事件
         /// </summary>
-        /// <param name="e">e</param>
+        /// <param name="e">鼠标参数</param>
         protected override void OnMouseUp(MouseEventArgs e)
         {
             base.OnMouseUp(e);
@@ -249,9 +316,9 @@ namespace Sunny.UI
         }
 
         /// <summary>
-        /// 鼠标进入
+        /// 重载鼠标进入事件
         /// </summary>
-        /// <param name="e">e</param>
+        /// <param name="e">鼠标参数</param>
         protected override void OnMouseEnter(EventArgs e)
         {
             base.OnMouseEnter(e);
@@ -266,9 +333,9 @@ namespace Sunny.UI
         }
 
         /// <summary>
-        /// 鼠标离开
+        /// 重载鼠标离开事件
         /// </summary>
-        /// <param name="e">e</param>
+        /// <param name="e">鼠标参数</param>
         protected override void OnMouseLeave(EventArgs e)
         {
             base.OnMouseLeave(e);

@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,7 +13,7 @@
  ******************************************************************************
  * 文件名称: UIDateTimeItem.cs
  * 文件说明: 日期选择框弹出窗体
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
@@ -120,7 +120,7 @@ namespace Sunny.UI
             this.TopPanel.MinimumSize = new System.Drawing.Size(1, 1);
             this.TopPanel.Name = "TopPanel";
             this.TopPanel.RadiusSides = Sunny.UI.UICornerRadiusSides.None;
-            this.TopPanel.RectSides = ((System.Windows.Forms.ToolStripStatusLabelBorderSides)(((System.Windows.Forms.ToolStripStatusLabelBorderSides.Left | System.Windows.Forms.ToolStripStatusLabelBorderSides.Top) 
+            this.TopPanel.RectSides = ((System.Windows.Forms.ToolStripStatusLabelBorderSides)(((System.Windows.Forms.ToolStripStatusLabelBorderSides.Left | System.Windows.Forms.ToolStripStatusLabelBorderSides.Top)
             | System.Windows.Forms.ToolStripStatusLabelBorderSides.Right)));
             this.TopPanel.Size = new System.Drawing.Size(284, 31);
             this.TopPanel.Style = Sunny.UI.UIStyle.Custom;
@@ -280,7 +280,7 @@ namespace Sunny.UI
             this.tabPage2.Controls.Add(this.p2);
             this.tabPage2.Location = new System.Drawing.Point(0, 40);
             this.tabPage2.Name = "tabPage2";
-            this.tabPage2.Size = new System.Drawing.Size(450, 230);
+            this.tabPage2.Size = new System.Drawing.Size(200, 60);
             this.tabPage2.TabIndex = 1;
             this.tabPage2.Text = "tabPage2";
             this.tabPage2.UseVisualStyleBackColor = true;
@@ -295,7 +295,7 @@ namespace Sunny.UI
             this.p2.MinimumSize = new System.Drawing.Size(1, 1);
             this.p2.Name = "p2";
             this.p2.RadiusSides = Sunny.UI.UICornerRadiusSides.None;
-            this.p2.Size = new System.Drawing.Size(450, 230);
+            this.p2.Size = new System.Drawing.Size(200, 60);
             this.p2.Style = Sunny.UI.UIStyle.Custom;
             this.p2.TabIndex = 1;
             this.p2.Text = null;
@@ -310,7 +310,7 @@ namespace Sunny.UI
             this.tabPage3.Controls.Add(this.p3);
             this.tabPage3.Location = new System.Drawing.Point(0, 40);
             this.tabPage3.Name = "tabPage3";
-            this.tabPage3.Size = new System.Drawing.Size(450, 230);
+            this.tabPage3.Size = new System.Drawing.Size(200, 60);
             this.tabPage3.TabIndex = 2;
             this.tabPage3.Text = "tabPage3";
             this.tabPage3.UseVisualStyleBackColor = true;
@@ -325,7 +325,7 @@ namespace Sunny.UI
             this.p3.MinimumSize = new System.Drawing.Size(1, 1);
             this.p3.Name = "p3";
             this.p3.RadiusSides = Sunny.UI.UICornerRadiusSides.None;
-            this.p3.Size = new System.Drawing.Size(450, 230);
+            this.p3.Size = new System.Drawing.Size(200, 60);
             this.p3.Style = Sunny.UI.UIStyle.Custom;
             this.p3.TabIndex = 2;
             this.p3.Text = null;
@@ -632,6 +632,7 @@ namespace Sunny.UI
             this.uiLine2.FillColor = System.Drawing.Color.White;
             this.uiLine2.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.uiLine2.LineColor = System.Drawing.Color.Silver;
+            this.uiLine2.LineDashStyle = Sunny.UI.UILineDashStyle.None;
             this.uiLine2.Location = new System.Drawing.Point(289, 88);
             this.uiLine2.MinimumSize = new System.Drawing.Size(16, 16);
             this.uiLine2.Name = "uiLine2";
@@ -648,6 +649,7 @@ namespace Sunny.UI
             this.uiLine3.FillColor = System.Drawing.Color.White;
             this.uiLine3.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.uiLine3.LineColor = System.Drawing.Color.Silver;
+            this.uiLine3.LineDashStyle = Sunny.UI.UILineDashStyle.None;
             this.uiLine3.Location = new System.Drawing.Point(289, 54);
             this.uiLine3.MinimumSize = new System.Drawing.Size(16, 16);
             this.uiLine3.Name = "uiLine3";
@@ -704,6 +706,7 @@ namespace Sunny.UI
             this.Name = "UIDateTimeItem";
             this.Size = new System.Drawing.Size(452, 235);
             this.Style = Sunny.UI.UIStyle.Custom;
+            this.StyleCustomMode = true;
             this.TopPanel.ResumeLayout(false);
             this.TabControl.ResumeLayout(false);
             this.tabPage1.ResumeLayout(false);
@@ -732,6 +735,24 @@ namespace Sunny.UI
             Translate();
         }
 
+        public override void SetDPIScale()
+        {
+            if (!IsScaled)
+            {
+                TopPanel.SetDPIScaleFont();
+
+                foreach (var label in this.GetControls<UILabel>())
+                {
+                    label.SetDPIScaleFont();
+                }
+
+                btnOK.SetDPIScaleFont();
+                btnCancel.SetDPIScaleFont();
+            }
+
+            base.SetDPIScale();
+        }
+
         public void Translate()
         {
             months.Clear();
@@ -758,8 +779,11 @@ namespace Sunny.UI
 
         private void TopPanel_Click(object sender, EventArgs e)
         {
-            TabControl.SelectedTab = tabPage1;
-            activeDay = -1;
+            if (TabControl.SelectedIndex > 0)
+            {
+                TabControl.SelectedIndex--;
+                activeDay = -1;
+            }
         }
 
         private void SetYears(int iy)
@@ -937,22 +961,45 @@ namespace Sunny.UI
             }
         }
 
-        public override void SetRectColor(Color color)
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="uiColor">主题样式</param>
+        public override void SetStyleColor(UIBaseStyle uiColor)
         {
-            base.SetRectColor(color);
-            RectColor = color;
-            b1.ForeColor = b2.ForeColor = b3.ForeColor = b4.ForeColor = color;
-            TopPanel.RectColor = p1.RectColor = p2.RectColor = p3.RectColor = color;
-            h1.ForeColor = h2.ForeColor = color;
-            mm1.ForeColor = mm2.ForeColor = color;
-            s1.ForeColor = s2.ForeColor = color;
-        }
+            base.SetStyleColor(uiColor);
 
-        public override void SetStyle(UIBaseStyle style)
-        {
-            base.SetStyle(style);
-            btnOK.SetStyleColor(style);
-            btnCancel.SetStyleColor(style);
+            btnOK.SetStyleColor(uiColor);
+            btnCancel.SetStyleColor(uiColor);
+
+            fillColor = Color.White;
+            foreColor = uiColor.DropDownPanelForeColor;
+
+            b1.SetStyleColor(uiColor);
+            b2.SetStyleColor(uiColor);
+            b3.SetStyleColor(uiColor);
+            b4.SetStyleColor(uiColor);
+
+            h1.SetStyleColor(uiColor);
+            h2.SetStyleColor(uiColor);
+            mm1.SetStyleColor(uiColor);
+            mm2.SetStyleColor(uiColor);
+            s1.SetStyleColor(uiColor);
+            s2.SetStyleColor(uiColor);
+
+            b1.FillColor = b2.FillColor = b3.FillColor = b4.FillColor = TopPanel.FillColor;
+            h1.FillColor = h2.FillColor = mm1.FillColor = mm2.FillColor = s1.FillColor = s2.FillColor = TopPanel.FillColor;
+
+            RectColor = uiColor.RectColor;
+            b1.ForeColor = b2.ForeColor = b3.ForeColor = b4.ForeColor = RectColor;
+            b1.SymbolColor = b2.SymbolColor = b3.SymbolColor = b4.SymbolColor = RectColor;
+            TopPanel.RectColor = p1.RectColor = p2.RectColor = p3.RectColor = RectColor;
+            h1.ForeColor = h2.ForeColor = RectColor;
+            mm1.ForeColor = mm2.ForeColor = RectColor;
+            s1.ForeColor = s2.ForeColor = RectColor;
+            h1.SymbolColor = h2.SymbolColor = RectColor;
+            mm1.SymbolColor = mm2.SymbolColor = RectColor;
+            s1.SymbolColor = s2.SymbolColor = RectColor;
         }
 
         private void UITimeItem_MouseWheel(object sender, System.Windows.Forms.MouseEventArgs e)
@@ -1071,14 +1118,14 @@ namespace Sunny.UI
 
         private void btnCancel_Click(object sender, EventArgs e)
         {
-            CloseParent();
+            Close();
         }
 
         private void btnOK_Click(object sender, EventArgs e)
         {
             DateTime time = new DateTime(Date.Year, Date.Month, Date.Day, Hour, Minute, Second);
             DoValueChanged(this, time);
-            CloseParent();
+            Close();
         }
 
         private void hc_DoubleClick(object sender, EventArgs e)
@@ -1238,7 +1285,7 @@ namespace Sunny.UI
 
             if (ShowToday)
             {
-                using (Font SubFont = new Font("微软雅黑", 10.5f))
+                using (Font SubFont = new Font("微软雅黑", 10.5f / UIDPIScale.DPIScale()))
                 {
                     e.Graphics.FillRectangle(p3.FillColor, p3.Width - width * 4 + 1, p3.Height - height + 1, width * 4 - 2, height - 2);
                     e.Graphics.FillRoundRectangle(PrimaryColor, new Rectangle((int)(p3.Width - width * 4 + 6), p3.Height - height + 3, 8, height - 10), 3);
@@ -1256,6 +1303,13 @@ namespace Sunny.UI
 
         private void p3_MouseMove(object sender, System.Windows.Forms.MouseEventArgs e)
         {
+            if (e.Location.Y <= 30)
+            {
+                activeDay = -1;
+                p3.Invalidate();
+                return;
+            }
+
             int width = p3.Width / 7;
             int height = (p3.Height - 30) / 6;
             int x = e.Location.X / width;
@@ -1273,6 +1327,7 @@ namespace Sunny.UI
 
         private void p3_MouseClick(object sender, System.Windows.Forms.MouseEventArgs e)
         {
+            if (e.Location.Y <= 30) return;
             int width = p3.Width / 7;
             int height = (p3.Height - 30) / 6;
             int x = e.Location.X / width;

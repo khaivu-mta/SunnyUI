@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,12 +13,13 @@
  ******************************************************************************
  * 文件名称: UILight.cs
  * 文件说明: 提示灯
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
  * 2021-06-19: V3.0.4 增加方形显示，优化渐变色
  * 2021-08-07: V3.0.5 默认不显示灯光亮线
+ * 2022-05-15: V3.1.8 增加文字显示
 ******************************************************************************/
 
 using System;
@@ -45,7 +46,7 @@ namespace Sunny.UI
         {
             SetStyleFlags(true, false);
             ShowRect = false;
-            ShowText = false;
+            base.ShowText = false;
             Radius = Width = Height = 35;
         }
 
@@ -69,6 +70,28 @@ namespace Sunny.UI
         }
 
         private int interval = 500;
+
+        /// <summary>
+        /// 是否显示文字
+        /// </summary>
+        [Description("是否显示文字"), Category("SunnyUI")]
+        [DefaultValue(false)]
+        public new bool ShowText
+        {
+            get => base.ShowText;
+            set => base.ShowText = value;
+        }
+
+        /// <summary>
+        /// 绘制前景颜色
+        /// </summary>
+        /// <param name="g">绘图图面</param>
+        /// <param name="path">绘图路径</param>
+        protected override void OnPaintFore(Graphics g, GraphicsPath path)
+        {
+            SizeF sf = g.MeasureString(Text, Font);
+            g.DrawString(Text, Font, ForeColor, Width / 2 - sf.Width / 2, Height / 2 - sf.Height / 2);
+        }
 
         [DefaultValue(500), Description("显示间隔"), Category("SunnyUI")]
         public int Interval
@@ -127,6 +150,11 @@ namespace Sunny.UI
             Invalidate();
         }
 
+        /// <summary>
+        /// 绘制填充颜色
+        /// </summary>
+        /// <param name="g">绘图图面</param>
+        /// <param name="path">绘图路径</param>
         protected override void OnPaintFill(Graphics g, GraphicsPath path)
         {
             int ShowSize = Math.Min(Width, Height);
@@ -223,7 +251,7 @@ namespace Sunny.UI
             }
         }
 
-        private bool showLightLine = false;
+        private bool showLightLine;
 
         [DefaultValue(false)]
         [Description("显示灯光亮线"), Category("SunnyUI")]

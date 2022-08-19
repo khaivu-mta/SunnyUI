@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,7 +13,7 @@
  ******************************************************************************
  * 文件名称: UIEditFormHelper.cs
  * 文件说明: 编辑窗体帮助类
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-12-28
  *
  * 2020-12-28: V2.2.10 增加文件说明
@@ -24,6 +24,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
+using System.Windows.Forms;
 
 namespace Sunny.UI
 {
@@ -36,7 +37,26 @@ namespace Sunny.UI
         DateTime,
         Password,
         Combobox,
-        Switch
+        Switch,
+        ComboTreeView,
+        ComboCheckedListBox
+    }
+
+    public class ComboCheckedListBoxItem
+    {
+        public bool Checked;
+        public string Text;
+
+        public ComboCheckedListBoxItem()
+        {
+
+        }
+
+        public ComboCheckedListBoxItem(string text, bool isChecked)
+        {
+            Checked = isChecked;
+            Text = text;
+        }
     }
 
     public class EditInfo
@@ -56,7 +76,9 @@ namespace Sunny.UI
         public bool HalfWidth { get; set; }
 
         public object DataSource { get; set; }
+
         public string DisplayMember { get; set; }
+
         public string ValueMember { get; set; }
     }
 
@@ -199,7 +221,28 @@ namespace Sunny.UI
                 EditType = EditType.Switch,
                 Text = text,
                 Value = value,
-                Enabled = enabled
+                Enabled = enabled,
+                HalfWidth = true
+            };
+
+            Infos.Add(info);
+            Dictionary.TryAdd(info.DataPropertyName, info);
+        }
+
+        public void AddSwitch(string dataPropertyName, string text, bool value, string activeText, string inActiveText, bool enabled = true)
+        {
+            if (Dictionary.ContainsKey(dataPropertyName))
+                throw new DuplicateNameException(dataPropertyName + ": 已经存在");
+
+            EditInfo info = new EditInfo()
+            {
+                DataPropertyName = dataPropertyName,
+                EditType = EditType.Switch,
+                Text = text,
+                Value = value,
+                Enabled = enabled,
+                DataSource = new string[2] { activeText, inActiveText },
+                HalfWidth = true
             };
 
             Infos.Add(info);
@@ -243,6 +286,46 @@ namespace Sunny.UI
                 Enabled = enabled,
                 HalfWidth = halfWidth,
                 DataSource = items
+            };
+
+            Infos.Add(info);
+            Dictionary.TryAdd(info.DataPropertyName, info);
+        }
+
+        public void AddComboTreeView(string dataPropertyName, string text, TreeNode[] nodes, TreeNode value, bool enabled = true, bool halfWidth = false)
+        {
+            if (Dictionary.ContainsKey(dataPropertyName))
+                throw new DuplicateNameException(dataPropertyName + ": 已经存在");
+
+            EditInfo info = new EditInfo()
+            {
+                DataPropertyName = dataPropertyName,
+                EditType = EditType.ComboTreeView,
+                Text = text,
+                Value = value,
+                Enabled = enabled,
+                HalfWidth = halfWidth,
+                DataSource = nodes
+            };
+
+            Infos.Add(info);
+            Dictionary.TryAdd(info.DataPropertyName, info);
+        }
+
+        public void AddComboCheckedListBox(string dataPropertyName, string text, ComboCheckedListBoxItem[] nodes, string value, bool enabled = true, bool halfWidth = false)
+        {
+            if (Dictionary.ContainsKey(dataPropertyName))
+                throw new DuplicateNameException(dataPropertyName + ": 已经存在");
+
+            EditInfo info = new EditInfo()
+            {
+                DataPropertyName = dataPropertyName,
+                EditType = EditType.ComboCheckedListBox,
+                Text = text,
+                Value = value,
+                Enabled = enabled,
+                HalfWidth = halfWidth,
+                DataSource = nodes
             };
 
             Infos.Add(info);

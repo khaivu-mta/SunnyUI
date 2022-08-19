@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,12 +13,15 @@
  ******************************************************************************
  * 文件名称: UISwitch.cs
  * 文件说明: 开关
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
  * 2020-04-25: V2.2.4 更新主题配置类
  * 2021-05-06: V3.0.3 更新Active状态改变时触发ValueChanged事件
+ * 2021-09-14: V3.0.7 增加Disabled颜色
+ * 2022-01-02: V3.0.9 增加是否只读属性
+ * 2022-03-19: V3.1.1 重构主题配色
 ******************************************************************************/
 
 using System;
@@ -53,10 +56,19 @@ namespace Sunny.UI
             Width = 75;
             ShowText = false;
             ShowRect = false;
-            foreColor = Color.White;
-            inActiveColor = Color.Silver;
+
+            inActiveColor = Color.Gray;
             fillColor = Color.White;
+
+            rectColor = UIStyles.Blue.SwitchActiveColor;
+            fillColor = UIStyles.Blue.SwitchFillColor;
+            inActiveColor = UIStyles.Blue.SwitchInActiveColor;
+            rectDisableColor = UIStyles.Blue.SwitchRectDisableColor;
         }
+
+        [DefaultValue(false)]
+        [Description("是否只读"), Category("SunnyUI")]
+        public bool ReadOnly { get; set; }
 
         private UISwitchShape switchShape = UISwitchShape.Round;
 
@@ -136,7 +148,7 @@ namespace Sunny.UI
 
         private Color inActiveColor;
 
-        [DefaultValue(typeof(Color), "Silver")]
+        [DefaultValue(typeof(Color), "Gray")]
         [Description("关闭颜色"), Category("SunnyUI")]
         public Color InActiveColor
         {
@@ -170,9 +182,13 @@ namespace Sunny.UI
             set => SetRectColor(value);
         }
 
+        /// <summary>
+        /// 点击事件
+        /// </summary>
+        /// <param name="e">参数</param>
         protected override void OnClick(EventArgs e)
         {
-            Active = !Active;
+            if (!ReadOnly) Active = !Active;
             base.OnClick(e);
         }
 
@@ -189,21 +205,48 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="uiColor">主题样式</param>
         public override void SetStyleColor(UIBaseStyle uiColor)
         {
             base.SetStyleColor(uiColor);
+
             rectColor = uiColor.SwitchActiveColor;
             fillColor = uiColor.SwitchFillColor;
             inActiveColor = uiColor.SwitchInActiveColor;
+            rectDisableColor = uiColor.SwitchRectDisableColor;
+        }
+
+        [Description("不可用颜色"), Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "173, 178, 181")]
+        public Color DisabledColor
+        {
+            get => rectDisableColor;
+            set => SetRectDisableColor(value);
+        }
+
+        protected override void OnEnabledChanged(EventArgs e)
+        {
+            base.OnEnabledChanged(e);
             Invalidate();
         }
 
+        /// <summary>
+        /// 绘制填充颜色
+        /// </summary>
+        /// <param name="g">绘图图面</param>
+        /// <param name="path">绘图路径</param>
         protected override void OnPaintFill(Graphics g, GraphicsPath path)
         {
+            Color color = Active ? ActiveColor : InActiveColor;
+            if (!Enabled) color = rectDisableColor;
+
             if (SwitchShape == UISwitchShape.Round)
             {
                 Rectangle rect = new Rectangle(0, 0, Width - 1, Height - 1);
-                g.FillRoundRectangle(Active ? ActiveColor : InActiveColor, rect, rect.Height);
+                g.FillRoundRectangle(color, rect, rect.Height);
 
                 int width = Width - 3 - 1 - 3 - (rect.Height - 6);
                 if (!Active)
@@ -223,7 +266,7 @@ namespace Sunny.UI
             if (SwitchShape == UISwitchShape.Square)
             {
                 Rectangle rect = new Rectangle(0, 0, Width - 1, Height - 1);
-                g.FillRoundRectangle(Active ? ActiveColor : InActiveColor, rect, Radius);
+                g.FillRoundRectangle(color, rect, Radius);
 
                 int width = Width - 3 - 1 - 3 - (rect.Height - 6);
                 if (!Active)

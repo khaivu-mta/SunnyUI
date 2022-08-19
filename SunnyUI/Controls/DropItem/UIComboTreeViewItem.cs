@@ -11,6 +11,17 @@ namespace Sunny.UI
 
         public UITreeView TreeView => treeView;
 
+        public override void SetDPIScale()
+        {
+            if (!IsScaled)
+            {
+                btnOK.SetDPIScaleFont();
+                btnCancel.SetDPIScaleFont();
+            }
+
+            base.SetDPIScale();
+        }
+
         [DefaultValue(false)]
         public bool CheckBoxes
         {
@@ -18,6 +29,7 @@ namespace Sunny.UI
             set
             {
                 treeView.CheckBoxes = value;
+                treeView.NodeClickChangeCheckBoxes = value;
                 panel.Visible = CheckBoxes;
             }
         }
@@ -131,16 +143,20 @@ namespace Sunny.UI
         {
             if (!treeView.CheckBoxes)
             {
-                if (e.Node.Nodes.Count == 0 || CanSelectRootNode)
+                if (e.Location.X > treeView.DrawLeft(e.Node))
                 {
-                    DoValueChanged(this, e.Node);
-                    CloseParent();
+                    if (e.Node.Nodes.Count == 0 || CanSelectRootNode)
+                    {
+                        DoValueChanged(this, e.Node);
+                        Close();
+                    }
                 }
             }
         }
 
-        public override void SetStyle(UIBaseStyle style)
+        public override void SetStyleColor(UIBaseStyle style)
         {
+            base.SetStyleColor(style);
             treeView.Style = style.Name;
             panel.Style = style.Name;
             btnOK.Style = style.Name;
@@ -148,13 +164,13 @@ namespace Sunny.UI
 
         private void btnCancel_Click(object sender, System.EventArgs e)
         {
-            CloseParent();
+            Close();
         }
 
         private void btnOK_Click(object sender, System.EventArgs e)
         {
             DoValueChanged(this, treeView.Nodes);
-            CloseParent();
+            Close();
         }
     }
 }

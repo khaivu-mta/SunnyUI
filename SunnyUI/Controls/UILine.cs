@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,10 +13,13 @@
  ******************************************************************************
  * 文件名称: UILine.cs
  * 文件说明: 分割线
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
+ * 2022-01-05: V3.0.9 增加线的样式，支持透明背景
+ * 2022-01-10: V3.1.0 修复了文本为空不显示的问题
+ * 2022-03-19: V3.1.1 重构主题配色
 ******************************************************************************/
 
 using System;
@@ -33,9 +36,9 @@ namespace Sunny.UI
         {
             SetStyleFlags(true, false);
             Size = new Size(360, 29);
-            MinimumSize = new Size(2, 2);
-            foreColor = UIStyles.GetStyleColor(UIStyle.Blue).LineForeColor;
-            fillColor = UIStyles.GetStyleColor(UIStyle.Blue).PlainColor;
+            MinimumSize = new Size(1, 1);
+            foreColor = UIStyles.Blue.LineForeColor;
+            fillColor = UIStyles.Blue.LineFillColor;
         }
 
         public enum LineDirection
@@ -79,13 +82,17 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="uiColor">主题样式</param>
         public override void SetStyleColor(UIBaseStyle uiColor)
         {
             base.SetStyleColor(uiColor);
-            fillColor = uiColor.PlainColor;
-            rectColor = uiColor.RectColor;
+
+            rectColor = uiColor.LineRectColor;
             foreColor = uiColor.LineForeColor;
-            Invalidate();
+            fillColor = uiColor.LineFillColor;
         }
 
         /// <summary>
@@ -99,19 +106,42 @@ namespace Sunny.UI
             set => SetForeColor(value);
         }
 
-        protected override void OnPaintRect(Graphics g, GraphicsPath path)
+        private UILineCap startCap = UILineCap.None;
+
+        [DefaultValue(UILineCap.None), Category("SunnyUI")]
+        public UILineCap StartCap
         {
-            if (Direction == LineDirection.Horizontal)
+            get => startCap;
+            set
             {
-                int top = (Height - lineSize) / 2;
-                g.FillRectangle(rectColor, Padding.Left, top, Width - Padding.Left - Padding.Right, lineSize);
-                g.DrawLine(Color.FromArgb(50, fillColor), Padding.Left, top + lineSize, Width - Padding.Right - 1, top + lineSize);
+                startCap = value;
+                Invalidate();
             }
-            else
+        }
+
+        private UILineCap endCap = UILineCap.None;
+
+        [DefaultValue(UILineCap.None), Category("SunnyUI")]
+        public UILineCap EndCap
+        {
+            get => endCap;
+            set
             {
-                int left = (Width - lineSize) / 2;
-                g.FillRectangle(rectColor, left, Padding.Top, lineSize, Height - Padding.Top - Padding.Bottom);
-                g.DrawLine(Color.FromArgb(50, fillColor), left + lineSize, Padding.Top, left + lineSize, Height - Padding.Bottom - 1);
+                endCap = value;
+                Invalidate();
+            }
+        }
+
+        private int lineCapSize = 6;
+
+        [DefaultValue(6), Category("SunnyUI")]
+        public int LineCapSize
+        {
+            get => lineCapSize;
+            set
+            {
+                lineCapSize = value;
+                Invalidate();
             }
         }
 
@@ -129,70 +159,163 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 绘制边框颜色
+        /// </summary>
+        /// <param name="g">绘图图面</param>
+        /// <param name="path">绘图路径</param>
+        protected override void OnPaintRect(Graphics g, GraphicsPath path)
+        {
+            //
+        }
+
+        /// <summary>
+        /// 绘制前景颜色
+        /// </summary>
+        /// <param name="g">绘图图面</param>
+        /// <param name="path">绘图路径</param>
         protected override void OnPaintFore(Graphics g, GraphicsPath path)
         {
-            if (Text.IsNullOrEmpty()) return;
-
-            SizeF sf = g.MeasureString(Text, Font);
+            SizeF sf = new SizeF(0, 0);
+            float x = 0;
+            Pen pen = new Pen(rectColor, lineSize);
+            if (LineDashStyle != UILineDashStyle.None)
+            {
+                pen.DashStyle = (DashStyle)((int)LineDashStyle);
+            }
 
             if (Direction == LineDirection.Horizontal)
             {
-                switch (TextAlign)
+                if (Text.IsValid())
                 {
-                    case ContentAlignment.BottomLeft:
-                        g.DrawString(Text, Font, foreColor, TextInterval + 2, (Height + lineSize) / 2.0f);
-                        break;
+                    sf = g.MeasureString(Text, Font);
+                    switch (TextAlign)
+                    {
+                        case ContentAlignment.BottomLeft:
+                            g.DrawString(Text, Font, foreColor, Padding.Left + TextInterval + 2, (Height + lineSize) / 2.0f);
+                            break;
 
-                    case ContentAlignment.MiddleLeft:
-                        g.FillRectangle(fillColor, TextInterval, 0, sf.Width + 3, Height);
-                        g.DrawString(Text, Font, foreColor, TextInterval + 2, (Height - sf.Height) / 2);
-                        break;
+                        case ContentAlignment.MiddleLeft:
+                            x = Padding.Left + TextInterval;
+                            g.DrawString(Text, Font, foreColor, Padding.Left + TextInterval + 2, (Height - sf.Height) / 2);
+                            break;
 
-                    case ContentAlignment.TopLeft:
-                        g.DrawString(Text, Font, foreColor, TextInterval + 2, (Height - lineSize) / 2.0f - sf.Height);
-                        break;
+                        case ContentAlignment.TopLeft:
+                            g.DrawString(Text, Font, foreColor, Padding.Left + TextInterval + 2, (Height - lineSize) / 2.0f - sf.Height);
+                            break;
 
-                    case ContentAlignment.BottomCenter:
-                        g.DrawString(Text, Font, foreColor, (Width - sf.Width) / 2, (Height + lineSize) / 2.0f);
-                        break;
+                        case ContentAlignment.BottomCenter:
+                            g.DrawString(Text, Font, foreColor, (Width - sf.Width) / 2, (Height + lineSize) / 2.0f);
+                            break;
 
-                    case ContentAlignment.MiddleCenter:
-                        g.FillRectangle(fillColor, (Width - sf.Width) / 2 - 2, 0, sf.Width + 3, Height);
-                        g.DrawString(Text, Font, foreColor, (Width - sf.Width) / 2, (Height - sf.Height) / 2);
-                        break;
+                        case ContentAlignment.MiddleCenter:
+                            x = (Width - sf.Width) / 2 - 2;
+                            g.DrawString(Text, Font, foreColor, (Width - sf.Width) / 2, (Height - sf.Height) / 2);
+                            break;
 
-                    case ContentAlignment.TopCenter:
-                        g.DrawString(Text, Font, foreColor, (Width - sf.Width) / 2, (Height - lineSize) / 2.0f - sf.Height);
-                        break;
+                        case ContentAlignment.TopCenter:
+                            g.DrawString(Text, Font, foreColor, (Width - sf.Width) / 2, (Height - lineSize) / 2.0f - sf.Height);
+                            break;
 
-                    case ContentAlignment.BottomRight:
-                        g.DrawString(Text, Font, foreColor, Width - sf.Width - TextInterval - 2, (Height + lineSize) / 2.0f);
-                        break;
+                        case ContentAlignment.BottomRight:
+                            g.DrawString(Text, Font, foreColor, Width - sf.Width - TextInterval - 2 - Padding.Right, (Height + lineSize) / 2.0f);
+                            break;
 
-                    case ContentAlignment.MiddleRight:
-                        g.FillRectangle(fillColor, Width - sf.Width - TextInterval - 4, 0, sf.Width + 3, Height);
-                        g.DrawString(Text, Font, foreColor, Width - sf.Width - TextInterval - 2, (Height - sf.Height) / 2);
-                        break;
+                        case ContentAlignment.MiddleRight:
+                            x = Width - sf.Width - TextInterval - 4 - Padding.Right;
+                            g.DrawString(Text, Font, foreColor, Width - sf.Width - TextInterval - 2 - Padding.Right, (Height - sf.Height) / 2);
+                            break;
 
-                    case ContentAlignment.TopRight:
-                        g.DrawString(Text, Font, foreColor, Width - sf.Width - TextInterval - 2, (Height - lineSize) / 2.0f - sf.Height);
+                        case ContentAlignment.TopRight:
+                            g.DrawString(Text, Font, foreColor, Width - sf.Width - TextInterval - 2 - Padding.Right, (Height - lineSize) / 2.0f - sf.Height);
+                            break;
+                    }
+                }
+
+                int top = (Height - lineSize) / 2;
+                if (Text.IsValid())
+                {
+                    switch (TextAlign)
+                    {
+                        case ContentAlignment.MiddleLeft:
+                        case ContentAlignment.MiddleCenter:
+                        case ContentAlignment.MiddleRight:
+                            g.DrawLine(pen, Padding.Left, top, x, top);
+                            g.DrawLine(pen, x + sf.Width + 2, top, Width - 2 - Padding.Left - Padding.Right, top);
+                            break;
+                        default:
+                            g.DrawLine(pen, Padding.Left, top, Width - 2 - Padding.Left - Padding.Right, top);
+                            break;
+                    }
+                }
+                else
+                {
+                    g.DrawLine(pen, Padding.Left, top, Width - 2 - Padding.Left - Padding.Right, top);
+                }
+
+                switch (startCap)
+                {
+                    case UILineCap.Square:
+                        top = Height / 2 - LineCapSize - 1;
+                        g.FillRectangle(rectColor, new RectangleF(0, top, LineCapSize * 2, LineCapSize * 2));
+                        break;
+                    case UILineCap.Diamond:
+                        break;
+                    case UILineCap.Triangle:
+                        break;
+                    case UILineCap.Circle:
+                        top = Height / 2 - LineCapSize - 1;
+                        g.FillEllipse(rectColor, new RectangleF(0, top, LineCapSize * 2, LineCapSize * 2));
+                        break;
+                }
+
+                switch (endCap)
+                {
+                    case UILineCap.Square:
+                        top = Height / 2 - LineCapSize;
+                        if (lineSize.Mod(2) == 1) top -= 1;
+                        g.FillRectangle(rectColor, new RectangleF(Width - lineCapSize * 2 - 1, top, LineCapSize * 2, LineCapSize * 2));
+                        break;
+                    case UILineCap.Diamond:
+                        break;
+                    case UILineCap.Triangle:
+                        break;
+                    case UILineCap.Circle:
+                        top = Height / 2 - LineCapSize - 1;
+                        g.FillEllipse(rectColor, new RectangleF(Width - lineCapSize * 2 - 1, top, LineCapSize * 2, LineCapSize * 2));
                         break;
                 }
             }
+            else
+            {
+                int left = (Width - lineSize) / 2;
+                g.DrawLine(pen, left, Padding.Top, left, Height - Padding.Top - Padding.Bottom);
+            }
 
-            //            if (Direction == LineDirection.Vertical)
-            //            {
-            //                StringFormat format = new StringFormat();
-            //                format.FormatFlags = StringFormatFlags.DirectionVertical;
-            //                g.DrawString(Text, Font, Brushes.Black, 15, 5, format);
-            //            }
+            pen.Dispose();
+        }
+
+        UILineDashStyle lineDashStyle = UILineDashStyle.None;
+        [Description("线的样式"), Category("SunnyUI")]
+        [DefaultValue(UILineDashStyle.None)]
+        public UILineDashStyle LineDashStyle
+        {
+            get => lineDashStyle;
+            set
+            {
+                if (lineDashStyle != value)
+                {
+                    lineDashStyle = value;
+                    Invalidate();
+                }
+            }
         }
 
         /// <summary>
         /// 填充颜色，当值为背景色或透明色或空值则不填充
         /// </summary>
         [Description("填充颜色"), Category("SunnyUI")]
-        [DefaultValue(typeof(Color), "235, 243, 255")]
+        [DefaultValue(typeof(Color), "243, 249, 255")]
         public Color FillColor
         {
             get => fillColor;

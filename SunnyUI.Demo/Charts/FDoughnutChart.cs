@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Sunny.UI.Demo.Charts
+namespace Sunny.UI.Demo
 {
     public partial class FDoughnutChart : UIPage
     {
@@ -57,6 +57,9 @@ namespace Sunny.UI.Demo.Charts
             //增加Series
             option.Series.Clear();
             option.Series.Add(series);
+
+            //显示数据小数位数
+            option.DecimalPlaces = 1;
 
             //设置Option
             DoughnutChart.SetOption(option);

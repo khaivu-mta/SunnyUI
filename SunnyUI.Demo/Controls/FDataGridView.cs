@@ -10,11 +10,14 @@ namespace Sunny.UI.Demo
         {
             InitializeComponent();
 
+            //SunnyUI封装的加列函数，也可以和原生的一样，从Columns里面添加列
             uiDataGridView1.AddColumn("Column1", "Column1");
             uiDataGridView1.AddColumn("Column2", "Column2");
             uiDataGridView1.AddColumn("Column3", "Column3");
             uiDataGridView1.AddColumn("Column4", "Column4");
-            uiDataGridView1.ReadOnly = true;
+
+            //SunnyUI常用的初始化配置，看个人喜好用或者不用。
+            uiDataGridView1.Init();
 
             for (int i = 0; i < 3610; i++)
             {
@@ -31,6 +34,11 @@ namespace Sunny.UI.Demo
 
             //设置分页控件每页数量
             uiPagination1.PageSize = 50;
+
+            uiDataGridView1.SelectIndexChange += uiDataGridView1_SelectIndexChange;
+
+            //设置统计绑定的表格
+            uiDataGridViewFooter1.DataGridView = uiDataGridView1;
         }
 
         public override void Init()
@@ -81,6 +89,11 @@ namespace Sunny.UI.Demo
             uiDataGridViewFooter1["Column2"] = "Column2_" + pageIndex;
             uiDataGridViewFooter1["Column3"] = "Column3_" + pageIndex;
             uiDataGridViewFooter1["Column4"] = "Column4_" + pageIndex;
+        }
+
+        private void uiDataGridView1_SelectIndexChange(object sender, int index)
+        {
+            index.WriteConsole("SelectedIndex");
         }
     }
 }

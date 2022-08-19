@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,7 +13,7 @@
  ******************************************************************************
  * 文件名称: UITransfer.cs
  * 文件说明: 穿梭框
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
@@ -46,6 +46,8 @@ namespace Sunny.UI
 
             l1.ItemsCountChange += L1_ItemsCountChange;
             l2.ItemsCountChange += L2_ItemsCountChange;
+            l1.ZoomScaleDisabled = l2.ZoomScaleDisabled = true;
+            b1.ZoomScaleDisabled = b2.ZoomScaleDisabled = b3.ZoomScaleDisabled = b4.ZoomScaleDisabled = true;
         }
 
         [DefaultValue(true)]
@@ -194,9 +196,9 @@ namespace Sunny.UI
         }
 
         /// <summary>
-        /// OnSizeChanged
+        /// 重载控件尺寸变更
         /// </summary>
-        /// <param name="e">e</param>
+        /// <param name="e">参数</param>
         protected override void OnSizeChanged(EventArgs e)
         {
             base.OnSizeChanged(e);
@@ -231,8 +233,6 @@ namespace Sunny.UI
 
             l1.BackColor = fillColor;
             l2.BackColor = fillColor;
-
-            Invalidate();
         }
 
         /// <summary>
@@ -249,9 +249,9 @@ namespace Sunny.UI
         }
 
         /// <summary>
-        /// OnPaint
+        /// 重载绘图
         /// </summary>
-        /// <param name="e">e</param>
+        /// <param name="e">绘图参数</param>
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);

@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -34,7 +34,7 @@ namespace Sunny.UI
     /// provide a sleek looking representation of an LED light that is sizable,
     /// has a transparent background and can be set to different colors.
     /// </summary>
-    public class UILedBulb : Control
+    public class UILedBulb : Control, IZoomScale
     {
         #region Public and Private Members
 
@@ -42,12 +42,34 @@ namespace Sunny.UI
         private bool _on = true;
         private readonly Color _reflectionColor = Color.FromArgb(180, 255, 255, 255);
         private readonly Color[] _surroundColor = new Color[] { Color.FromArgb(0, 255, 255, 255) };
-        private readonly Timer _timer = new Timer();
+        private readonly Timer timer;
 
-        ~UILedBulb()
+        /// <summary>
+        /// 禁止控件跟随窗体缩放
+        /// </summary>
+        [DefaultValue(false), Category("SunnyUI"), Description("禁止控件跟随窗体缩放")]
+        public bool ZoomScaleDisabled { get; set; }
+
+        /// <summary>
+        /// 控件缩放前在其容器里的位置
+        /// </summary>
+        [Browsable(false)]
+        public Rectangle ZoomScaleRect { get; set; }
+
+        /// <summary>
+        /// 设置控件缩放比例
+        /// </summary>
+        /// <param name="scale">缩放比例</param>
+        public void SetZoomScale(float scale)
         {
-            _timer.Stop();
-            _timer.Dispose();
+
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            timer?.Stop();
+            timer?.Dispose();
         }
 
         /// <summary>
@@ -106,7 +128,8 @@ namespace Sunny.UI
 
             Width = Height = 32;
             Color = Color.FromArgb(192, 255, 192);
-            _timer.Tick += (sender, e) => { On = !On; };
+            timer = new Timer();
+            timer.Tick += (sender, e) => { On = !On; };
         }
 
         #endregion Constructor
@@ -114,8 +137,9 @@ namespace Sunny.UI
         #region Methods
 
         /// <summary>
-        /// Handles the Paint event for this UserControl
+        /// 重载绘图
         /// </summary>
+        /// <param name="e">绘图参数</param>
         protected override void OnPaint(PaintEventArgs e)
         {
             // Create an offscreen graphics object for double buffering
@@ -149,7 +173,7 @@ namespace Sunny.UI
 
             // Draw the background ellipse
             var rectangle = new Rectangle(Padding.Left, Padding.Top, diameter, diameter);
-            g.FillEllipse(darkColor, rectangle, true);
+            g.FillEllipse(darkColor, rectangle);
 
             // Draw the glow gradient
             var path = new GraphicsPath();
@@ -199,22 +223,22 @@ namespace Sunny.UI
             {
                 blinkInterval = Math.Max(100, value);
                 bool isBlink = Blink;
-                if (isBlink) _timer.Stop();
-                _timer.Interval = blinkInterval;
-                _timer.Enabled = isBlink;
+                if (isBlink) timer.Stop();
+                timer.Interval = blinkInterval;
+                timer.Enabled = isBlink;
             }
         }
 
         [DefaultValue(false)]
         public bool Blink
         {
-            get => _timer.Enabled;
+            get => timer.Enabled;
             set
             {
                 On = true;
-                _timer.Stop();
-                _timer.Interval = BlinkInterval;
-                _timer.Enabled = value;
+                timer.Stop();
+                timer.Interval = BlinkInterval;
+                timer.Enabled = value;
             }
         }
 

@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,10 +13,12 @@
  ******************************************************************************
  * 文件名称: UIRoundProcess.cs
  * 文件说明: 圆形进度条
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2021-04-08
  *
  * 2021-04-08: V3.0.2 增加文件说明
+ * 2021-10-18: V3.0.8 增加显示小数位数
+ * 2022-03-19: V3.1.1 重构主题配色
 ******************************************************************************/
 
 using System;
@@ -41,12 +43,27 @@ namespace Sunny.UI
             Inner = 30;
             Outer = 50;
 
-            fillColor = UIColor.Blue;
-            rectColor = Color.FromArgb(155, 200, 255);
-            foreColor = UIColor.Blue;
+            fillColor = UIStyles.Blue.ProcessBarForeColor;
+            foreColor = UIStyles.Blue.ProcessBarForeColor;
+            rectColor = UIStyles.Blue.ProcessBackColor;
+
             ShowText = false;
             ShowRect = false;
         }
+
+        [Description("显示文字小数位数"), Category("SunnyUI")]
+        [DefaultValue(1)]
+        public int DecimalPlaces
+        {
+            get => decimalCount;
+            set
+            {
+                decimalCount = Math.Max(value, 0);
+                Text = (posValue * 100.0 / maximum).ToString("F" + decimalCount) + "%";
+            }
+        }
+
+        private int decimalCount = 1;
 
         private int maximum = 100;
 
@@ -108,7 +125,7 @@ namespace Sunny.UI
         /// </summary>
         [Description("进度条背景色")]
         [Category("SunnyUI")]
-        [DefaultValue(typeof(Color), "155, 200, 255")]
+        [DefaultValue(typeof(Color), "185, 217, 255")]
         public Color ProcessBackColor
         {
             get => rectColor;
@@ -136,11 +153,15 @@ namespace Sunny.UI
             get => posValue;
             set
             {
-                posValue = Math.Max(value, 0);
-                posValue = Math.Min(posValue, maximum);
-                Text = (posValue * 100.0 / maximum).ToString("F1") + "%";
-                ValueChanged?.Invoke(this, posValue);
-                Invalidate();
+                value = Math.Max(value, 0);
+                value = Math.Min(value, maximum);
+                if (posValue != value)
+                {
+                    posValue = value;
+                    Text = (posValue * 100.0 / maximum).ToString("F" + decimalCount) + "%";
+                    ValueChanged?.Invoke(this, posValue);
+                    Invalidate();
+                }
             }
         }
 
@@ -148,6 +169,11 @@ namespace Sunny.UI
 
         public event OnValueChanged ValueChanged;
 
+        /// <summary>
+        /// 绘制填充颜色
+        /// </summary>
+        /// <param name="g">绘图图面</param>
+        /// <param name="path">绘图路径</param>
         protected override void OnPaintFill(Graphics g, GraphicsPath path)
         {
             int iin = Math.Min(inner, outer);
@@ -164,15 +190,20 @@ namespace Sunny.UI
             g.FillFan(ProcessColor, ClientRectangle.Center(), Inner, Outer, -90, Value * 1.0f / Maximum * 360.0f);
         }
 
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="uiColor">主题样式</param>
         public override void SetStyleColor(UIBaseStyle uiColor)
         {
             base.SetStyleColor(uiColor);
-            fillColor = uiColor.RectColor;
-            foreColor = uiColor.RectColor;
-            rectColor = uiColor.GridSelectedColor;
-            Invalidate();
+
+            fillColor = uiColor.ProcessBarForeColor;
+            foreColor = uiColor.ProcessBarForeColor;
+            rectColor = uiColor.ProcessBackColor;
         }
 
+        [DefaultValue(false)]
         public bool ShowProcess
         {
             get => ShowText;

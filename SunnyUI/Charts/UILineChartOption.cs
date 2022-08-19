@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,10 +13,11 @@
  ******************************************************************************
  * 文件名称: UILineChartOption.cs
  * 文件说明: 曲线图设置类
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-10-01
  *
  * 2020-10-01: V2.2.8 完成曲线图表设置类
+ * 2022-07-15: V3.2.1 增加移除线的操作
 ******************************************************************************/
 
 using System;
@@ -29,12 +30,21 @@ namespace Sunny.UI
 {
     public sealed class UILineOption : UIOption, IDisposable
     {
+        public bool ShowZeroLine { get; set; } = true;
+
+        public bool ShowZeroValue { get; set; } = false;
+
         public UIAxis XAxis { get; set; } = new UIAxis(UIAxisType.Value);
 
         public UIAxis YAxis { get; set; } = new UIAxis(UIAxisType.Value);
 
+        public UIAxis Y2Axis { get; set; } = new UIAxis(UIAxisType.Value);
+
         public UILineToolTip ToolTip { get; set; } = new UILineToolTip();
 
+        /// <summary>
+        /// 析构函数
+        /// </summary>
         public void Dispose()
         {
             Clear();
@@ -44,102 +54,97 @@ namespace Sunny.UI
 
         public UIAxisType XAxisType { get; set; } = UIAxisType.Value;
 
-        public UIAxisType YAxisType { get; set; } = UIAxisType.Value;
-
         public ConcurrentDictionary<string, UILineSeries> Series = new ConcurrentDictionary<string, UILineSeries>();
 
         public readonly List<UIScaleLine> XAxisScaleLines = new List<UIScaleLine>();
 
         public readonly List<UIScaleLine> YAxisScaleLines = new List<UIScaleLine>();
 
+        public readonly List<UIScaleLine> Y2AxisScaleLines = new List<UIScaleLine>();
+
         public UILineWarningArea GreaterWarningArea { get; set; }
         public UILineWarningArea LessWarningArea { get; set; }
 
         public UILineSeries AddSeries(UILineSeries series)
         {
+            if (series == null) return null;
             if (series.Name.IsNullOrEmpty()) return null;
+            if (ExistsSeries(series.Name)) return series;
+
             series.Index = Series.Count;
             Series.TryAdd(series.Name, series);
             return series;
         }
 
-        public UILineSeries AddSeries(string name)
+        public UILineSeries AddSeries(string seriesName, bool isY2 = false)
         {
-            if (name.IsNullOrEmpty()) return null;
-            UILineSeries series = new UILineSeries(name);
+            if (seriesName.IsNullOrEmpty()) return null;
+            if (ExistsSeries(seriesName)) return Series[seriesName];
+
+            UILineSeries series = new UILineSeries(seriesName, isY2);
             AddSeries(series);
             return series;
         }
 
-        public void AddData(string name, double x, double y)
+        public bool ExistsSeries(string seriesName)
         {
-            if (!Series.ContainsKey(name)) return;
-            Series[name].Add(x, y);
+            return seriesName.IsValid() && Series.ContainsKey(seriesName);
         }
 
-        public void AddData(string name, DateTime x, double y)
+        public void RemoveSeries(string seriesName)
         {
-            if (!Series.ContainsKey(name)) return;
-            Series[name].Add(x, y);
+            if (ExistsSeries(seriesName))
+            {
+                Clear(seriesName);
+                Series.TryRemove(seriesName, out _);
+            }
         }
 
-        public void AddData(string name, string x, double y)
+        public void AddData(string seriesName, double x, double y)
         {
-            if (!Series.ContainsKey(name)) return;
-            Series[name].Add(x, y);
+            if (!Series.ContainsKey(seriesName)) return;
+            Series[seriesName].Add(x, y);
         }
 
-        public void AddData(string name, List<double> x, List<double> y)
+        public void AddData(string seriesName, DateTime x, double y)
+        {
+            if (!Series.ContainsKey(seriesName)) return;
+            Series[seriesName].Add(x, y);
+        }
+
+        public void AddData(string seriesName, List<double> x, List<double> y)
         {
             if (x.Count != y.Count) return;
             for (int i = 0; i < x.Count; i++)
             {
-                AddData(name, x[i], y[i]);
+                AddData(seriesName, x[i], y[i]);
             }
         }
 
-        public void AddData(string name, List<DateTime> x, List<double> y)
+        public void AddData(string seriesName, List<DateTime> x, List<double> y)
         {
             if (x.Count != y.Count) return;
             for (int i = 0; i < x.Count; i++)
             {
-                AddData(name, x[i], y[i]);
+                AddData(seriesName, x[i], y[i]);
             }
         }
 
-        public void AddData(string name, List<string> x, List<double> y)
-        {
-            if (x.Count != y.Count) return;
-            for (int i = 0; i < x.Count; i++)
-            {
-                AddData(name, x[i], y[i]);
-            }
-        }
-
-        public void AddData(string name, double[] x, double[] y)
+        public void AddData(string seriesName, double[] x, double[] y)
         {
             if (x.Length != y.Length) return;
             for (int i = 0; i < x.Length; i++)
             {
-                AddData(name, x[i], y[i]);
+                AddData(seriesName, x[i], y[i]);
             }
         }
 
-        public void AddData(string name, DateTime[] x, double[] y)
+        public void AddData(string seriesName, DateTime[] x, double[] y)
         {
             if (x.Length != y.Length) return;
             for (int i = 0; i < x.Length; i++)
             {
-                AddData(name, x[i], y[i]);
-            }
-        }
-
-        public void AddData(string name, string[] x, double[] y)
-        {
-            if (x.Length != y.Length) return;
-            for (int i = 0; i < x.Length; i++)
-            {
-                AddData(name, x[i], y[i]);
+                AddData(seriesName, x[i], y[i]);
             }
         }
 
@@ -153,32 +158,24 @@ namespace Sunny.UI
             Series.Clear();
         }
 
-        public void Clear(string name)
+        public void Clear(string seriesName)
         {
-            if (Series.ContainsKey(name))
+            if (Series.ContainsKey(seriesName))
             {
-                Series[name].Clear();
+                Series[seriesName].Clear();
             }
         }
 
-        public void SetLabels(string[] labels)
+        public int AllDataCount(bool isY2)
         {
-            XAxis.Clear();
-            if (XAxis.Type == UIAxisType.Category)
+            int cnt = 0;
+            foreach (var series in Series.Values)
             {
-                foreach (var label in labels)
-                {
-                    AddLabel(label);
-                }
+                if (series.IsY2 != isY2) continue;
+                cnt += series.DataCount;
             }
-        }
 
-        public void AddLabel(string label)
-        {
-            if (XAxis.Type == UIAxisType.Category)
-            {
-                XAxis.Data.Add(label);
-            }
+            return cnt;
         }
 
         public int AllDataCount()
@@ -192,9 +189,22 @@ namespace Sunny.UI
             return cnt;
         }
 
+        public bool HaveY2
+        {
+            get
+            {
+                foreach (var series in Series.Values)
+                {
+                    if (series.IsY2) return true;
+                }
+
+                return false;
+            }
+        }
+
         public void GetAllDataYRange(out double min, out double max)
         {
-            if (AllDataCount() == 0)
+            if (AllDataCount(false) == 0)
             {
                 min = 0;
                 max = 1;
@@ -205,10 +215,78 @@ namespace Sunny.UI
                 max = double.MinValue;
                 foreach (var series in Series.Values)
                 {
+                    if (series.IsY2) continue;
                     if (series.DataCount > 0)
                     {
-                        min = Math.Min(min, series.YData.Min());
-                        max = Math.Max(max, series.YData.Max());
+                        if (series.ContainsNan)
+                        {
+                            foreach (var d in series.YData)
+                            {
+                                if (d.IsNan() || d.IsInfinity()) continue;
+                                min = Math.Min(min, d);
+                                max = Math.Max(max, d);
+                            }
+                        }
+                        else
+                        {
+                            min = Math.Min(min, series.YData.Min());
+                            max = Math.Max(max, series.YData.Max());
+                        }
+                    }
+                }
+
+                if (min > max)
+                {
+                    min = 0;
+                    max = 1;
+                }
+            }
+        }
+
+        public void GetAllDataY2Range(out double min, out double max)
+        {
+            if (!HaveY2)
+            {
+                min = 0;
+                max = 1;
+            }
+            else
+            {
+                if (AllDataCount(true) == 0)
+                {
+                    min = 0;
+                    max = 1;
+                }
+                else
+                {
+                    min = double.MaxValue;
+                    max = double.MinValue;
+                    foreach (var series in Series.Values)
+                    {
+                        if (!series.IsY2) continue;
+                        if (series.DataCount > 0)
+                        {
+                            if (series.ContainsNan)
+                            {
+                                foreach (var d in series.YData)
+                                {
+                                    if (d.IsNan() || d.IsInfinity()) continue;
+                                    min = Math.Min(min, d);
+                                    max = Math.Max(max, d);
+                                }
+                            }
+                            else
+                            {
+                                min = Math.Min(min, series.YData.Min());
+                                max = Math.Max(max, series.YData.Max());
+                            }
+                        }
+                    }
+
+                    if (min > max)
+                    {
+                        min = 0;
+                        max = 1;
                     }
                 }
             }
@@ -225,12 +303,25 @@ namespace Sunny.UI
             {
                 min = double.MaxValue;
                 max = double.MinValue;
+
                 foreach (var series in Series.Values)
                 {
                     if (series.DataCount > 0)
                     {
-                        min = Math.Min(min, series.XData.Min());
-                        max = Math.Max(max, series.XData.Max());
+                        if (series.ContainsNan)
+                        {
+                            foreach (var d in series.XData)
+                            {
+                                if (d.IsNan() || d.IsInfinity()) continue;
+                                min = Math.Min(min, d);
+                                max = Math.Max(max, d);
+                            }
+                        }
+                        else
+                        {
+                            min = Math.Min(min, series.XData.Min());
+                            max = Math.Max(max, series.XData.Max());
+                        }
                     }
                 }
             }
@@ -244,6 +335,73 @@ namespace Sunny.UI
 
     public class UILineSeries
     {
+        public UILineSeries(string name, bool isY2 = false)
+        {
+            Name = name;
+            Color = UIColor.Blue;
+            IsY2 = isY2;
+        }
+
+        public UILineSeries(string name, Color color, bool isY2 = false)
+        {
+            Name = name;
+            Color = color;
+            CustomColor = true;
+            IsY2 = isY2;
+        }
+
+        public void SetValueFormat(int xAxisDecimalPlaces, int yAxisDecimalPlaces)
+        {
+            XAxisDecimalPlaces = xAxisDecimalPlaces;
+            YAxisDecimalPlaces = yAxisDecimalPlaces;
+        }
+
+        public void SetValueFormat(string xAxisDateTimeFormat, int yAxisDecimalPlaces)
+        {
+            XAxisDateTimeFormat = xAxisDateTimeFormat;
+            YAxisDecimalPlaces = yAxisDecimalPlaces;
+        }
+
+        public void ClearValueFormat()
+        {
+            _dateTimeFormat = "";
+            _xAxisDecimalPlaces = -1;
+            _yAxisDecimalPlaces = -1;
+        }
+
+        private int _xAxisDecimalPlaces = -1;
+        public int XAxisDecimalPlaces
+        {
+            get => _xAxisDecimalPlaces;
+            set => _xAxisDecimalPlaces = Math.Max(0, value);
+        }
+
+        private int _yAxisDecimalPlaces = -1;
+        public int YAxisDecimalPlaces
+        {
+            get => _yAxisDecimalPlaces;
+            set => _yAxisDecimalPlaces = Math.Max(0, value);
+        }
+
+        private string _dateTimeFormat = "";
+
+        public string XAxisDateTimeFormat
+        {
+            get => _dateTimeFormat;
+            set
+            {
+                try
+                {
+                    DateTime.Now.ToString(value);
+                    _dateTimeFormat = value;
+                }
+                catch
+                {
+                    _dateTimeFormat = "";
+                }
+            }
+        }
+
         public int Index { get; set; }
         public string Name { get; private set; }
 
@@ -251,28 +409,30 @@ namespace Sunny.UI
         public Color Color { get; set; }
 
         public UILinePointSymbol Symbol { get; set; } = UILinePointSymbol.None;
+
+        /// <summary>
+        /// 字体图标大小
+        /// </summary>
         public int SymbolSize { get; set; } = 4;
 
         public int SymbolLineWidth { get; set; } = 1;
 
-        public Color SymbolColor { get; set; }
+        /// <summary>
+        /// 字体图标颜色
+        /// </summary>
+        public Color SymbolColor { get; set; } = Color.Empty;
 
         public bool CustomColor { get; set; }
 
         public bool Smooth { get; set; }
 
-        public UILineSeries(string name)
-        {
-            Name = name;
-            Color = UIColor.Blue;
-        }
+        public bool ShowLine { get; set; } = true;
 
-        public UILineSeries(string name, Color color)
-        {
-            Name = name;
-            Color = color;
-            CustomColor = true;
-        }
+        public bool ContainsNan { get; private set; }
+
+        public bool IsY2 { get; private set; }
+
+        public bool Visible { get; set; } = true;
 
         public readonly List<double> XData = new List<double>();
 
@@ -325,12 +485,15 @@ namespace Sunny.UI
 
         public void Clear()
         {
+            ContainsNan = false;
+            SymbolColor = Color.Empty;
+
             XData.Clear();
             YData.Clear();
             ClearPoints();
         }
 
-        public void ClearPoints()
+        private void ClearPoints()
         {
             Points.Clear();
             PointsX.Clear();
@@ -354,9 +517,19 @@ namespace Sunny.UI
             }
         }
 
+        public void CalcData(UILineChart chart, UIScale XScale, UIScale YScale)
+        {
+            ClearPoints();
+            float[] x = XScale.CalcXPixels(XData.ToArray(), chart.DrawOrigin.X, chart.DrawSize.Width);
+            float[] y = YScale.CalcYPixels(YData.ToArray(), chart.DrawOrigin.Y, chart.DrawSize.Height);
+            AddPoints(x, y);
+        }
+
         public void Add(double x, double y)
         {
             XData.Add(x);
+            if (y.IsInfinity()) y = double.NaN;
+            if (y.IsNan()) ContainsNan = true;
             YData.Add(y);
         }
 
@@ -364,6 +537,8 @@ namespace Sunny.UI
         {
             DateTimeInt64 t = new DateTimeInt64(x);
             XData.Add(t);
+            if (y.IsInfinity()) y = double.NaN;
+            if (y.IsNan()) ContainsNan = true;
             YData.Add(y);
         }
 
@@ -371,6 +546,8 @@ namespace Sunny.UI
         {
             int cnt = XData.Count;
             XData.Add(cnt);
+            if (y.IsInfinity()) y = double.NaN;
+            if (y.IsNan()) ContainsNan = true;
             YData.Add(y);
         }
     }
@@ -383,14 +560,12 @@ namespace Sunny.UI
         Triangle,
         Circle,
         Plus,
-        Star
+        Star,
+        Round
     }
 
     public struct UILineSelectPoint
     {
-        public int SeriesIndex { get; set; }
-        public string Name { get; set; }
-
         public int Index { get; set; }
 
         public double X { get; set; }
@@ -398,6 +573,8 @@ namespace Sunny.UI
         public double Y { get; set; }
 
         public Point Location { get; set; }
+
+        public UILineSeries Series { get; set; }
     }
 
     public class UILineWarningArea

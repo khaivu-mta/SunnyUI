@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,12 +13,14 @@
  ******************************************************************************
  * 文件名称: UIRichTextBox.cs
  * 文件说明: 富文本输入框
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
  * 2021-05-25: V3.0.4 支持可改背景色
  * 2021-07-29: V3.0.5 修改滚动条没有文字时自动隐藏
+ * 2022-02-23: V3.1.1 增加了一些原生的属性和事件
+ * 2022-03-14: V3.1.1 增加滚动条的颜色设置
 ******************************************************************************/
 
 using System;
@@ -32,7 +34,7 @@ namespace Sunny.UI
 {
     [DefaultEvent("TextChanged")]
     [DefaultProperty("Text")]
-    public sealed class UIRichTextBox : UIPanel,IToolTip
+    public sealed class UIRichTextBox : UIPanel, IToolTip
     {
         private UIScrollBar bar;
         private RichTextBox edit;
@@ -48,6 +50,8 @@ namespace Sunny.UI
             edit.KeyDown += EditOnKeyDown;
             edit.KeyUp += EditOnKeyUp;
             edit.KeyPress += EditOnKeyPress;
+            edit.DoubleClick += Edit_DoubleClick;
+            edit.Click += Edit_Click;
 
             bar.Parent = this;
             bar.Style = UIStyle.Custom;
@@ -67,16 +71,115 @@ namespace Sunny.UI
             edit.SelectionChanged += Edit_SelectionChanged;
 
             edit.ScrollBars = RichTextBoxScrollBars.Vertical;
+
+            edit.Leave += Edit_Leave;
+            edit.Validated += Edit_Validated;
+            edit.Validating += Edit_Validating;
+            edit.GotFocus += Edit_GotFocus;
+            edit.LostFocus += Edit_LostFocus;
+            edit.MouseLeave += Edit_MouseLeave;
+            edit.MouseDown += Edit_MouseDown;
+            edit.MouseUp += Edit_MouseUp;
+            edit.MouseMove += Edit_MouseMove;
         }
 
+        public new event EventHandler Leave;
+        public new event EventHandler Validated;
+        public new event CancelEventHandler Validating;
+        public new event EventHandler GotFocus;
+        public new event EventHandler LostFocus;
+        public new event MouseEventHandler MouseDown;
+        public new event MouseEventHandler MouseUp;
+        public new event MouseEventHandler MouseMove;
+        public new event EventHandler MouseLeave;
+
+        private void Edit_MouseMove(object sender, MouseEventArgs e)
+        {
+            MouseMove?.Invoke(this, e);
+        }
+
+        private void Edit_MouseUp(object sender, MouseEventArgs e)
+        {
+            MouseUp?.Invoke(this, e);
+        }
+
+        private void Edit_MouseDown(object sender, MouseEventArgs e)
+        {
+            MouseDown?.Invoke(this, e);
+        }
+
+        private void Edit_MouseLeave(object sender, EventArgs e)
+        {
+            MouseLeave?.Invoke(this, e);
+        }
+
+        private void Edit_LostFocus(object sender, EventArgs e)
+        {
+            LostFocus?.Invoke(this, e);
+        }
+
+        private void Edit_GotFocus(object sender, EventArgs e)
+        {
+            GotFocus?.Invoke(this, e);
+        }
+
+        private void Edit_Validating(object sender, CancelEventArgs e)
+        {
+            Validating?.Invoke(this, e);
+        }
+
+        private void Edit_Validated(object sender, EventArgs e)
+        {
+            Validated?.Invoke(this, e);
+        }
+
+        private void Edit_Leave(object sender, EventArgs e)
+        {
+            Leave?.Invoke(this, e);
+        }
+
+        private void Edit_Click(object sender, EventArgs e)
+        {
+            Click?.Invoke(this, e);
+        }
+
+        public new event EventHandler DoubleClick;
+        public new event EventHandler Click;
+
+        [
+            DefaultValue(false),
+            RefreshProperties(RefreshProperties.Repaint),
+            Browsable(false), EditorBrowsable(EditorBrowsableState.Never),
+            DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)
+        ]
+        public override bool AutoSize
+        {
+            get => edit.AutoSize;
+            set => edit.AutoSize = value;
+        }
+
+        private void Edit_DoubleClick(object sender, EventArgs e)
+        {
+            DoubleClick?.Invoke(this, e);
+        }
+
+        /// <summary>
+        /// 需要额外设置ToolTip的控件
+        /// </summary>
+        /// <returns>控件</returns>
         public Control ExToolTipControl()
         {
             return edit;
         }
 
+        public void Clear()
+        {
+            edit.Clear();
+        }
+
         public RichTextBox RichTextBox => edit;
 
-        public override Color BackColor { get => edit.BackColor; set { edit.BackColor = base.BackColor = value; } }
+        //public override Color BackColor { get => edit.BackColor; set { edit.BackColor = base.BackColor = value; } }
 
         protected override void OnContextMenuStripChanged(EventArgs e)
         {
@@ -84,6 +187,10 @@ namespace Sunny.UI
             edit.ContextMenuStrip = ContextMenuStrip;
         }
 
+        /// <summary>
+        /// 重载字体变更
+        /// </summary>
+        /// <param name="e">参数</param>
         protected override void OnFontChanged(EventArgs e)
         {
             base.OnFontChanged(e);
@@ -157,26 +264,74 @@ namespace Sunny.UI
             edit.Focus();
         }
 
+        /// <summary>
+        /// 重载鼠标按下事件
+        /// </summary>
+        /// <param name="e">鼠标参数</param>
         protected override void OnMouseDown(MouseEventArgs e)
         {
             ActiveControl = edit;
         }
 
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="uiColor">主题样式</param>
         public override void SetStyleColor(UIBaseStyle uiColor)
         {
             base.SetStyleColor(uiColor);
-            edit.BackColor = fillColor = Color.White;
-            edit.ForeColor = foreColor = UIFontColor.Primary;
+            fillColor = uiColor.EditorBackColor;
+            foreColor = UIFontColor.Primary;
+            edit.BackColor = GetFillColor();
+            edit.ForeColor = GetForeColor();
 
             if (bar != null)
             {
                 bar.ForeColor = uiColor.PrimaryColor;
                 bar.HoverColor = uiColor.ButtonFillHoverColor;
                 bar.PressColor = uiColor.ButtonFillPressColor;
-                bar.FillColor = Color.White;
+                bar.FillColor = fillColor;
+                scrollBarColor = uiColor.PrimaryColor;
+                scrollBarBackColor = fillColor;
             }
+        }
 
-            Invalidate();
+        private Color scrollBarColor = Color.FromArgb(80, 160, 255);
+
+        /// <summary>
+        /// 填充颜色，当值为背景色或透明色或空值则不填充
+        /// </summary>
+        [Description("滚动条填充颜色"), Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "80, 160, 255")]
+        public Color ScrollBarColor
+        {
+            get => scrollBarColor;
+            set
+            {
+                scrollBarColor = value;
+                bar.HoverColor = bar.PressColor = bar.ForeColor = value;
+                _style = UIStyle.Custom;
+                Invalidate();
+            }
+        }
+
+        private Color scrollBarBackColor = Color.White;
+
+        /// <summary>
+        /// 填充颜色，当值为背景色或透明色或空值则不填充
+        /// </summary>
+        [Description("滚动条背景颜色"), Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "White")]
+        public Color ScrollBarBackColor
+        {
+            get => scrollBarBackColor;
+            set
+            {
+                scrollBarBackColor = value;
+                bar.FillColor = value;
+                _style = UIStyle.Custom;
+                Invalidate();
+            }
         }
 
         protected override void AfterSetForeColor(Color color)
@@ -189,6 +344,7 @@ namespace Sunny.UI
         {
             base.AfterSetFillColor(color);
             edit.BackColor = color;
+            bar.FillColor = color;
         }
 
         private void EditOnKeyPress(object sender, KeyPressEventArgs e)
@@ -262,6 +418,8 @@ namespace Sunny.UI
 
         public void SetScrollInfo()
         {
+            bar.Width = ScrollBarInfo.VerticalScrollBarWidth() + 1;
+            bar.Left = Width - bar.Width - 1;
             if (bar == null)
             {
                 return;
@@ -284,7 +442,7 @@ namespace Sunny.UI
         private void SizeChange()
         {
             bar.Top = 2;
-            bar.Width = ScrollBarInfo.VerticalScrollBarWidth();
+            bar.Width = ScrollBarInfo.VerticalScrollBarWidth() + 1;
             bar.Left = Width - bar.Width - 1;
             bar.Height = Height - 4;
             bar.BringToFront();
@@ -500,7 +658,7 @@ namespace Sunny.UI
             set => edit.AllowDrop = value;
         }
 
-        [DefaultValue(false)]
+        [DefaultValue(true)]
         public bool AutoWordSelection
         {
             get => edit.AllowDrop;
@@ -695,6 +853,7 @@ namespace Sunny.UI
             set => edit.ZoomFactor = value;
         }
 
+        [DefaultValue(true)]
         public bool WordWrap
         {
             get => edit.WordWrap;

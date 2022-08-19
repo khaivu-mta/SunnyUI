@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,13 +13,14 @@
  ******************************************************************************
  * 文件名称: UICheckBoxGroup.cs
  * 文件说明: 多选框组
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-04-19: V2.2.3 增加单元
  * 2020-04-25: V2.2.4 更新主题配置类
  * 2020-07-03: V2.2.6 修正调整ItemSize无效的Bug
  * 2020-07-04: V2.2.6 可以设置初始选中值
+ * 2022-06-30: V3.2.0 设置条目状态前判断是否创建
 ******************************************************************************/
 
 using System;
@@ -41,7 +42,7 @@ namespace Sunny.UI
         /// <summary>
         /// 值切换事件
         /// </summary>
-        /// <param name="sender">sender</param>
+        /// <param name="sender">控件</param>
         /// <param name="index">索引</param>
         /// <param name="text">文字</param>
         /// <param name="isChecked">是否选中</param>
@@ -52,6 +53,9 @@ namespace Sunny.UI
         /// </summary>
         public event OnValueChanged ValueChanged;
 
+        /// <summary>
+        /// 构造函数
+        /// </summary>
         public UICheckBoxGroup()
         {
             items.CountChange += Items_CountChange;
@@ -60,6 +64,17 @@ namespace Sunny.UI
         private void Items_CountChange(object sender, EventArgs e)
         {
             Invalidate();
+        }
+
+        /// <summary>
+        /// 获取和设置条目值
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        public bool this[int index]
+        {
+            get => GetItemCheckState(index);
+            set => SetItemCheckState(index, value);
         }
 
         /// <summary>
@@ -81,6 +96,9 @@ namespace Sunny.UI
             boxes.Clear();
         }
 
+        /// <summary>
+        /// 清除所有条目
+        /// </summary>
         public void Clear()
         {
             Items.Clear();
@@ -88,6 +106,9 @@ namespace Sunny.UI
             Invalidate();
         }
 
+        /// <summary>
+        /// 条目列表
+        /// </summary>
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
         [Localizable(true)]
         [Editor("System.Windows.Forms.Design.ListControlStringCollectionEditor, System.Design, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a", typeof(UITypeEditor))]
@@ -105,21 +126,23 @@ namespace Sunny.UI
 
                 for (int i = 0; i < Items.Count; i++)
                 {
-                    UICheckBox box = new UICheckBox
-                    {
-                        BackColor = Color.Transparent,
-                        Font = Font,
-                        Parent = this,
-                        Tag = i,
-                        Style = Style
-                    };
-
+                    UICheckBox box = new UICheckBox();
+                    box.BackColor = Color.Transparent;
+                    box.Font = Font;
+                    box.Parent = this;
+                    box.Tag = i;
+                    box.Style = Style;
+                    box.IsScaled = IsScaled;
                     box.ValueChanged += Box_ValueChanged;
                     boxes.Add(box);
                 }
             }
         }
 
+        /// <summary>
+        /// 重载绘图
+        /// </summary>
+        /// <param name="e">绘图参数</param>
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
@@ -153,6 +176,9 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 选中状态列表
+        /// </summary>
         [Browsable(false)]
         public List<int> SelectedIndexes
         {
@@ -185,37 +211,50 @@ namespace Sunny.UI
             }
         }
 
-        //[Browsable(false)]
-        //public List<string> SelectedItems
-        //{
-        //    get
-        //    {
-        //        List<string> items = new List<string>();
+        /// <summary>
+        /// 设置条目状态
+        /// </summary>
+        /// <param name="index">索引</param>
+        /// <param name="isChecked">是否选中</param>
+        public void SetItemCheckState(int index, bool isChecked)
+        {
+            CreateBoxes();
+            if (index >= 0 && index < boxes.Count)
+            {
+                boxes[index].Checked = isChecked;
+            }
+        }
 
-        //        foreach (var checkBox in boxes)
-        //        {
-        //            if (checkBox.Checked)
-        //                items.Add(checkBox.Text);
-        //        }
+        /// <summary>
+        /// 获取条目状态
+        /// </summary>
+        /// <param name="index">索引</param>
+        /// <returns>是否选中</returns>
+        public bool GetItemCheckState(int index)
+        {
+            if (index >= 0 && index < items.Count)
+                return boxes[index].Checked;
 
-        //        return items;
-        //    }
-        //}
+            return false;
+        }
 
+        /// <summary>
+        /// 所有选中条目列表
+        /// </summary>
         [Browsable(false)]
         public List<object> SelectedItems
         {
             get
             {
-                List<object> items = new List<object>();
+                List<object> objects = new List<object>();
 
                 for (int i = 0; i < boxes.Count; i++)
                 {
                     if (boxes[i].Checked)
-                        items.Add(Items[i]);
+                        objects.Add(Items[i]);
                 }
 
-                return items;
+                return objects;
             }
         }
 
@@ -223,6 +262,9 @@ namespace Sunny.UI
 
         private int columnCount = 1;
 
+        /// <summary>
+        /// 显示列的个数
+        /// </summary>
         [DefaultValue(1)]
         [Description("显示列的个数"), Category("SunnyUI")]
         public int ColumnCount
@@ -237,6 +279,9 @@ namespace Sunny.UI
 
         private Size _itemSize = new Size(150, 35);
 
+        /// <summary>
+        /// 显示项的大小
+        /// </summary>
         [DefaultValue(typeof(Size), "150, 35")]
         [Description("显示项的大小"), Category("SunnyUI")]
         public Size ItemSize
@@ -251,6 +296,9 @@ namespace Sunny.UI
 
         private Point startPos = new Point(12, 12);
 
+        /// <summary>
+        /// 显示项的起始位置
+        /// </summary>
         [DefaultValue(typeof(Point), "12, 12")]
         [Description("显示项的起始位置"), Category("SunnyUI")]
         public Point StartPos
@@ -263,8 +311,12 @@ namespace Sunny.UI
             }
         }
 
-        public int columnInterval;
 
+        private int columnInterval;
+
+        /// <summary>
+        /// 显示项列之间的间隔
+        /// </summary>
         [DefaultValue(0)]
         [Description("显示项列之间的间隔"), Category("SunnyUI")]
         public int ColumnInterval
@@ -279,6 +331,9 @@ namespace Sunny.UI
 
         private int rowInterval;
 
+        /// <summary>
+        /// 显示项行之间的间隔
+        /// </summary>
         [DefaultValue(0)]
         [Description("显示项行之间的间隔"), Category("SunnyUI")]
         public int RowInterval
@@ -288,15 +343,6 @@ namespace Sunny.UI
             {
                 rowInterval = value;
                 Invalidate();
-            }
-        }
-
-        protected override void OnFontChanged(EventArgs e)
-        {
-            base.OnFontChanged(e);
-            foreach (var box in boxes)
-            {
-                box.Font = Font;
             }
         }
 

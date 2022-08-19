@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,7 +13,7 @@
  ******************************************************************************
  * 文件名称: UIDropControl.cs
  * 文件说明: 下拉框基类
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
@@ -50,7 +50,7 @@ namespace Sunny.UI
             SetStyleFlags();
             Padding = new Padding(0, 0, 30, 2);
 
-            edit.Font = UIFontColor.Font;
+            edit.Font = UIFontColor.Font();
             edit.Left = 3;
             edit.Top = 3;
             edit.Text = String.Empty;
@@ -80,27 +80,10 @@ namespace Sunny.UI
             MouseLocation = e.Location;
         }
 
-        protected override void OnPaint(PaintEventArgs e)
+        protected override void OnEnabledChanged(EventArgs e)
         {
-            base.OnPaint(e);
-            if (Enabled)
-            {
-                if (Radius == 0 || RadiusSides == UICornerRadiusSides.None)
-                    e.Graphics.DrawRectangle(RectColor, 0, 0, Width - 1, Height - 1);
-                else
-                    e.Graphics.DrawRoundRectangle(RectColor, 0, 0, Width, Height, Radius);
-
-                edit.BackColor = Color.White;
-            }
-            else
-            {
-                if (Radius == 0 || RadiusSides == UICornerRadiusSides.None)
-                    e.Graphics.DrawRectangle(RectDisableColor, 0, 0, Width - 1, Height - 1);
-                else
-                    e.Graphics.DrawRoundRectangle(RectDisableColor, 0, 0, Width, Height, Radius);
-
-                edit.BackColor = GetFillColor();
-            }
+            base.OnEnabledChanged(e);
+            edit.BackColor = Enabled ? Color.White : GetFillColor();
         }
 
         private void Edit_LostFocus(object sender, EventArgs e)
@@ -157,6 +140,14 @@ namespace Sunny.UI
             set => edit.WaterMarkColor = value;
         }
 
+        [DefaultValue(typeof(Color), "Gray")]
+        [Description("水印文字激活颜色"), Category("SunnyUI")]
+        public Color WatermarkActiveColor
+        {
+            get => edit.WaterMarkActiveForeColor;
+            set => edit.WaterMarkActiveForeColor = value;
+        }
+
         private UIDropDown itemForm;
 
         protected UIDropDown ItemForm
@@ -177,7 +168,17 @@ namespace Sunny.UI
 
                 return itemForm;
             }
-            set => itemForm = value;
+            set
+            {
+                itemForm = value;
+
+                if (itemForm != null)
+                {
+                    itemForm.ValueChanged += ItemForm_ValueChanged;
+                    itemForm.VisibleChanged += ItemForm_VisibleChanged;
+                    itemForm.Closed += ItemForm_Closed;
+                }
+            }
         }
 
         private void ItemForm_Closed(object sender, ToolStripDropDownClosedEventArgs e)
@@ -201,7 +202,7 @@ namespace Sunny.UI
         public bool DroppedDown => itemForm is { Visible: true };
 
         private int symbolNormal = 61703;
-        private int dropSymbol = 61703;
+        protected int dropSymbol = 61703;
 
         [DefaultValue(61703)]
         [Description("正常显示时字体图标"), Category("SunnyUI")]
@@ -223,6 +224,11 @@ namespace Sunny.UI
         {
         }
 
+        /// <summary>
+        /// 值改变事件
+        /// </summary>
+        /// <param name="sender">控件</param>
+        /// <param name="value">值</param>
         protected virtual void ItemForm_ValueChanged(object sender, object value)
         {
         }
@@ -245,9 +251,15 @@ namespace Sunny.UI
                 {
                     _dropDownStyle = value;
                     edit.Visible = value == UIDropDownStyle.DropDown;
+                    DropDownStyleChanged();
                     Invalidate();
                 }
             }
+        }
+
+        protected virtual void DropDownStyleChanged()
+        {
+
         }
 
         public event EventHandler ButtonClick;
@@ -268,6 +280,10 @@ namespace Sunny.UI
             Invalidate();
         }
 
+        /// <summary>
+        /// 重载字体变更
+        /// </summary>
+        /// <param name="e">参数</param>
         protected override void OnFontChanged(EventArgs e)
         {
             base.OnFontChanged(e);
@@ -285,6 +301,10 @@ namespace Sunny.UI
             SizeChange();
         }
 
+        /// <summary>
+        /// 重载控件尺寸变更
+        /// </summary>
+        /// <param name="e">参数</param>
         protected override void OnSizeChanged(EventArgs e)
         {
             SizeChange();
@@ -297,21 +317,25 @@ namespace Sunny.UI
             edit.Width = Width - Padding.Left - Padding.Right;
         }
 
+        /// <summary>
+        /// 绘制前景颜色
+        /// </summary>
+        /// <param name="g">绘图图面</param>
+        /// <param name="path">绘图路径</param>
         protected override void OnPaintFore(Graphics g, GraphicsPath path)
         {
             SizeChange();
 
             if (!edit.Visible)
             {
-                base.OnPaintFore(g, path);
-                g.FillRoundRectangle(GetFillColor(), new Rectangle(Width - 27, edit.Top, 26, edit.Height), Radius, false);
-                g.DrawRoundRectangle(rectColor, new Rectangle(0, 0, Width, Height), Radius);
+                g.DrawString(Text, Font, GetForeColor(), Size, Padding, TextAlignment);
             }
 
-            g.FillRoundRectangle(GetFillColor(), new Rectangle(Width - 27, edit.Top, 25, edit.Height), Radius);
+            g.FillRectangle(GetFillColor(), new Rectangle(Width - 27, Radius / 2, 26, Height - Radius));
             Color color = GetRectColor();
             SizeF sf = g.GetFontImageSize(dropSymbol, 24);
             g.DrawFontImage(dropSymbol, 24, color, Width - 28 + (12 - sf.Width / 2.0f), (Height - sf.Height) / 2.0f);
+            //g.DrawLine(RectColor, Width - 1, Radius / 2, Width - 1, Height - Radius);
         }
 
         protected override void OnGotFocus(EventArgs e)
@@ -356,6 +380,10 @@ namespace Sunny.UI
         [Browsable(false)]
         public bool IsEmpty => edit.Text == "";
 
+        /// <summary>
+        /// 重载鼠标按下事件
+        /// </summary>
+        /// <param name="e">鼠标参数</param>
         protected override void OnMouseDown(MouseEventArgs e)
         {
             ActiveControl = edit;
@@ -382,12 +410,15 @@ namespace Sunny.UI
             set => edit.SelectionStart = value;
         }
 
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="uiColor">主题样式</param>
         public override void SetStyleColor(UIBaseStyle uiColor)
         {
             base.SetStyleColor(uiColor);
-            foreColor = uiColor.DropDownControlColor;
+            foreColor = uiColor.DropDownPanelForeColor;
             edit.BackColor = fillColor = Color.White;
-            Invalidate();
         }
 
         protected override void AfterSetFillColor(Color color)
@@ -404,6 +435,10 @@ namespace Sunny.UI
 
         protected bool fullControlSelect;
 
+        /// <summary>
+        /// 点击事件
+        /// </summary>
+        /// <param name="e">参数</param>
         protected override void OnClick(EventArgs e)
         {
             if (!ReadOnly)
@@ -413,7 +448,7 @@ namespace Sunny.UI
                     ItemForm.SetRectColor(rectColor);
                     ItemForm.SetFillColor(fillColor);
                     ItemForm.SetForeColor(foreColor);
-                    ItemForm.SetStyle(UIStyles.ActiveStyleColor);
+                    ItemForm.SetStyle(UIStyles.ActiveStyleColor.DropDownStyle);
                 }
 
                 DropDown?.Invoke(this, e);

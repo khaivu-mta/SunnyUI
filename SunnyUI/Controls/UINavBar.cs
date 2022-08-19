@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,7 +13,7 @@
  ******************************************************************************
  * 文件名称: UINavBar.cs
  * 文件说明: 导航栏
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
@@ -21,21 +21,23 @@
  * 2021-03-20: V3.0.2 增加可设置背景图片
  * 2021-06-08: V3.0.4 标题选中高亮颜色增加可调整高度
  * 2021-08-07: V3.0.5 显示/隐藏子节点提示箭头，增加选中项圆角
+ * 2022-03-19: V3.1.1 重构主题配色
+ * 2022-04-14: V3.1.3 重构扩展函数
+ * 2022-07-28: V3.2.2 删除界面此控件的编辑器 
 ******************************************************************************/
 
 using System;
 using System.ComponentModel;
 using System.Drawing;
-using System.Drawing.Design;
 using System.Windows.Forms;
 
 namespace Sunny.UI
 {
     [DefaultEvent("MenuItemClick")]
     [DefaultProperty("Nodes")]
-    public sealed partial class UINavBar : ScrollableControl, IStyleInterface
+    public sealed partial class UINavBar : ScrollableControl, IStyleInterface, IZoomScale
     {
-        public readonly UINavMenu Menu = new UINavMenu();
+        public readonly TreeView Menu = new TreeView();
 
         private readonly UIContextMenuStrip NavBarMenu = new UIContextMenuStrip();
 
@@ -48,16 +50,54 @@ namespace Sunny.UI
             SetStyle(ControlStyles.SupportsTransparentBackColor, true);
             SetStyle(ControlStyles.UserPaint, true);
             SetStyle(ControlStyles.OptimizedDoubleBuffer, true);
-            //SetStyle(ControlStyles.ResizeRedraw, true);
+
             DoubleBuffered = true;
             UpdateStyles();
-            Font = UIFontColor.Font;
+            Font = UIFontColor.Font();
 
             NavBarMenu.VisibleChanged += NavBarMenu_VisibleChanged;
             Dock = DockStyle.Top;
             Width = 500;
             Height = 110;
             Version = UIGlobal.Version;
+
+            selectedForeColor = UIStyles.Blue.NavBarMenuSelectedColor;
+            selectedHighColor = UIStyles.Blue.NavBarMenuSelectedColor;
+        }
+
+        /// <summary>
+        /// 禁止控件跟随窗体缩放
+        /// </summary>
+        [DefaultValue(false), Category("SunnyUI"), Description("禁止控件跟随窗体缩放")]
+        public bool ZoomScaleDisabled { get; set; }
+
+        /// <summary>
+        /// 控件缩放前在其容器里的位置
+        /// </summary>
+        [Browsable(false)]
+        public Rectangle ZoomScaleRect { get; set; }
+
+        /// <summary>
+        /// 设置控件缩放比例
+        /// </summary>
+        /// <param name="scale">缩放比例</param>
+        public void SetZoomScale(float scale)
+        {
+            _nodeInterval = UIZoomScale.Calc(baseNodeInterval, scale);
+            nodeSize = UIZoomScale.Calc(baseNodeSize, scale);
+            Invalidate();
+        }
+
+        [Browsable(false)]
+        public bool IsScaled { get; private set; }
+
+        public void SetDPIScale()
+        {
+            if (!IsScaled)
+            {
+                this.SetDPIScaleFont();
+                IsScaled = true;
+            }
         }
 
         private int radius;
@@ -88,6 +128,10 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 重载控件尺寸变更
+        /// </summary>
+        /// <param name="e">参数</param>
         protected override void OnSizeChanged(EventArgs e)
         {
             base.OnSizeChanged(e);
@@ -100,40 +144,9 @@ namespace Sunny.UI
             MenuHelper.Clear();
         }
 
-        protected override void OnFontChanged(EventArgs e)
-        {
-            base.OnFontChanged(e);
-            if (NavBarMenu != null) NavBarMenu.Font = Font;
-        }
-
         [DefaultValue(null)]
         [Description("关联的TabControl"), Category("SunnyUI")]
         public UITabControl TabControl { get; set; }
-
-        public void SetNodeItem(TreeNode node, NavMenuItem item)
-        {
-            MenuHelper.Add(node, item);
-        }
-
-        public void SetNodePageIndex(TreeNode node, int pageIndex)
-        {
-            MenuHelper.SetPageIndex(node, pageIndex);
-        }
-
-        public int GetPageIndex(TreeNode node)
-        {
-            return MenuHelper.GetPageIndex(node);
-        }
-
-        public void SetNodeSymbol(TreeNode node, int symbol, int symbolSize = 24)
-        {
-            MenuHelper.SetSymbol(node, symbol, symbolSize);
-        }
-
-        public void SetNodeImageIndex(TreeNode node, int imageIndex)
-        {
-            node.ImageIndex = imageIndex;
-        }
 
         /// <summary>
         /// Tag字符串
@@ -172,18 +185,13 @@ namespace Sunny.UI
             get => foreColor;
             set
             {
-                foreColor = value;
-                _menuStyle = UIMenuStyle.Custom;
-                _style = UIStyle.Custom;
-                Invalidate();
+                if (foreColor != value)
+                {
+                    foreColor = value;
+                    _menuStyle = UIMenuStyle.Custom;
+                    Invalidate();
+                }
             }
-        }
-
-        protected override void OnBackColorChanged(EventArgs e)
-        {
-            base.OnBackColorChanged(e);
-            _menuStyle = UIMenuStyle.Custom;
-            _style = UIStyle.Custom;
         }
 
         private Color backColor = Color.FromArgb(56, 56, 56);
@@ -195,10 +203,12 @@ namespace Sunny.UI
             get => backColor;
             set
             {
-                backColor = value;
-                _menuStyle = UIMenuStyle.Custom;
-                _style = UIStyle.Custom;
-                Invalidate();
+                if (backColor != value)
+                {
+                    backColor = value;
+                    _menuStyle = UIMenuStyle.Custom;
+                    Invalidate();
+                }
             }
         }
 
@@ -220,8 +230,12 @@ namespace Sunny.UI
             get => menuSelectedColor;
             set
             {
-                menuSelectedColor = value;
-                _menuStyle = UIMenuStyle.Custom;
+                if (menuSelectedColor != value)
+                {
+                    menuSelectedColor = value;
+                    _menuStyle = UIMenuStyle.Custom;
+                    Invalidate();
+                }
             }
         }
 
@@ -237,8 +251,12 @@ namespace Sunny.UI
             get => menuHoverColor;
             set
             {
-                menuHoverColor = value;
-                _menuStyle = UIMenuStyle.Custom;
+                if (menuHoverColor != value)
+                {
+                    menuHoverColor = value;
+                    _menuStyle = UIMenuStyle.Custom;
+                    Invalidate();
+                }
             }
         }
 
@@ -255,10 +273,18 @@ namespace Sunny.UI
             get => selectedHighColor;
             set
             {
-                selectedHighColor = value;
-                _style = UIStyle.Custom;
-                Invalidate();
+                if (selectedHighColor != value)
+                {
+                    selectedHighColor = value;
+                    SetStyleCustom();
+                }
             }
+        }
+
+        private void SetStyleCustom(bool needRefresh = true)
+        {
+            _style = UIStyle.Custom;
+            if (needRefresh) Invalidate();
         }
 
         private int selectedHighColorSize = 4;
@@ -302,7 +328,7 @@ namespace Sunny.UI
         [Localizable(true)]
         [MergableProperty(false)]
         [Description("菜单栏显示节点集合"), Category("SunnyUI")]
-        [Editor("System.Windows.Forms.Design.TreeNodeCollectionEditor", typeof(UITypeEditor))]
+        //[Editor("System.Windows.Forms.Design.TreeNodeCollectionEditor", typeof(UITypeEditor))]
         public TreeNodeCollection Nodes => Menu.Nodes;
 
         [DefaultValue(null)]
@@ -320,6 +346,23 @@ namespace Sunny.UI
         {
             get => NavBarMenu.ImageList;
             set => NavBarMenu.ImageList = value;
+        }
+
+        private Font dropMenuFont = UIFontColor.Font();
+
+        /// <summary>
+        /// 标题字体
+        /// </summary>
+        [Description("标题字体"), Category("SunnyUI")]
+        [DefaultValue(typeof(Font), "微软雅黑, 12pt")]
+        public Font DropMenuFont
+        {
+            get => dropMenuFont;
+            set
+            {
+                dropMenuFont = value;
+                Invalidate();
+            }
         }
 
         private StringAlignment nodeAlignment = StringAlignment.Far;
@@ -354,12 +397,12 @@ namespace Sunny.UI
                 if (Nodes.Count > 0 && value >= 0 && value < Nodes.Count)
                 {
                     selectedIndex = value;
-                    NodeMouseClick?.Invoke(Nodes[SelectedIndex], selectedIndex, MenuHelper.GetPageIndex(Nodes[SelectedIndex]));
+                    NodeMouseClick?.Invoke(Nodes[SelectedIndex], selectedIndex, GetPageIndex(Nodes[SelectedIndex]));
 
                     if (Nodes[value].Nodes.Count == 0)
                     {
-                        MenuItemClick?.Invoke(Nodes[SelectedIndex].Text, selectedIndex, MenuHelper.GetPageIndex(Nodes[SelectedIndex]));
-                        TabControl?.SelectPage(MenuHelper.GetPageIndex(Nodes[SelectedIndex]));
+                        MenuItemClick?.Invoke(Nodes[SelectedIndex].Text, selectedIndex, GetPageIndex(Nodes[SelectedIndex]));
+                        TabControl?.SelectPage(GetPageIndex(Nodes[SelectedIndex]));
                     }
 
                     Invalidate();
@@ -379,12 +422,15 @@ namespace Sunny.UI
                 if (selectedForeColor != value)
                 {
                     selectedForeColor = value;
-                    _style = UIStyle.Custom;
-                    Invalidate();
+                    SetStyleCustom();
                 }
             }
         }
 
+        /// <summary>
+        /// 重载绘图
+        /// </summary>
+        /// <param name="e">绘图参数</param>
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
@@ -503,6 +549,7 @@ namespace Sunny.UI
         }
 
         private int _nodeInterval = 100;
+        private int baseNodeInterval = 100;
 
         [DefaultValue(100)]
         [Description("显示菜单边距"), Category("SunnyUI")]
@@ -513,13 +560,14 @@ namespace Sunny.UI
             {
                 if (_nodeInterval != value)
                 {
-                    _nodeInterval = value;
+                    baseNodeInterval = _nodeInterval = value;
                     Invalidate();
                 }
             }
         }
 
         private Size nodeSize = new Size(130, 45);
+        private Size baseNodeSize = new Size(130, 45);
 
         [DefaultValue(typeof(Size), "130, 45")]
         [Description("显示菜单大小"), Category("SunnyUI")]
@@ -530,12 +578,16 @@ namespace Sunny.UI
             {
                 if (nodeSize != value)
                 {
-                    nodeSize = value;
+                    baseNodeSize = nodeSize = value;
                     Invalidate();
                 }
             }
         }
 
+        /// <summary>
+        /// 重载鼠标离开事件
+        /// </summary>
+        /// <param name="e">鼠标参数</param>
         protected override void OnMouseLeave(EventArgs e)
         {
             base.OnMouseLeave(e);
@@ -543,6 +595,10 @@ namespace Sunny.UI
             Invalidate();
         }
 
+        /// <summary>
+        /// 重载鼠标移动事件
+        /// </summary>
+        /// <param name="e">鼠标参数</param>
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
@@ -578,7 +634,8 @@ namespace Sunny.UI
             if (ActiveIndex == -1) return;
             SelectedIndex = ActiveIndex;
             Invalidate();
-
+            if (SelectedIndex < 0) return;
+            if (SelectedIndex >= Nodes.Count) return;
             if (Nodes[selectedIndex].Nodes.Count == 0)
             {
                 return;
@@ -587,6 +644,8 @@ namespace Sunny.UI
             NavBarMenu.Style = UIStyles.Style;
             NavBarMenu.Items.Clear();
             NavBarMenu.ImageList = ImageList;
+            NavBarMenu.IsScaled = false;
+            NavBarMenu.Font = DropMenuFont;
             foreach (TreeNode node in Nodes[SelectedIndex].Nodes)
             {
                 ToolStripMenuItem item = new ToolStripMenuItem(node.Text) { Tag = node };
@@ -635,9 +694,9 @@ namespace Sunny.UI
             ToolStripMenuItem item = (ToolStripMenuItem)sender;
             if (item.Tag != null && item.Tag is TreeNode node)
             {
-                TabControl?.SelectPage(MenuHelper.GetPageIndex(node));
-                MenuItemClick?.Invoke(item.Text, selectedIndex, MenuHelper.GetPageIndex(node));
-                NodeMouseClick?.Invoke(node, selectedIndex, MenuHelper.GetPageIndex(node));
+                TabControl?.SelectPage(GetPageIndex(node));
+                MenuItemClick?.Invoke(item.Text, selectedIndex, GetPageIndex(node));
+                NodeMouseClick?.Invoke(node, selectedIndex, GetPageIndex(node));
             }
         }
 
@@ -667,15 +726,19 @@ namespace Sunny.UI
 
         public void SetStyle(UIStyle style)
         {
-            UIBaseStyle uiColor = UIStyles.GetStyleColor(style);
-            if (!uiColor.IsCustom()) SetStyleColor(uiColor);
+            if (!style.IsCustom())
+            {
+                SetStyleColor(style.Colors());
+                Invalidate();
+            }
+
             _style = style;
         }
 
         public void SetStyleColor(UIBaseStyle uiColor)
         {
-            selectedForeColor = selectedHighColor = uiColor.MenuSelectedColor;
-            Invalidate();
+            selectedForeColor = uiColor.NavBarMenuSelectedColor;
+            selectedHighColor = uiColor.NavBarMenuSelectedColor;
         }
 
         /// <summary>
@@ -687,9 +750,34 @@ namespace Sunny.UI
 
         public string Version { get; }
 
+        #region 扩展函数
+
+        public UINavBar SetNodePageIndex(TreeNode node, int pageIndex)
+        {
+            MenuHelper.SetPageIndex(node, pageIndex);
+            return this;
+        }
+
+        public UINavBar SetNodeSymbol(TreeNode node, int symbol, int symbolSize = 24)
+        {
+            MenuHelper.SetSymbol(node, symbol, symbolSize);
+            return this;
+        }
+
+        public UINavBar SetNodeImageIndex(TreeNode node, int imageIndex)
+        {
+            node.ImageIndex = imageIndex;
+            return this;
+        }
+
         public TreeNode CreateNode(string text, int pageIndex)
         {
             return CreateNode(new NavMenuItem(text, pageIndex));
+        }
+
+        public TreeNode CreateNode(string text, Guid pageGuid)
+        {
+            return CreateNode(new NavMenuItem(text, pageGuid));
         }
 
         public TreeNode CreateNode(UIPage page)
@@ -697,49 +785,33 @@ namespace Sunny.UI
             return CreateNode(new NavMenuItem(page));
         }
 
-        public TreeNode CreateNode(NavMenuItem item)
-        {
-            TreeNode node = new TreeNode(item.Text);
-            Nodes.Add(node);
-            SetNodeItem(node, item);
-            return node;
-        }
-
-        public TreeNode CreateNode(string text, int imageIndex, int pageIndex)
-        {
-            return CreateNode(new NavMenuItem(text, pageIndex), imageIndex);
-        }
-
-        public TreeNode CreateNode(UIPage page, int imageIndex)
-        {
-            return CreateNode(new NavMenuItem(page), imageIndex);
-        }
-
-        public TreeNode CreateNode(NavMenuItem item, int imageIndex)
-        {
-            TreeNode node = new TreeNode(item.Text);
-            Nodes.Add(node);
-            SetNodeItem(node, item);
-            node.ImageIndex = imageIndex;
-            return node;
-        }
-
         public TreeNode CreateNode(string text, int symbol, int symbolSize, int pageIndex)
         {
-            return CreateNode(new NavMenuItem(text, pageIndex), symbol, symbolSize);
+            var node = CreateNode(text, pageIndex);
+            SetNodeSymbol(node, symbol, symbolSize);
+            return node;
         }
 
-        public TreeNode CreateNode(UIPage page, int symbol, int symbolSize)
+        public TreeNode CreateChildNode(TreeNode parent, string text, Guid pageGuid)
         {
-            return CreateNode(new NavMenuItem(page), symbol, symbolSize);
+            return CreateChildNode(parent, new NavMenuItem(text, pageGuid));
         }
 
-        public TreeNode CreateNode(NavMenuItem item, int symbol, int symbolSize)
+        public int GetPageIndex(TreeNode node)
+        {
+            return MenuHelper.GetPageIndex(node);
+        }
+
+        private void SetNodeItem(TreeNode node, NavMenuItem item)
+        {
+            MenuHelper.Add(node, item);
+        }
+
+        private TreeNode CreateNode(NavMenuItem item)
         {
             TreeNode node = new TreeNode(item.Text);
             Nodes.Add(node);
             SetNodeItem(node, item);
-            MenuHelper.SetSymbol(node, symbol, symbolSize);
             return node;
         }
 
@@ -753,7 +825,14 @@ namespace Sunny.UI
             return CreateChildNode(parent, new NavMenuItem(page));
         }
 
-        public TreeNode CreateChildNode(TreeNode parent, NavMenuItem item)
+        public TreeNode CreateChildNode(TreeNode parent, string text, int symbol, int symbolSize, int pageIndex)
+        {
+            var node = CreateChildNode(parent, text, pageIndex);
+            SetNodeSymbol(node, symbol, symbolSize);
+            return node;
+        }
+
+        private TreeNode CreateChildNode(TreeNode parent, NavMenuItem item)
         {
             TreeNode childNode = new TreeNode(item.Text);
             parent.Nodes.Add(childNode);
@@ -761,42 +840,6 @@ namespace Sunny.UI
             return childNode;
         }
 
-        public TreeNode CreateChildNode(TreeNode parent, int imageIndex, string text, int pageIndex)
-        {
-            return CreateChildNode(parent, imageIndex, new NavMenuItem(text, pageIndex));
-        }
-
-        public TreeNode CreateChildNode(TreeNode parent, int imageIndex, UIPage page)
-        {
-            return CreateChildNode(parent, imageIndex, new NavMenuItem(page));
-        }
-
-        public TreeNode CreateChildNode(TreeNode parent, int imageIndex, NavMenuItem item)
-        {
-            TreeNode childNode = new TreeNode(item.Text);
-            parent.Nodes.Add(childNode);
-            SetNodeItem(childNode, item);
-            childNode.ImageIndex = imageIndex;
-            return childNode;
-        }
-
-        public TreeNode CreateChildNode(TreeNode parent, int symbol, int symbolSize, string text, int pageIndex)
-        {
-            return CreateChildNode(parent, symbol, symbolSize, new NavMenuItem(text, pageIndex));
-        }
-
-        public TreeNode CreateChildNode(TreeNode parent, int symbol, int symbolSize, UIPage page)
-        {
-            return CreateChildNode(parent, symbol, symbolSize, new NavMenuItem(page));
-        }
-
-        public TreeNode CreateChildNode(TreeNode parent, int symbol, int symbolSize, NavMenuItem item)
-        {
-            TreeNode childNode = new TreeNode(item.Text);
-            parent.Nodes.Add(childNode);
-            SetNodeItem(childNode, item);
-            MenuHelper.SetSymbol(childNode, symbol, symbolSize);
-            return childNode;
-        }
+        #endregion 扩展函数
     }
 }

@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -11,9 +11,9 @@
  * If you use this code, please keep this note.
  * 如果您使用此代码，请保留此说明。
  ******************************************************************************
- * 文件名称: UIGrid.cs
+ * 文件名称: UIDataGridView.cs
  * 文件说明: 表格
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
@@ -27,6 +27,22 @@
  * 2021-04-29: V3.0.3 设置数据行头部颜色
  * 2021-05-22: V3.0.4 增加了一个RowHeight，默认23
  * 2021-06-27: V3.0.4 自定义单元格颜色
+ * 2022-01-21: V3.1.0 更新单选时选中值SelectedIndex值
+ * 2022-04-16: V3.1.3 增加滚动条的颜色设置
+ * 2022-04-26: V3.1.8 解决原生控件DataSource绑定List，并且List为空，出现”索引-1没有值“错误
+ * 2022-06-10: V3.1.9 不再判断DataSource绑定List为空，出现”索引-1没有值“用户自行判断
+ * 2022-06-11: V3.1.9 隐藏 ShowRect, 设置原生属性：
+ *                    BorderStyle = BorderStyle.FixedSingle;
+ * 2022-06-11: V3.1.9 隐藏 ShowGridLine, 设置原生属性：
+ *                    CellBorderStyle = DataGridViewCellBorderStyle.Single;
+ * 2022-06-11: V3.1.9 隐藏 RowHeight, 用 SetRowHeight() 代替，或设置原生属性：
+ *                    AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None
+ *                    RowTemplate.Height 设置为高度
+ * 2022-06-22: V3.2.0 删除 ShowRect、ShowGridLine、RowHeight三个属性
+ * 2022-07-11: V3.2.1 修复一处滚动条的显示位置
+ * 2022-07-11: V3.2.1 增加滚动条边框线的设置
+ * 2022-07-28: V3.2.2 修复了ScrollBars为None时仍然显示滚动条的问题
+ * 2022-07-28: V3.2.2 修复了单行时表格高度低时，垂直滚动条拖拽至底部出错的问题
 ******************************************************************************/
 
 using System;
@@ -37,7 +53,7 @@ using System.Windows.Forms;
 
 namespace Sunny.UI
 {
-    public class UIDataGridView : DataGridView, IStyleInterface
+    public class UIDataGridView : DataGridView, IStyleInterface, IZoomScale
     {
         private readonly UIScrollBar VBar = new UIScrollBar();
         private readonly UIHorScrollBarEx HBar = new UIHorScrollBarEx();
@@ -46,7 +62,7 @@ namespace Sunny.UI
         {
             BackgroundColor = UIColor.White;
             GridColor = UIColor.Blue;
-            base.Font = UIFontColor.Font;
+            base.Font = UIFontColor.Font();
             base.DoubleBuffered = true;
 
             VBar.Parent = this;
@@ -55,6 +71,7 @@ namespace Sunny.UI
             VBar.ForeColor = UIColor.Blue;
             VBar.StyleCustomMode = true;
             VBar.ValueChanged += VBarValueChanged;
+            VBar.ShowLeftLine = true;
 
             HBar.Parent = this;
             HBar.Visible = false;
@@ -73,20 +90,20 @@ namespace Sunny.UI
             ColumnHeadersDefaultCellStyle.BackColor = UIColor.Blue;
             ColumnHeadersDefaultCellStyle.ForeColor = UIColor.White;
             ColumnHeadersDefaultCellStyle.WrapMode = DataGridViewTriState.True;
+            ColumnHeadersDefaultCellStyle.Font = UIFontColor.Font();
 
             //行头部颜色
             RowHeadersDefaultCellStyle.BackColor = UIColor.LightBlue;
             RowHeadersDefaultCellStyle.ForeColor = UIFontColor.Primary;
             RowHeadersDefaultCellStyle.SelectionBackColor = UIColor.Blue;
             RowHeadersDefaultCellStyle.SelectionForeColor = Color.White;
+            RowHeadersDefaultCellStyle.Font = UIFontColor.Font();
+
+            RowsDefaultCellStyle.Font = UIFontColor.Font();
+            DefaultCellStyle.Font = UIFontColor.Font();
 
             //标题行行高，与OnColumnAdded事件配合
             ColumnHeadersHeight = 32;
-
-            //数据行行高
-            // RowTemplate.Height = 29;
-            // RowTemplate.MinimumHeight = 29;
-            // AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None;
 
             //设置奇偶数行颜色
             StripeEvenColor = UIColor.White;
@@ -96,6 +113,46 @@ namespace Sunny.UI
             HorizontalScrollBar.ValueChanged += HorizontalScrollBar_ValueChanged;
             VerticalScrollBar.VisibleChanged += VerticalScrollBar_VisibleChanged;
             HorizontalScrollBar.VisibleChanged += HorizontalScrollBar_VisibleChanged;
+        }
+
+        /// <summary>
+        /// 禁止控件跟随窗体缩放
+        /// </summary>
+        [DefaultValue(false), Category("SunnyUI"), Description("禁止控件跟随窗体缩放")]
+        public bool ZoomScaleDisabled { get; set; }
+
+        /// <summary>
+        /// 控件缩放前在其容器里的位置
+        /// </summary>
+        [Browsable(false)]
+        public Rectangle ZoomScaleRect { get; set; }
+
+        /// <summary>
+        /// 设置控件缩放比例
+        /// </summary>
+        /// <param name="scale">缩放比例</param>
+        public virtual void SetZoomScale(float scale)
+        {
+
+        }
+
+        [Browsable(false)]
+        public bool IsScaled { get; private set; }
+
+        public void SetDPIScale()
+        {
+            if (!IsScaled)
+            {
+                if (ColumnHeadersDefaultCellStyle.Font != null)
+                    ColumnHeadersDefaultCellStyle.Font = ColumnHeadersDefaultCellStyle.Font.DPIScaleFont();
+                if (RowHeadersDefaultCellStyle.Font != null)
+                    RowHeadersDefaultCellStyle.Font = RowHeadersDefaultCellStyle.Font.DPIScaleFont();
+                if (DefaultCellStyle.Font != null)
+                    DefaultCellStyle.Font = DefaultCellStyle.Font.DPIScaleFont();
+                if (RowsDefaultCellStyle.Font != null)
+                    RowsDefaultCellStyle.Font = RowsDefaultCellStyle.Font.DPIScaleFont();
+                IsScaled = true;
+            }
         }
 
         private readonly Dictionary<string, CellStyle> CellStyles = new Dictionary<string, CellStyle>();
@@ -167,43 +224,17 @@ namespace Sunny.UI
             }
         }
 
-
-        [Description("行高"), Category("SunnyUI")]
-        [DefaultValue(23)]
-        public int RowHeight
+        public void SetRowHeight(int height)
         {
-            get => RowTemplate.Height;
-            set
-            {
-                int rowHeight = Math.Max(23, value);
-                RowTemplate.Height = rowHeight;
-                RowTemplate.MinimumHeight = rowHeight;
-                AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None;
-            }
+            AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None;
+            RowTemplate.Height = height;
         }
 
-        /*
-        private bool showRowIndex;
-
-        [Description("显示行号"), Category("SunnyUI")]
-        [DefaultValue(false)]
-        public bool ShowRowIndex
+        public void SetColumnHeadersHeight(int height)
         {
-            get => showRowIndex;
-            set
-            {
-                showRowIndex = value;
-                if (value) RowHeadersVisible = true;
-                Invalidate();
-            }
+            ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.EnableResizing;
+            ColumnHeadersHeight = height;
         }
-
-        protected override void OnRowStateChanged(int rowIndex, DataGridViewRowStateChangedEventArgs e)
-        {
-            base.OnRowStateChanged(rowIndex, e);
-            if (ShowRowIndex) e.Row.HeaderCell.Value = (e.Row.Index + 1).ToString();
-        }
-        */
 
         private void HorizontalScrollBar_VisibleChanged(object sender, EventArgs e)
         {
@@ -257,7 +288,11 @@ namespace Sunny.UI
 
         private void VBarValueChanged(object sender, EventArgs e)
         {
-            FirstDisplayedScrollingRowIndex = VBar.Value;
+            if (RowCount == 0) return;
+            int idx = VBar.Value;
+            if (idx < 0) idx = 0;
+            if (idx >= RowCount) idx = RowCount - 1;
+            FirstDisplayedScrollingRowIndex = idx;
         }
 
         private void HorizontalScrollBar_ValueChanged(object sender, EventArgs e)
@@ -287,7 +322,7 @@ namespace Sunny.UI
             {
                 VBar.Maximum = RowCount - DisplayedRowCount(false);
                 VBar.Value = FirstDisplayedScrollingRowIndex;
-                VBar.Visible = true;
+                VBar.Visible = ScrollBars == ScrollBars.Vertical || ScrollBars == ScrollBars.Both;
             }
             else
             {
@@ -300,7 +335,7 @@ namespace Sunny.UI
                 HBar.Value = HorizontalScrollBar.Value;
                 HBar.BoundsWidth = HorizontalScrollBar.LargeChange;
                 HBar.LargeChange = HorizontalScrollBar.LargeChange;//.Maximum / VisibleColumnCount();
-                HBar.Visible = true;
+                HBar.Visible = ScrollBars == ScrollBars.Horizontal || ScrollBars == ScrollBars.Both;
             }
             else
             {
@@ -310,11 +345,15 @@ namespace Sunny.UI
             SetBarPosition();
         }
 
+        /// <summary>
+        /// 重载绘图
+        /// </summary>
+        /// <param name="e">绘图参数</param>
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
 
-            if (ShowRect)
+            if (BorderStyle == BorderStyle.FixedSingle)
             {
                 Color color = RectColor;
                 color = Enabled ? color : UIDisableColor.Fill;
@@ -325,17 +364,6 @@ namespace Sunny.UI
         protected override void OnMouseWheel(MouseEventArgs e)
         {
             base.OnMouseWheel(e);
-            /*if (VBar.Visible)
-            {
-                if (e.Delta > 10)
-                {
-                    VBar.SetValue(VBar.Value - VBar.Maximum / 20);
-                }
-                else if (e.Delta < -10)
-                {
-                    VBar.SetValue(VBar.Value + VBar.Maximum / 20);
-                }
-            }*/
 
             if (VBar.Visible && ScrollMode == UIDataGridViewScrollMode.Page)
             {
@@ -368,7 +396,6 @@ namespace Sunny.UI
             Page
         }
 
-
         protected override void OnRowsAdded(DataGridViewRowsAddedEventArgs e)
         {
             base.OnRowsAdded(e);
@@ -381,6 +408,10 @@ namespace Sunny.UI
             SetScrollInfo();
         }
 
+        /// <summary>
+        /// 重载控件尺寸变更
+        /// </summary>
+        /// <param name="e">参数</param>
         protected override void OnSizeChanged(EventArgs e)
         {
             base.OnSizeChanged(e);
@@ -402,7 +433,12 @@ namespace Sunny.UI
 
         private void SetBarPosition()
         {
-            if (ShowRect)
+            if (VBar == null || HBar == null)
+            {
+                return;
+            }
+
+            if (BorderStyle == BorderStyle.FixedSingle)
             {
                 VBar.Left = Width - ScrollBarInfo.VerticalScrollBarWidth() - 2;
                 VBar.Top = 1;
@@ -410,10 +446,10 @@ namespace Sunny.UI
                 VBar.Height = Height - 2;
                 VBar.BringToFront();
 
-                HBar.Left = 2;
+                HBar.Left = 1;
                 HBar.Height = ScrollBarInfo.HorizontalScrollBarHeight() + 1;
                 HBar.Width = Width - (VBar.Visible ? VBar.Width : 0) - 2;
-                HBar.Top = Height - HBar.Height - 2;
+                HBar.Top = Height - HBar.Height - 1;
                 HBar.BringToFront();
             }
             else
@@ -469,7 +505,7 @@ namespace Sunny.UI
             }
         }
 
-        [DefaultValue(typeof(Color), "235, 243, 255")]
+        [DefaultValue(typeof(Color), "243, 249, 255")]
         [Description("奇数行显示颜色"), Category("SunnyUI")]
         public Color StripeOddColor
         {
@@ -477,46 +513,76 @@ namespace Sunny.UI
             set
             {
                 AlternatingRowsDefaultCellStyle.BackColor = value;
-                HBar.FillColor = VBar.FillColor = value;
                 Invalidate();
             }
         }
 
         public void SetStyle(UIStyle style)
         {
-            UIBaseStyle uiColor = UIStyles.GetStyleColor(style);
-            if (!uiColor.IsCustom()) SetStyleColor(uiColor);
+            if (!style.IsCustom())
+            {
+                SetStyleColor(style.Colors());
+                Invalidate();
+            }
+
             _style = style;
         }
 
         public void SetStyleColor(UIBaseStyle uiColor)
         {
+            BackgroundColor = uiColor.PlainColor;
+
             //列头部颜色
-            ColumnHeadersDefaultCellStyle.BackColor = uiColor.TitleColor;
-            ColumnHeadersDefaultCellStyle.ForeColor = uiColor.TitleForeColor;
-            ColumnHeadersDefaultCellStyle.SelectionBackColor = uiColor.TitleColor;
+            ColumnHeadersDefaultCellStyle.BackColor = uiColor.GridTitleColor;
+            ColumnHeadersDefaultCellStyle.ForeColor = uiColor.GridTitleForeColor;
+            ColumnHeadersDefaultCellStyle.SelectionBackColor = uiColor.GridTitleColor;
 
             //行头部颜色
             RowHeadersDefaultCellStyle.BackColor = uiColor.PlainColor;
-            RowHeadersDefaultCellStyle.ForeColor = UIFontColor.Primary;
+            RowHeadersDefaultCellStyle.ForeColor = uiColor.GridForeColor;
             RowHeadersDefaultCellStyle.SelectionBackColor = uiColor.RectColor;
-            RowHeadersDefaultCellStyle.SelectionForeColor = Color.White;
+            RowHeadersDefaultCellStyle.SelectionForeColor = uiColor.GridForeColor;
 
-            //数据行选中颜色
+            //数据单元格选中颜色
             DefaultCellStyle.SelectionBackColor = uiColor.GridSelectedColor;
             DefaultCellStyle.SelectionForeColor = uiColor.GridSelectedForeColor;
+            DefaultCellStyle.BackColor = uiColor.GridStripeEvenColor;
+            DefaultCellStyle.ForeColor = uiColor.GridForeColor;
 
-            GridColor = RectColor = uiColor.RectColor;
-            RowsDefaultCellStyle.BackColor = UIColor.White;
-            AlternatingRowsDefaultCellStyle.BackColor = UIColor.LightBlue;
+            //数据行选中颜色            
+            RowsDefaultCellStyle.SelectionBackColor = uiColor.GridSelectedColor;
+            RowsDefaultCellStyle.SelectionForeColor = uiColor.GridSelectedForeColor;
+            RowsDefaultCellStyle.ForeColor = uiColor.GridForeColor;
+
+            GridColor = uiColor.GridLineColor;
+            RectColor = uiColor.RectColor;
+            RowsDefaultCellStyle.BackColor = uiColor.GridStripeEvenColor;
+            AlternatingRowsDefaultCellStyle.BackColor = uiColor.GridStripeOddColor;
 
             StripeEvenColor = uiColor.GridStripeEvenColor;
             StripeOddColor = uiColor.GridStripeOddColor;
 
-            HBar.FillColor = VBar.FillColor = uiColor.GridStripeOddColor;
-            HBar.ForeColor = VBar.ForeColor = uiColor.PrimaryColor;
+            if (HBar != null)
+            {
+                HBar.ForeColor = uiColor.GridBarForeColor;
+                HBar.HoverColor = uiColor.ButtonFillHoverColor;
+                HBar.PressColor = uiColor.ButtonFillPressColor;
+                HBar.FillColor = uiColor.GridBarFillColor;
+                //HBar.RectColor = uiColor.RectColor;
+                scrollBarColor = uiColor.GridBarForeColor;
+                scrollBarBackColor = uiColor.GridBarFillColor;
+            }
 
-            Invalidate();
+            if (VBar != null)
+            {
+                VBar.ForeColor = uiColor.GridBarForeColor;
+                VBar.HoverColor = uiColor.ButtonFillHoverColor;
+                VBar.PressColor = uiColor.ButtonFillPressColor;
+                VBar.FillColor = uiColor.GridBarFillColor;
+                scrollBarRectColor = VBar.RectColor = uiColor.RectColor;
+                scrollBarColor = uiColor.GridBarForeColor;
+                scrollBarBackColor = uiColor.GridBarFillColor;
+            }
         }
 
         /// <summary>
@@ -535,30 +601,10 @@ namespace Sunny.UI
         [Description("获取或设置包含有关控件的数据的对象字符串"), Category("SunnyUI")]
         public string TagString { get; set; }
 
-        /// <summary>
-        /// 是否显示边框
-        /// </summary>
-        [Description("是否显示边框"), Category("SunnyUI")]
-        [DefaultValue(true)]
-        public bool ShowRect
+        protected override void OnCellBorderStyleChanged(EventArgs e)
         {
-            get => BorderStyle == BorderStyle.FixedSingle;
-            set
-            {
-                BorderStyle = value ? BorderStyle.FixedSingle : BorderStyle.None;
-                Invalidate();
-            }
-        }
-
-        /// <summary>
-        /// 是否显示表格线
-        /// </summary>
-        [Description("是否显示表格线"), Category("SunnyUI")]
-        [DefaultValue(false)]
-        public bool ShowGridLine
-        {
-            get => CellBorderStyle == DataGridViewCellBorderStyle.Single;
-            set => CellBorderStyle = value ? DataGridViewCellBorderStyle.Single : DataGridViewCellBorderStyle.None;
+            base.OnCellBorderStyleChanged(e);
+            VBar.ShowLeftLine = CellBorderStyle == DataGridViewCellBorderStyle.Single;
         }
 
         private Color _rectColor = UIColor.Blue;
@@ -578,73 +624,70 @@ namespace Sunny.UI
             }
         }
 
-        private int selectedIndex = -1;
-
         [Browsable(false)]
         public int SelectedIndex
         {
-            get => selectedIndex;
+            get
+            {
+                return CurrentRow != null ? CurrentRow.Index : -1;
+            }
             set
             {
+                //BindingContext[DataSource].Position = value;
                 if (Rows.Count == 0)
                 {
-                    selectedIndex = -1;
                     return;
                 }
 
                 if (value >= 0 && value < Rows.Count)
                 {
+                    foreach (DataGridViewRow row in SelectedRows)
+                    {
+                        row.Selected = false;
+                    }
+
                     Rows[value].Selected = true;
-                    selectedIndex = value;
                     FirstDisplayedScrollingRowIndex = value;
+
+                    if (selectedIndex >= 0 && selectedIndex <= Rows.Count)
+                        jumpIndex = selectedIndex;
+
+                    selectedIndex = value;
                     SelectIndexChange?.Invoke(this, value);
-                }
-                else
-                {
-                    selectedIndex = -1;
                 }
             }
         }
+
+        private int jumpIndex = -1;
 
         protected override void OnDataSourceChanged(EventArgs e)
         {
             base.OnDataSourceChanged(e);
             SetScrollInfo();
-            selectedIndex = -1;
         }
 
         public delegate void OnSelectIndexChange(object sender, int index);
 
         public event OnSelectIndexChange SelectIndexChange;
 
-        protected override void OnCellClick(DataGridViewCellEventArgs e)
+        protected override void OnRowEnter(DataGridViewCellEventArgs e)
         {
-            base.OnCellClick(e);
+            base.OnRowEnter(e);
 
-            if (e.RowIndex >= 0 && selectedIndex != e.RowIndex)
+            if (e.RowIndex == jumpIndex)
+            {
+                jumpIndex = -1;
+                return;
+            }
+
+            if (selectedIndex != e.RowIndex)
             {
                 selectedIndex = e.RowIndex;
                 SelectIndexChange?.Invoke(this, e.RowIndex);
             }
         }
 
-        // protected override void OnGridColorChanged(EventArgs e)
-        // {
-        //     base.OnGridColorChanged(e);
-        //     _style = UIStyle.Custom;
-        // }
-        //
-        // protected override void OnDefaultCellStyleChanged(EventArgs e)
-        // {
-        //     base.OnDefaultCellStyleChanged(e);
-        //     _style = UIStyle.Custom;
-        // }
-        //
-        // protected override void OnColumnDefaultCellStyleChanged(DataGridViewColumnEventArgs e)
-        // {
-        //     base.OnColumnDefaultCellStyleChanged(e);
-        //     _style = UIStyle.Custom;
-        // }
+        private int selectedIndex = -1;
 
         public DataGridViewColumn AddColumn(string columnName, string dataPropertyName, int fillWeight = 100, DataGridViewContentAlignment alignment = DataGridViewContentAlignment.MiddleCenter, bool readOnly = true)
         {
@@ -743,6 +786,60 @@ namespace Sunny.UI
         [DefaultValue(false)]
         [Description("编辑输入时，用Enter键代替Tab键跳到下一个单元格"), Category("SunnyUI")]
         public bool EnterAsTab { get; set; }
+
+        private Color scrollBarColor = Color.FromArgb(80, 160, 255);
+
+        /// <summary>
+        /// 填充颜色，当值为背景色或透明色或空值则不填充
+        /// </summary>
+        [Description("滚动条填充颜色"), Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "80, 160, 255")]
+        public Color ScrollBarColor
+        {
+            get => scrollBarColor;
+            set
+            {
+                scrollBarColor = value;
+                HBar.HoverColor = HBar.PressColor = HBar.ForeColor = value;
+                VBar.HoverColor = VBar.PressColor = VBar.ForeColor = value;
+                _style = UIStyle.Custom;
+                Invalidate();
+            }
+        }
+
+        private Color scrollBarRectColor = Color.FromArgb(80, 160, 255);
+
+        public Color ScrollBarRectColor
+        {
+            get => scrollBarRectColor;
+            set
+            {
+                scrollBarRectColor = value;
+                VBar.RectColor = value;
+                _style = UIStyle.Custom;
+                Invalidate();
+            }
+        }
+
+        private Color scrollBarBackColor = Color.FromArgb(243, 249, 255);
+
+        /// <summary>
+        /// 填充颜色，当值为背景色或透明色或空值则不填充
+        /// </summary>
+        [Description("滚动条背景颜色"), Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "243, 249, 255")]
+        public Color ScrollBarBackColor
+        {
+            get => scrollBarBackColor;
+            set
+            {
+                scrollBarBackColor = value;
+                HBar.FillColor = value;
+                VBar.FillColor = value;
+                _style = UIStyle.Custom;
+                Invalidate();
+            }
+        }
     }
 
     public static class UIDataGridViewHelper
@@ -758,6 +855,11 @@ namespace Sunny.UI
         {
             column.SortMode = sortMode;
             return column;
+        }
+
+        public static bool IsDBNull(this DataGridViewCell cell)
+        {
+            return cell.Value is DBNull;
         }
     }
 }

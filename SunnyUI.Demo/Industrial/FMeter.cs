@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Windows.Forms;
 
 namespace Sunny.UI.Demo
 {
@@ -7,24 +7,24 @@ namespace Sunny.UI.Demo
         public FMeter()
         {
             InitializeComponent();
+            timer.Tick += Timer_Tick;
         }
 
-        private int value;
-
-        public override void Init()
-        {
-            value = 0;
-            uiMillisecondTimer1.ReStart();
-        }
-
-        private void uiMillisecondTimer1_Tick(object sender, System.EventArgs e)
+        private void Timer_Tick(object sender, System.EventArgs e)
         {
             value++;
             uiRoundMeter1.Angle = value * 10;
             uiRoundMeter2.Angle = value * 10;
             uiAnalogMeter1.Value = value;
+        }
 
-            Console.WriteLine(DateTime.Now.ToString(DateTimeEx.DateTimeFormatEx));
+        Timer timer = new Timer();
+        private int value;
+
+        public override void Init()
+        {
+            value = 0;
+            timer.ReStart();
         }
     }
 }

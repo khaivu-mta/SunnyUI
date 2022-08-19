@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,13 +13,15 @@
  ******************************************************************************
  * 文件名称: UIGroupBox.cs
  * 文件说明: 组框
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
  * 2020-04-25: V2.2.4 更新主题配置类
+ * 2022-05-30: V3.1.9 修复Padding设置
 ******************************************************************************/
 
+using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -36,25 +38,32 @@ namespace Sunny.UI
             SetStyleFlags(true, false);
         }
 
+        /// <summary>
+        /// 绘制填充颜色
+        /// </summary>
+        /// <param name="g">绘图图面</param>
+        /// <param name="path">绘图路径</param>
         protected override void OnPaintFill(Graphics g, GraphicsPath path)
         {
             g.Clear(FillColor);
         }
 
+        /// <summary>
+        /// 绘制边框颜色
+        /// </summary>
+        /// <param name="g">绘图图面</param>
+        /// <param name="path">绘图路径</param>
         protected override void OnPaintRect(Graphics g, GraphicsPath path)
         {
-            //IsRadius为True时，显示左上圆角
-            bool RadiusLeftTop = RadiusSides.GetValue(UICornerRadiusSides.LeftTop);
-            //IsRadius为True时，显示左下圆角
-            bool RadiusLeftBottom = RadiusSides.GetValue(UICornerRadiusSides.LeftBottom);
-            //IsRadius为True时，显示右上圆角
-            bool RadiusRightTop = RadiusSides.GetValue(UICornerRadiusSides.RightTop);
-            //IsRadius为True时，显示右下圆角
-            bool RadiusRightBottom = RadiusSides.GetValue(UICornerRadiusSides.RightBottom);
-            path = new Rectangle(0, TitleTop, Width - 1, Height - _titleTop - 1).CreateRoundedRectanglePath(Radius, RadiusLeftTop, RadiusRightTop, RadiusRightBottom, RadiusLeftBottom);
+            path = new Rectangle(0, TitleTop, Width - 1, Height - _titleTop - 1).CreateRoundedRectanglePath(Radius, RadiusSides);
             base.OnPaintRect(g, path);
         }
 
+        /// <summary>
+        /// 绘制前景颜色
+        /// </summary>
+        /// <param name="g">绘图图面</param>
+        /// <param name="path">绘图路径</param>
         protected override void OnPaintFore(Graphics g, GraphicsPath path)
         {
             SizeF sf = g.MeasureString(Text, Font);
@@ -82,9 +91,18 @@ namespace Sunny.UI
                 if (_titleTop != value)
                 {
                     _titleTop = value;
-                    Padding = new Padding(0, value + 16, 0, 0);
+                    Padding = new Padding(Padding.Left, Math.Max(value + 16, Padding.Top), Padding.Right, Padding.Bottom);
                     Invalidate();
                 }
+            }
+        }
+
+        protected override void OnPaddingChanged(EventArgs e)
+        {
+            base.OnPaddingChanged(e);
+            if (Padding.Top != Math.Max(TitleTop + 16, Padding.Top))
+            {
+                Padding = new Padding(Padding.Left, Math.Max(TitleTop + 16, Padding.Top), Padding.Right, Padding.Bottom);
             }
         }
 

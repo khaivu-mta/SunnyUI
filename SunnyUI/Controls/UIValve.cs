@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,7 +13,7 @@
  ******************************************************************************
  * 文件名称: UIValve.cs
  * 文件说明: 阀门
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2021-08-08
  *
  * 2021-08-07: V3.0.5 增加阀门控件
@@ -31,7 +31,7 @@ namespace Sunny.UI
     [ToolboxItem(true)]
     [DefaultProperty("Active")]
     [DefaultEvent("ActiveChanged")]
-    public class UIValve : Control
+    public sealed class UIValve : Control, IZoomScale
     {
         public UIValve()
         {
@@ -41,8 +41,34 @@ namespace Sunny.UI
             fillColor = Color.White;
             valveColor = UIColor.Blue;
             Version = UIGlobal.Version;
+            ZoomScaleDisabled = true;
         }
 
+        /// <summary>
+        /// 禁止控件跟随窗体缩放
+        /// </summary>
+        [DefaultValue(false), Category("SunnyUI"), Description("禁止控件跟随窗体缩放")]
+        public bool ZoomScaleDisabled { get; set; }
+
+        /// <summary>
+        /// 控件缩放前在其容器里的位置
+        /// </summary>
+        [Browsable(false)]
+        public Rectangle ZoomScaleRect { get; set; }
+
+        /// <summary>
+        /// 设置控件缩放比例
+        /// </summary>
+        /// <param name="scale">缩放比例</param>
+        public void SetZoomScale(float scale)
+        {
+
+        }
+
+        /// <summary>
+        /// 点击事件
+        /// </summary>
+        /// <param name="e">参数</param>
         protected override void OnClick(EventArgs e)
         {
             base.OnClick(e);
@@ -122,7 +148,7 @@ namespace Sunny.UI
             get => valveColor;
             set
             {
-                valveColor = value; 
+                valveColor = value;
                 Invalidate();
             }
         }
@@ -171,6 +197,10 @@ namespace Sunny.UI
 
         int pipeSize = 20;
 
+        /// <summary>
+        /// 重载绘图
+        /// </summary>
+        /// <param name="e">绘图参数</param>
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
@@ -216,7 +246,7 @@ namespace Sunny.UI
                     rect = new Rectangle(Width - pipeSize - 8 - 14 - 10, Height / 2 - 14, 10, 27);
                     e.Graphics.FillRectangle(valveColor, rect);
 
-                    colors = GDIEx.GradientColors(Color.White, valveColor, 14);
+                    colors = Color.White.GradientColors(valveColor, 14);
                     rect = new Rectangle(Width - pipeSize - 8 - 14 - 10, Height / 2 - 14 + 4, 10, 4);
                     e.Graphics.FillRectangle(colors[4], rect);
                     rect = new Rectangle(Width - pipeSize - 8 - 14 - 10, Height / 2 - 14 + 12, 10, 4);
@@ -269,7 +299,7 @@ namespace Sunny.UI
                     rect = new Rectangle(Width / 2 - 14, pipeSize + 8 + 10 + 4, 27, 10);
                     e.Graphics.FillRectangle(valveColor, rect);
 
-                    colors = GDIEx.GradientColors(Color.White, valveColor, 14);
+                    colors = Color.White.GradientColors(valveColor, 14);
                     rect = new Rectangle(Width / 2 - 14 + 4, pipeSize + 8 + 10 + 4, 4, 10);
                     e.Graphics.FillRectangle(colors[4], rect);
                     rect = new Rectangle(Width / 2 - 14 + 12, pipeSize + 8 + 10 + 4, 4, 10);
@@ -321,7 +351,7 @@ namespace Sunny.UI
                     rect = new Rectangle(pipeSize + 8 + 10 + 4, Height / 2 - 14, 10, 27);
                     e.Graphics.FillRectangle(valveColor, rect);
 
-                    colors = GDIEx.GradientColors(Color.White, valveColor, 14);
+                    colors = Color.White.GradientColors(valveColor, 14);
                     rect = new Rectangle(pipeSize + 8 + 10 + 4, Height / 2 - 14 + 4, 10, 4);
                     e.Graphics.FillRectangle(colors[4], rect);
                     rect = new Rectangle(pipeSize + 8 + 10 + 4, Height / 2 - 14 + 12, 10, 4);
@@ -373,7 +403,7 @@ namespace Sunny.UI
                     rect = new Rectangle(Width / 2 - 14, Height - pipeSize - 8 - 14 - 10, 27, 10);
                     e.Graphics.FillRectangle(valveColor, rect);
 
-                    colors = GDIEx.GradientColors(Color.White, valveColor, 14);
+                    colors = Color.White.GradientColors(valveColor, 14);
                     rect = new Rectangle(Width / 2 - 14 + 4, Height - pipeSize - 8 - 14 - 10, 4, 10);
                     e.Graphics.FillRectangle(colors[4], rect);
                     rect = new Rectangle(Width / 2 - 14 + 12, Height - pipeSize - 8 - 14 - 10, 4, 10);
@@ -389,8 +419,6 @@ namespace Sunny.UI
                     pt3 = new Point(Width / 2 + 4 + 5, Height - pipeSize - 8 + 2);
                     pt4 = new Point(Width / 2 + 4, Height - pipeSize - 8 - 7);
                     e.Graphics.FillPolygon(rectColor, new PointF[] { pt1, pt2, pt3, pt4, pt1 });
-                    break;
-                default:
                     break;
             }
         }

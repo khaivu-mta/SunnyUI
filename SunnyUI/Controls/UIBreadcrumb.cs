@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,10 +13,13 @@
  ******************************************************************************
  * 文件名称: UIBreadcrumb.cs
  * 文件说明: 面包屑导航条
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2021-04-10
  *
  * 2021-04-10: V3.0.2 增加文件说明
+ * 2022-01-26: V3.1.0 增加两端对齐，AlignBothEnds
+ * 2022-01-26: V3.1.0 增加未选中步骤文字颜色
+ * 2022-03-19: V3.1.1 重构主题配色
 ******************************************************************************/
 
 using System;
@@ -30,11 +33,17 @@ using System.Windows.Forms;
 
 namespace Sunny.UI
 {
+    /// <summary>
+    /// 面包屑导航条
+    /// </summary>
     [ToolboxItem(true)]
     [DefaultEvent("ItemIndexChanged")]
     [DefaultProperty("ItemIndex")]
     public class UIBreadcrumb : UIControl
     {
+        /// <summary>
+        /// 构造函数
+        /// </summary>
         public UIBreadcrumb()
         {
             items.CountChange += Items_CountChange;
@@ -54,13 +63,44 @@ namespace Sunny.UI
             Invalidate();
         }
 
+        private bool alignBothEnds;
+
+        /// <summary>
+        /// 显示时两端对齐
+        /// </summary>
+        [DefaultValue(false)]
+        [Description("显示时两端对齐"), Category("SunnyUI")]
+        public bool AlignBothEnds
+        {
+            get => alignBothEnds;
+            set
+            {
+                if (alignBothEnds != value)
+                {
+                    alignBothEnds = value;
+                    Invalidate();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 步骤值变化事件
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="value"></param>
         public delegate void OnValueChanged(object sender, int value);
 
+        /// <summary>
+        /// 步骤值变化事件
+        /// </summary>
         public event OnValueChanged ItemIndexChanged;
 
+        /// <summary>
+        /// 步骤条目列表
+        /// </summary>
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
         [Localizable(true)]
-        [Editor("System.Windows.Forms.Design.ListControlStringCollectionEditor, System.Design, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a", typeof(UITypeEditor))]
+        [Editor("System.Windows.Forms.Design.ListControlStringCollectionEditor, " + AssemblyRefEx.SystemDesign, typeof(UITypeEditor))]
         [MergableProperty(false)]
         [Description("列表项"), Category("SunnyUI")]
         public UIObjectCollection Items => items;
@@ -69,11 +109,17 @@ namespace Sunny.UI
 
         private readonly ConcurrentDictionary<int, Point[]> ClickArea = new ConcurrentDictionary<int, Point[]>();
 
+        /// <summary>
+        /// 步骤个数
+        /// </summary>
         [Browsable(false)]
         public int Count => Items.Count;
 
         private int itemIndex = -1;
 
+        /// <summary>
+        /// 当前节点索引
+        /// </summary>
         [DefaultValue(-1)]
         [Description("当前节点索引"), Category("SunnyUI")]
         public int ItemIndex
@@ -95,12 +141,17 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 绘制填充颜色
+        /// </summary>
+        /// <param name="g">绘图图面</param>
+        /// <param name="path">绘图路径</param>
         protected override void OnPaintFill(Graphics g, GraphicsPath path)
         {
             float width = 0;
             if (Items.Count == 0)
             {
-                SizeF sf = g.MeasureString("Item0", Font);
+                SizeF sf = g.MeasureString(Text, Font);
                 width = sf.Width + Height + 6;
                 if (itemWidth < width) itemWidth = (int)width;
                 List<PointF> points = new List<PointF>();
@@ -117,7 +168,7 @@ namespace Sunny.UI
                     g.FillPolygon(br, points.ToArray());
                 }
 
-                g.DrawString("Item0", Font, ForeColor, (Width - sf.Width) / 2.0f, (Height - sf.Height) / 2.0f);
+                g.DrawString(Text, Font, ForeColor, (Width - sf.Width) / 2.0f, (Height - sf.Height) / 2.0f);
             }
             else
             {
@@ -136,13 +187,35 @@ namespace Sunny.UI
                 {
                     SizeF sf = g.MeasureString(item.ToString(), Font);
                     List<PointF> points = new List<PointF>();
-                    points.Add(new PointF(begin + 3, 0));
-                    points.Add(new PointF(begin + itemWidth - 3 - Height / 2.0f, 0));
-                    points.Add(new PointF(begin + itemWidth - 3, Height / 2.0f));
-                    points.Add(new PointF(begin + itemWidth - 3 - Height / 2.0f, Height));
-                    points.Add(new PointF(begin + 3, Height));
-                    points.Add(new PointF(begin + 3 + Height / 2.0f, Height / 2.0f));
-                    points.Add(new PointF(begin + 3, 0));
+
+                    if (index == 0 && AlignBothEnds)
+                    {
+                        points.Add(new PointF(begin + 3, 0));
+                        points.Add(new PointF(begin + itemWidth - 3 - Height / 2.0f, 0));
+                        points.Add(new PointF(begin + itemWidth - 3, Height / 2.0f));
+                        points.Add(new PointF(begin + itemWidth - 3 - Height / 2.0f, Height));
+                        points.Add(new PointF(begin + 3, Height));
+                        points.Add(new PointF(begin + 3, 0));
+                    }
+                    else if (index == Items.Count - 1 && AlignBothEnds)
+                    {
+                        points.Add(new PointF(begin + 3, 0));
+                        points.Add(new PointF(begin + itemWidth - 3, 0));
+                        points.Add(new PointF(begin + itemWidth - 3, Height));
+                        points.Add(new PointF(begin + 3, Height));
+                        points.Add(new PointF(begin + 3 + Height / 2.0f, Height / 2.0f));
+                        points.Add(new PointF(begin + 3, 0));
+                    }
+                    else
+                    {
+                        points.Add(new PointF(begin + 3, 0));
+                        points.Add(new PointF(begin + itemWidth - 3 - Height / 2.0f, 0));
+                        points.Add(new PointF(begin + itemWidth - 3, Height / 2.0f));
+                        points.Add(new PointF(begin + itemWidth - 3 - Height / 2.0f, Height));
+                        points.Add(new PointF(begin + 3, Height));
+                        points.Add(new PointF(begin + 3 + Height / 2.0f, Height / 2.0f));
+                        points.Add(new PointF(begin + 3, 0));
+                    }
 
                     Point[] pts = new Point[points.Count];
                     for (int i = 0; i < points.Count; i++)
@@ -164,7 +237,7 @@ namespace Sunny.UI
                         g.FillPolygon(br, points.ToArray());
                     }
 
-                    g.DrawString(item.ToString(), Font, ForeColor, begin + (itemWidth - sf.Width) / 2.0f, (Height - sf.Height) / 2.0f);
+                    g.DrawString(item.ToString(), Font, index <= ItemIndex ? ForeColor : UnSelectedForeColor, begin + (itemWidth - sf.Width) / 2.0f, (Height - sf.Height) / 2.0f);
 
                     begin = begin + itemWidth - 3 - Height / 2.0f + Interval;
                     index++;
@@ -174,7 +247,10 @@ namespace Sunny.UI
 
         private int itemWidth;
 
-        [DefaultValue(120)]
+        /// <summary>
+        /// 节点宽度
+        /// </summary>
+        [DefaultValue(160)]
         [Description("节点宽度"), Category("SunnyUI")]
         public int ItemWidth
         {
@@ -188,6 +264,9 @@ namespace Sunny.UI
 
         private int interval = 1;
 
+        /// <summary>
+        /// 节点间隔
+        /// </summary>
         [DefaultValue(1)]
         [Description("节点间隔"), Category("SunnyUI")]
         public int Interval
@@ -201,7 +280,7 @@ namespace Sunny.UI
         }
 
         /// <summary>
-        ///     已选节点颜色
+        /// 已选节点颜色
         /// </summary>
         [Description("已选节点颜色")]
         [Category("SunnyUI")]
@@ -213,19 +292,40 @@ namespace Sunny.UI
         }
 
         /// <summary>
-        ///     未选节点颜色
+        /// 未选节点颜色
         /// </summary>
         [Description("未选节点颜色")]
         [Category("SunnyUI")]
-        [DefaultValue(typeof(Color), "155, 200, 255")]
+        [DefaultValue(typeof(Color), "185, 217, 255")]
         public Color UnSelectedColor
         {
             get => rectColor;
             set => SetRectColor(value);
         }
 
+        private Color unSelectedForeColor = Color.White;
+
         /// <summary>
-        ///     字体颜色
+        /// 未选节点文字颜色
+        /// </summary>
+        [Description("未选节点文字颜色")]
+        [Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "White")]
+        public Color UnSelectedForeColor
+        {
+            get => unSelectedForeColor;
+            set
+            {
+                if (unSelectedForeColor != value)
+                {
+                    unSelectedForeColor = value;
+                    SetStyleCustom();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 字体颜色
         /// </summary>
         [Description("字体颜色")]
         [Category("SunnyUI")]
@@ -236,15 +336,22 @@ namespace Sunny.UI
             set => SetForeColor(value);
         }
 
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="uiColor">主题样式</param>
         public override void SetStyleColor(UIBaseStyle uiColor)
         {
             base.SetStyleColor(uiColor);
-            fillColor = uiColor.PrimaryColor;
-            foreColor = uiColor.ButtonForeColor;
-            rectColor = uiColor.GridSelectedColor;
-            Invalidate();
+
+            unSelectedForeColor = uiColor.ButtonForeColor;
+            rectColor = uiColor.BreadcrumbUnSelectedColor;
         }
 
+        /// <summary>
+        /// 鼠标点击事件
+        /// </summary>
+        /// <param name="e">参数</param>
         protected override void OnMouseClick(MouseEventArgs e)
         {
             base.OnMouseClick(e);

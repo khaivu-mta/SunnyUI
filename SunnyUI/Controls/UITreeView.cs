@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,30 +13,44 @@
  ******************************************************************************
  * 文件名称: UITreeView.cs
  * 文件说明: 树形列表
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-05-05
  *
  * 2020-05-05: V2.2.5 增加文件
  * 2020-07-07: V2.2.6 全部重写，增加圆角，CheckBoxes等
  * 2020-08-12: V2.2.7 更新可设置背景色
  * 2021-07-19: V3.0.5 调整了显示CheckBoxes时图片位置
+ * 2021-08-26: V3.0.6 CheckBoxes增加三态，感谢群友：笑口常开 
+ * 2022-01-05: V3.0.9 TreeNodeStateSync: 节点点击时同步父节点和子节点的状态
+ * 2022-03-19: V3.1.1 重构主题配色
+ * 2022-04-01: V3.1.2 增加水平滚动条
+ * 2022-04-01: V3.1.2 自定义行颜色，可通过代码给颜色值，SetNodePainter
+ * 2022-05-15: V3.1.8 修复了一个设计期显示错误
+ * 2022-05-15: V3.1.8 增加了点击文字改变CheckBox状态的NodeClickChangeCheckBoxes
 ******************************************************************************/
 
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Design;
 using System.Drawing.Drawing2D;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace Sunny.UI
 {
-    public sealed class UITreeView : UIPanel,IToolTip
+    [DefaultEvent("AfterSelect")]
+    [DefaultProperty("Nodes")]
+    public sealed class UITreeView : UIPanel, IToolTip
     {
         private UIScrollBar Bar;
+        private UIHorScrollBar HBar;
 
         private bool ScrollBarVisible;
+        private bool HScrollBarVisible;
         private TreeViewEx view;
 
         public UITreeView()
@@ -44,6 +58,8 @@ namespace Sunny.UI
             InitializeComponent();
             SetStyleFlags(true, false);
             ShowText = false;
+            view.HBar = HBar;
+            view.Bar = Bar;
             SetScrollInfo();
 
             view.BeforeCheck += View_BeforeCheck;
@@ -64,18 +80,112 @@ namespace Sunny.UI
             view.MouseMove += View_MouseMove;
             view.MouseEnter += View_MouseEnter;
             view.MouseLeave += View_MouseLeave;
+            view.KeyPress += View_KeyPress;
+            view.KeyDown += View_KeyDown;
+            view.KeyUp += View_KeyUp;
+            view.AfterLabelEdit += View_AfterLabelEdit;
         }
 
+        public int DrawLeft(TreeNode node)
+        {
+            if (view == null || node == null) return 0;
+            return view.DrawLeft(node);
+        }
+
+        public void SetNodePainter(TreeNode node, Color backColor, Color foreColor)
+        {
+            if (view.IsNull()) return;
+            if (view.Painter.ContainsKey(node))
+            {
+                view.Painter[node].BackColor = backColor;
+                view.Painter[node].ForeColor = foreColor;
+            }
+            else
+            {
+                view.Painter.TryAdd(node, new UITreeNodePainter() { BackColor = backColor, ForeColor = foreColor });
+            }
+
+            view.Invalidate();
+        }
+
+        public void ClearNodePainter(TreeNode node)
+        {
+            if (view.IsNull()) return;
+            if (view.Painter.ContainsKey(node))
+            {
+                view.Painter.TryRemove(node, out _);
+                view.Invalidate();
+            }
+        }
+
+        public void ClearAllNodePainter(TreeNode node)
+        {
+            if (view.IsNull()) return;
+            view.Painter.Clear();
+            view.Invalidate();
+        }
+
+        [Description("节点点击时同步父节点和子节点的状态"), Category("SunnyUI")]
+        [DefaultValue(true)]
+        public bool TreeNodeStateSync
+        {
+            get => view.TreeNodeStateSync;
+            set => view.TreeNodeStateSync = value;
+        }
+
+        [Description("点击文字改变CheckBox状态"), Category("SunnyUI")]
+        [DefaultValue(false)]
+        public bool NodeClickChangeCheckBoxes
+        {
+            get => view.NodeClickChangeCheckBoxes;
+            set => view.NodeClickChangeCheckBoxes = value;
+        }
+
+        private void View_AfterLabelEdit(object sender, NodeLabelEditEventArgs e)
+        {
+            AfterLabelEdit?.Invoke(this, e);
+        }
+
+        /// <summary>
+        /// 需要额外设置ToolTip的控件
+        /// </summary>
+        /// <returns>控件</returns>
         public Control ExToolTipControl()
         {
             return view;
         }
 
-        public new EventHandler MouseLeave;
-        public new EventHandler MouseEnter;
-        public new MouseEventHandler MouseMove;
-        public new MouseEventHandler MouseDown;
-        public new MouseEventHandler MouseUp;
+        public event NodeLabelEditEventHandler AfterLabelEdit;
+        public new event EventHandler MouseLeave;
+        public new event EventHandler MouseEnter;
+        public new event MouseEventHandler MouseMove;
+        public new event MouseEventHandler MouseDown;
+        public new event MouseEventHandler MouseUp;
+        public new event KeyPressEventHandler KeyPress;
+        public new event KeyEventHandler KeyDown;
+        public new event KeyEventHandler KeyUp;
+
+        [DefaultValue(false)]
+        public bool LabelEdit
+        {
+            get => view.LabelEdit;
+            set => view.LabelEdit = true;
+        }
+
+        private void View_KeyUp(object sender, KeyEventArgs e)
+        {
+            KeyUp?.Invoke(this, e);
+        }
+
+        private void View_KeyDown(object sender, KeyEventArgs e)
+        {
+            KeyDown?.Invoke(this, e);
+        }
+
+        private void View_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            KeyPress?.Invoke(this, e);
+        }
 
         private void View_MouseLeave(object sender, EventArgs e)
         {
@@ -105,30 +215,40 @@ namespace Sunny.UI
         [Browsable(false)]
         public TreeView TreeView => view;
 
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="uiColor">主题样式</param>
         public override void SetStyleColor(UIBaseStyle uiColor)
         {
             base.SetStyleColor(uiColor);
             if (view != null)
             {
-                view.SelectedForeColor = UIColor.White;
-                view.FillColor = view.BackColor = fillColor = UIColor.White;
+                view.SelectedForeColor = uiColor.TreeViewForeColor;
+                view.FillColor = view.BackColor = fillColor = uiColor.TreeViewBackColor;
 
                 rectColor = uiColor.RectColor;
                 view.SelectedColor = uiColor.TreeViewSelectedColor;
-                view.ForeColor = foreColor = UIFontColor.Primary;
+                view.ForeColor = foreColor = uiColor.TreeViewForeColor;
                 view.HoverColor = uiColor.TreeViewHoverColor;
+                LineColor = uiColor.TreeViewLineColor;
             }
 
             if (Bar != null)
             {
-                Bar.FillColor = UIColor.White;
-
-                Bar.ForeColor = uiColor.PrimaryColor;
+                Bar.FillColor = uiColor.TreeViewBarFillColor;
+                Bar.ForeColor = uiColor.TreeViewBarForeColor;
                 Bar.HoverColor = uiColor.ButtonFillHoverColor;
                 Bar.PressColor = uiColor.ButtonFillPressColor;
             }
 
-            Invalidate();
+            if (HBar != null)
+            {
+                HBar.FillColor = uiColor.TreeViewBarFillColor;
+                HBar.ForeColor = uiColor.TreeViewBarForeColor;
+                HBar.HoverColor = uiColor.ButtonFillHoverColor;
+                HBar.PressColor = uiColor.ButtonFillPressColor;
+            }
         }
 
         protected override void AfterSetFillColor(Color color)
@@ -143,6 +263,11 @@ namespace Sunny.UI
             if (Bar != null)
             {
                 Bar.FillColor = color;
+            }
+
+            if (HBar != null)
+            {
+                HBar.FillColor = color;
             }
         }
 
@@ -181,6 +306,7 @@ namespace Sunny.UI
         }
 
         [Browsable(false)]
+        [DefaultValue(null)]
         public TreeNode SelectedNode
         {
             get => view.SelectedNode;
@@ -484,30 +610,54 @@ namespace Sunny.UI
             view.Width = Width - 4;
             view.Height = Height - 4;
 
-            if (Bar == null) return;
-            Bar.Top = 2;
-            Bar.Left = Width - ScrollBarInfo.VerticalScrollBarWidth() - 2;
-            Bar.Width = ScrollBarInfo.VerticalScrollBarWidth();
-            Bar.Height = Height - 4;
+            if (Bar != null)
+            {
+                Bar.Top = 2;
+                Bar.Left = Width - ScrollBarInfo.VerticalScrollBarWidth() - 2;
+                Bar.Width = ScrollBarInfo.VerticalScrollBarWidth();
+                Bar.Height = Height - 4;
+            }
+
+            if (HBar != null)
+            {
+                HBar.Left = 2;
+                HBar.Top = Height - ScrollBarInfo.HorizontalScrollBarHeight() - 2;
+                HBar.Width = Width - (ScrollBarVisible ? ScrollBarInfo.VerticalScrollBarWidth() : 0) - 2 - 2;
+                HBar.Height = ScrollBarInfo.HorizontalScrollBarHeight();
+            }
         }
 
+        /// <summary>
+        /// 重载字体变更
+        /// </summary>
+        /// <param name="e">参数</param>
         protected override void OnFontChanged(EventArgs e)
         {
             base.OnFontChanged(e);
-            if (view != null) view.Font = Font;
+            if (view != null)
+            {
+                view.IsScaled = true;
+                view.Font = Font;
+            }
         }
 
         protected override void OnMouseWheel(MouseEventArgs e)
         {
+            if (!ScrollBarVisible || !HScrollBarVisible) return;
             base.OnMouseWheel(e);
 
             if (e.Delta > 10)
                 ScrollBarInfo.ScrollUp(view.Handle);
-            else if (e.Delta < -10) ScrollBarInfo.ScrollDown(view.Handle);
+            else if (e.Delta < -10)
+                ScrollBarInfo.ScrollDown(view.Handle);
 
             SetScrollInfo();
         }
 
+        /// <summary>
+        /// 重载控件尺寸变更
+        /// </summary>
+        /// <param name="e">参数</param>
         protected override void OnSizeChanged(EventArgs e)
         {
             base.OnSizeChanged(e);
@@ -517,7 +667,7 @@ namespace Sunny.UI
 
         public void SetScrollInfo()
         {
-            if (view == null || Bar == null) return;
+            if (view == null || Bar == null || HBar == null) return;
 
             if (Nodes.Count == 0)
             {
@@ -526,8 +676,10 @@ namespace Sunny.UI
             }
 
             var si = ScrollBarInfo.GetInfo(view.Handle);
+            var si1 = ScrollBarInfo.GetHorInfo(view.Handle);
 
             SetPos();
+
             Bar.Maximum = si.ScrollMax;
             Bar.Visible = si.ScrollMax > 0 && si.nMax > 0 && si.nPage > 0;
             Bar.Value = si.nPos;
@@ -538,12 +690,24 @@ namespace Sunny.UI
                 ScrollBarVisible = Bar.Visible;
                 Invalidate();
             }
+
+            HBar.Maximum = si1.ScrollMax;
+            HBar.Visible = si1.ScrollMax > 0 && si1.nMax > 0 && si1.nPage > 0;
+            HBar.Value = si1.nPos;
+            HBar.BringToFront();
+
+            if (HScrollBarVisible != HBar.Visible)
+            {
+                HScrollBarVisible = HBar.Visible;
+                Invalidate();
+            }
         }
 
         private void InitializeComponent()
         {
             view = new TreeViewEx();
             Bar = new UIScrollBar();
+            HBar = new UIHorScrollBar();
             SuspendLayout();
             //
             // view
@@ -575,9 +739,22 @@ namespace Sunny.UI
             Bar.Visible = false;
             Bar.ValueChanged += Bar_ValueChanged;
             //
+            // HBar
+            //
+            HBar.Font = new Font("微软雅黑", 12F);
+            HBar.Location = new Point(247, 3);
+            HBar.Name = "HBar";
+            HBar.Size = new Size(173, 19);
+            HBar.Style = UIStyle.Custom;
+            HBar.StyleCustomMode = true;
+            HBar.TabIndex = 3;
+            HBar.Visible = false;
+            HBar.ValueChanged += HBar_ValueChanged;
+            //
             // UITreeViewEx
             //
             Controls.Add(Bar);
+            Controls.Add(HBar);
             Controls.Add(view);
             FillColor = Color.White;
             Style = UIStyle.Custom;
@@ -587,6 +764,11 @@ namespace Sunny.UI
         private void Bar_ValueChanged(object sender, EventArgs e)
         {
             ScrollBarInfo.SetScrollValue(view.Handle, Bar.Value);
+        }
+
+        private void HBar_ValueChanged(object sender, EventArgs e)
+        {
+            ScrollBarInfo.SetHorScrollValue(view.Handle, HBar.Value);
         }
 
         private void view_AfterExpand(object sender, TreeViewEventArgs e)
@@ -611,6 +793,11 @@ namespace Sunny.UI
 
         internal class TreeViewEx : TreeView
         {
+            public ConcurrentDictionary<TreeNode, UITreeNodePainter> Painter = new ConcurrentDictionary<TreeNode, UITreeNodePainter>();
+
+            public UIHorScrollBar HBar;
+            public UIScrollBar Bar;
+
             private TreeNode CurrentNode;
 
             private bool showLines;
@@ -619,6 +806,18 @@ namespace Sunny.UI
             {
                 DrawMode = TreeViewDrawMode.OwnerDrawAll;
                 base.DoubleBuffered = true;
+            }
+
+            [Browsable(false), DefaultValue(false)]
+            public bool IsScaled { get; set; }
+
+            public void SetDPIScale()
+            {
+                if (!IsScaled)
+                {
+                    this.SetDPIScaleFont();
+                    IsScaled = true;
+                }
             }
 
             [DefaultValue(typeof(Color), "155, 200, 255")]
@@ -640,6 +839,10 @@ namespace Sunny.UI
                 }
             }
 
+            /// <summary>
+            /// 重载鼠标移动事件
+            /// </summary>
+            /// <param name="e">鼠标参数</param>
             protected override void OnMouseMove(MouseEventArgs e)
             {
                 base.OnMouseMove(e);
@@ -647,188 +850,275 @@ namespace Sunny.UI
                 if (node == null || CurrentNode == node) return;
 
                 var g = CreateGraphics();
-                if (CurrentNode != null)
-                    OnDrawNode(new DrawTreeNodeEventArgs(g, CurrentNode,
-                        new Rectangle(0, CurrentNode.Bounds.Y, Width, CurrentNode.Bounds.Height),
-                        TreeNodeStates.Default));
-
-                CurrentNode = node;
-                OnDrawNode(new DrawTreeNodeEventArgs(g, CurrentNode,
-                    new Rectangle(0, CurrentNode.Bounds.Y, Width, CurrentNode.Bounds.Height), TreeNodeStates.Hot));
-                g.Dispose();
-            }
-
-            protected override void OnMouseLeave(EventArgs e)
-            {
-                var g = CreateGraphics();
-                if (CurrentNode != null)
+                if (CurrentNode != null && CurrentNode != SelectedNode)
                 {
-                    OnDrawNode(new DrawTreeNodeEventArgs(g, CurrentNode,
-                        new Rectangle(0, CurrentNode.Bounds.Y, Width, CurrentNode.Bounds.Height),
-                        TreeNodeStates.Default));
-                    CurrentNode = null;
+                    ClearCurrentNode(g);
+                }
+
+                if (node != SelectedNode)
+                {
+                    CurrentNode = node;
+                    OnDrawNode(new DrawTreeNodeEventArgs(g, CurrentNode, new Rectangle(0, CurrentNode.Bounds.Y, Width, CurrentNode.Bounds.Height), TreeNodeStates.Hot));
                 }
 
                 g.Dispose();
+            }
+
+            /// <summary>
+            /// 重载鼠标离开事件
+            /// </summary>
+            /// <param name="e">鼠标参数</param>
+            protected override void OnMouseLeave(EventArgs e)
+            {
+                var g = CreateGraphics();
+                ClearCurrentNode(g);
+                g.Dispose();
+            }
+
+            private void ClearCurrentNode(Graphics g)
+            {
+                if (CurrentNode != null && CurrentNode != SelectedNode)
+                {
+                    OnDrawNode(new DrawTreeNodeEventArgs(g, CurrentNode, new Rectangle(0, CurrentNode.Bounds.Y, Width, CurrentNode.Bounds.Height), TreeNodeStates.Default));
+                    OnDrawNode(new DrawTreeNodeEventArgs(g, CurrentNode, new Rectangle(0, CurrentNode.Bounds.Y, Width, CurrentNode.Bounds.Height), TreeNodeStates.Default));
+                    CurrentNode = null;
+                }
+            }
+
+            public int DrawLeft(TreeNode node)
+            {
+                int drawLeft;
+                if (!HBar.Visible)
+                    drawLeft = (node.Level + 1) * Indent + 3;
+                else
+                    drawLeft = -(int)(Width * HBar.Value * 1.0 / HBar.Maximum) + (node.Level + 1) * Indent + 3;
+
+                return drawLeft;
             }
 
             protected override void OnDrawNode(DrawTreeNodeEventArgs e)
             {
                 base.OnDrawNode(e);
 
-                if (e.Node == null) return;
+                if (e.Node == null || Nodes.Count == 0) return;
 
-                if (BorderStyle == BorderStyle.Fixed3D) BorderStyle = BorderStyle.FixedSingle;
-
-                if (e.Node == null || e.Node.Bounds.Width <= 0 && e.Node.Bounds.Height <= 0 && e.Node.Bounds.X <= 0 &&
-                    e.Node.Bounds.Y <= 0)
+                try
                 {
-                    e.DrawDefault = true;
-                }
-                else
-                {
-                    var drawLeft = (e.Node.Level + 1) * Indent + 3;
-                    var checkBoxLeft = (e.Node.Level + 1) * Indent + 1;
-                    var imageLeft = drawLeft;
-                    var haveImage = false;
-                    var sf = e.Graphics.MeasureString(e.Node.Text, Font);
+                    if (!DicNodeStatus.ContainsKey(e.Node.GetHashCode()))
+                    {
+                        DicNodeStatus.Add(e.Node.GetHashCode(), false);
+                    }
 
                     if (CheckBoxes)
                     {
-                        drawLeft += 16;
-                        imageLeft += 16;
+                        if (TreeNodeStateSync && e.Node.Parent != null && DicNodeStatus.ContainsKey(e.Node.Parent.GetHashCode()) && !DicNodeStatus[e.Node.Parent.GetHashCode()])
+                        {
+                            SetParentNodeCheckedState(e.Node);
+                        }
                     }
 
-                    if (ImageList != null && ImageList.Images.Count > 0 && e.Node.ImageIndex >= 0 &&
-                        e.Node.ImageIndex < ImageList.Images.Count)
+                    if (BorderStyle == BorderStyle.Fixed3D)
                     {
-                        haveImage = true;
-                        drawLeft += ImageList.ImageSize.Width + 6;
+                        BorderStyle = BorderStyle.FixedSingle;
                     }
 
-                    var checkboxColor = ForeColor;
-                    if (e.Node == SelectedNode)
+                    if (e.Node == null || e.Node.Bounds.Width <= 0 && e.Node.Bounds.Height <= 0 && e.Node.Bounds.X <= 0 && e.Node.Bounds.Y <= 0)
                     {
-                        e.Graphics.FillRectangle((e.State & TreeNodeStates.Hot) != 0 ? HoverColor : SelectedColor,
-                            new Rectangle(new Point(0, e.Node.Bounds.Y), new Size(Width, e.Node.Bounds.Height)));
-
-                        e.Graphics.DrawString(e.Node.Text, Font, SelectedForeColor, drawLeft,
-                            e.Bounds.Y + (ItemHeight - sf.Height) / 2.0f);
-
-                        checkboxColor = SelectedForeColor;
-                    }
-                    else if (e.Node == CurrentNode && (e.State & TreeNodeStates.Hot) != 0)
-                    {
-                        e.Graphics.FillRectangle(HoverColor,
-                            new Rectangle(new Point(0, e.Node.Bounds.Y), new Size(Width, e.Node.Bounds.Height)));
-                        e.Graphics.DrawString(e.Node.Text, Font, ForeColor, drawLeft,
-                            e.Bounds.Y + (ItemHeight - sf.Height) / 2.0f);
+                        e.DrawDefault = true;
                     }
                     else
                     {
-                        e.Graphics.FillRectangle(FillColor,
-                            new Rectangle(new Point(0, e.Node.Bounds.Y), new Size(Width, e.Node.Bounds.Height)));
-                        e.Graphics.DrawString(e.Node.Text, Font, ForeColor, drawLeft,
-                            e.Bounds.Y + (ItemHeight - sf.Height) / 2.0f);
-                    }
-
-                    if (haveImage)
-                    {
-                        if (e.Node == SelectedNode && e.Node.SelectedImageIndex >= 0 &&
-                            e.Node.SelectedImageIndex < ImageList.Images.Count)
-                            e.Graphics.DrawImage(ImageList.Images[e.Node.SelectedImageIndex], imageLeft,
-                                e.Bounds.Y + (e.Bounds.Height - ImageList.ImageSize.Height) / 2);
+                        int drawLeft;
+                        if (!HBar.Visible)
+                            drawLeft = e.Bounds.X + (e.Node.Level + 1) * Indent + 3;
                         else
-                            e.Graphics.DrawImage(ImageList.Images[e.Node.ImageIndex], imageLeft,
-                                e.Bounds.Y + (e.Bounds.Height - ImageList.ImageSize.Height) / 2);
-                    }
+                            drawLeft = -(int)(Width * HBar.Value * 1.0 / HBar.Maximum) + (e.Node.Level + 1) * Indent + 3;
 
-                    if (CheckBoxes)
-                    {
-                        if (!e.Node.Checked)
-                            using (var pn = new Pen(checkboxColor, 1))
-                            {
-                                e.Graphics.DrawRectangle(pn,
-                                    new Rectangle(checkBoxLeft + 2, e.Bounds.Y + (ItemHeight - 12) / 2 - 1, 12, 12));
-                            }
-                        else
-                            using (var pn = new Pen(checkboxColor, 2))
-                            {
-                                var pt1 = new Point(checkBoxLeft + 2 + 2, e.Bounds.Y + (ItemHeight - 12) / 2 - 1 + 5);
-                                var pt2 = new Point(pt1.X + 3, pt1.Y + 3);
-                                var pt3 = new Point(pt2.X + 5, pt2.Y - 5);
+                        var checkBoxLeft = drawLeft - 2;
+                        var imageLeft = drawLeft;
+                        var haveImage = false;
+                        var sf = e.Graphics.MeasureString(e.Node.Text, Font);
 
-                                PointF[] CheckMarkLine = { pt1, pt2, pt3 };
-
-                                e.Graphics.SetHighQuality();
-                                e.Graphics.DrawLines(pn, CheckMarkLine);
-                                e.Graphics.SetDefaultQuality();
-                                e.Graphics.DrawRectangle(checkboxColor,
-                                    new Rectangle(checkBoxLeft + 2, e.Bounds.Y + (ItemHeight - 12) / 2 - 1, 12, 12));
-                            }
-                    }
-
-                    var lineY = e.Bounds.Y + e.Node.Bounds.Height / 2 - 1;
-                    var lineX = 3 + e.Node.Level * Indent + 9;
-
-                    if (ShowLinesEx)
-                        try
+                        if (CheckBoxes)
                         {
-                            //绘制虚线
-                            var pn = new Pen(LineColor);
-                            pn.DashStyle = DashStyle.Dot;
-                            e.Graphics.DrawLine(pn, lineX, lineY, lineX + 10, lineY);
+                            drawLeft += 16;
+                            imageLeft += 16;
+                        }
 
-                            if (e.Node.Level >= 1)
+                        if (ImageList != null && ImageList.Images.Count > 0 && e.Node.ImageIndex >= 0 && e.Node.ImageIndex < ImageList.Images.Count)
+                        {
+                            haveImage = true;
+                            drawLeft += ImageList.ImageSize.Width + 6;
+                        }
+
+                        var checkboxColor = ForeColor;
+                        if (e.Node != null)
+                        {
+                            if (Painter.ContainsKey(e.Node))
                             {
-                                e.Graphics.DrawLine(pn, lineX, lineY, lineX, e.Bounds.Top);
-                                if (e.Node.NextNode != null)
-                                    e.Graphics.DrawLine(pn, lineX, lineY, lineX, e.Node.Bounds.Bottom);
-
-                                var pNode = e.Node.Parent;
-                                while (pNode != null)
-                                {
-                                    lineX -= Indent;
-
-                                    if (pNode.NextNode != null)
-                                        e.Graphics.DrawLine(pn, lineX, lineY, lineX, e.Node.Bounds.Top);
-
-                                    if (pNode.NextNode != null)
-                                        e.Graphics.DrawLine(pn, lineX, lineY, lineX, e.Node.Bounds.Bottom);
-
-                                    pNode = pNode.Parent;
-                                }
+                                e.Graphics.FillRectangle(Painter[e.Node].BackColor,
+                                       new Rectangle(new Point(0, e.Node.Bounds.Y), new Size(Width, e.Node.Bounds.Height)));
+                                e.Graphics.DrawString(e.Node.Text, Font, Painter[e.Node].ForeColor, drawLeft,
+                                       e.Bounds.Y + (ItemHeight - sf.Height) / 2.0f);
                             }
                             else
                             {
-                                if (e.Node.PrevNode != null)
-                                    e.Graphics.DrawLine(pn, lineX, lineY, lineX, e.Node.Bounds.Top);
+                                if (e.Node == SelectedNode)
+                                {
+                                    e.Graphics.FillRectangle(SelectedColor,
+                                        new Rectangle(new Point(0, e.Node.Bounds.Y), new Size(Width, e.Node.Bounds.Height)));
 
-                                if (e.Node.NextNode != null)
-                                    e.Graphics.DrawLine(pn, lineX, lineY, lineX, e.Node.Bounds.Bottom);
+                                    e.Graphics.DrawString(e.Node.Text, Font, SelectedForeColor, drawLeft,
+                                        e.Bounds.Y + (ItemHeight - sf.Height) / 2.0f);
+
+                                    checkboxColor = SelectedForeColor;
+                                }
+                                else if (e.Node == CurrentNode && (e.State & TreeNodeStates.Hot) != 0)
+                                {
+                                    e.Graphics.FillRectangle(HoverColor,
+                                        new Rectangle(new Point(0, e.Node.Bounds.Y), new Size(Width, e.Node.Bounds.Height)));
+                                    e.Graphics.DrawString(e.Node.Text, Font, ForeColor, drawLeft,
+                                        e.Bounds.Y + (ItemHeight - sf.Height) / 2.0f);
+                                }
+                                else
+                                {
+                                    e.Graphics.FillRectangle(FillColor,
+                                        new Rectangle(new Point(0, e.Node.Bounds.Y), new Size(Width, e.Node.Bounds.Height)));
+                                    e.Graphics.DrawString(e.Node.Text, Font, ForeColor, drawLeft,
+                                        e.Bounds.Y + (ItemHeight - sf.Height) / 2.0f);
+                                }
                             }
 
-                            pn.Dispose();
-                        }
-                        catch (Exception exception)
-                        {
-                            Console.WriteLine(exception);
+                            if (haveImage)
+                            {
+                                if (e.Node == SelectedNode && e.Node.SelectedImageIndex >= 0 &&
+                                    e.Node.SelectedImageIndex < ImageList.Images.Count)
+                                    e.Graphics.DrawImage(ImageList.Images[e.Node.SelectedImageIndex], imageLeft,
+                                        e.Bounds.Y + (e.Bounds.Height - ImageList.ImageSize.Height) / 2);
+                                else
+                                    e.Graphics.DrawImage(ImageList.Images[e.Node.ImageIndex], imageLeft,
+                                        e.Bounds.Y + (e.Bounds.Height - ImageList.ImageSize.Height) / 2);
+                            }
+
+                            if (CheckBoxes)
+                            {
+                                if (!e.Node.Checked)
+                                {
+                                    e.Graphics.DrawRectangle(checkboxColor,
+                                        new Rectangle(checkBoxLeft + 2, e.Bounds.Y + (ItemHeight - 12) / 2 - 1, 12, 12));
+                                }
+                                else
+                                {
+                                    using (var pn = new Pen(checkboxColor, 2))
+                                    {
+                                        var pt1 = new Point(checkBoxLeft + 2 + 2, e.Bounds.Y + (ItemHeight - 12) / 2 - 1 + 5);
+                                        var pt2 = new Point(pt1.X + 3, pt1.Y + 3);
+                                        var pt3 = new Point(pt2.X + 5, pt2.Y - 5);
+
+                                        PointF[] CheckMarkLine = { pt1, pt2, pt3 };
+
+                                        e.Graphics.SetHighQuality();
+                                        e.Graphics.DrawLines(pn, CheckMarkLine);
+                                        e.Graphics.SetDefaultQuality();
+                                        e.Graphics.DrawRectangle(checkboxColor,
+                                            new Rectangle(checkBoxLeft + 2, e.Bounds.Y + (ItemHeight - 12) / 2 - 1, 12, 12));
+                                    }
+                                }
+
+                                if (DicNodeStatus[e.Node.GetHashCode()])
+                                {
+                                    //var location = e.Node.Bounds.Location;
+                                    //location.Offset(-29, 10);
+                                    var location = new Point(checkBoxLeft + 5, e.Bounds.Y + (ItemHeight - 12) / 2 + 2);
+                                    var size = new Size(7, 7);
+                                    e.Graphics.FillRectangle(checkboxColor, new Rectangle(location, size)); //这里绘制的是正方形
+
+                                }
+                            }
                         }
 
-                    lineX = 3 + e.Node.Level * Indent + 9;
-                    //绘制左侧+号
-                    if (ShowPlusMinus && e.Node.Nodes.Count > 0)
-                    {
-                        e.Graphics.FillRectangle(Color.White, new Rectangle(lineX - 4, lineY - 4, 8, 8));
-                        e.Graphics.DrawRectangle(UIFontColor.Primary, new Rectangle(lineX - 4, lineY - 4, 8, 8));
-                        e.Graphics.DrawLine(UIFontColor.Primary, lineX - 2, lineY, lineX + 2, lineY);
-                        if (!e.Node.IsExpanded)
-                            e.Graphics.DrawLine(UIFontColor.Primary, lineX, lineY - 2, lineX, lineY + 2);
+                        var lineY = e.Bounds.Y + e.Node.Bounds.Height / 2 - 1;
+                        int lineX;
+                        if (!HBar.Visible)
+                            lineX = 3 + e.Node.Level * Indent + 9;
+                        else
+                            lineX = -(int)(Width * HBar.Value * 1.0 / HBar.Maximum) + 3 + e.Node.Level * Indent + 9;
+
+                        if (ShowLinesEx)
+                        {
+                            try
+                            {
+                                //绘制虚线
+                                var pn = new Pen(LineColor);
+                                pn.DashStyle = DashStyle.Dot;
+                                e.Graphics.DrawLine(pn, lineX, lineY, lineX + 10, lineY);
+
+                                if (e.Node.Level >= 1)
+                                {
+                                    e.Graphics.DrawLine(pn, lineX, lineY, lineX, e.Bounds.Top);
+                                    if (e.Node.NextNode != null)
+                                        e.Graphics.DrawLine(pn, lineX, lineY, lineX, e.Node.Bounds.Bottom);
+
+                                    var pNode = e.Node.Parent;
+                                    while (pNode != null)
+                                    {
+                                        lineX -= Indent;
+
+                                        if (Nodes.Count > 0)
+                                        {
+                                            if (pNode.NextNode != null)
+                                                e.Graphics.DrawLine(pn, lineX, lineY, lineX, e.Node.Bounds.Top);
+
+                                            if (pNode.NextNode != null)
+                                                e.Graphics.DrawLine(pn, lineX, lineY, lineX, e.Node.Bounds.Bottom);
+                                        }
+
+                                        pNode = pNode.Parent;
+                                    }
+                                }
+                                else
+                                {
+                                    if (e.Node != null && Nodes.Count > 0)
+                                    {
+                                        if (e.Node.PrevNode != null)
+                                            e.Graphics.DrawLine(pn, lineX, lineY, lineX, e.Node.Bounds.Top);
+
+                                        if (e.Node.NextNode != null)
+                                            e.Graphics.DrawLine(pn, lineX, lineY, lineX, e.Node.Bounds.Bottom);
+                                    }
+                                }
+
+                                pn.Dispose();
+                            }
+                            catch (Exception exception)
+                            {
+                                Console.WriteLine(exception);
+                            }
+                        }
+
+                        if (!HBar.Visible)
+                            lineX = 3 + e.Node.Level * Indent + 9;
+                        else
+                            lineX = -(int)(Width * HBar.Value * 1.0 / HBar.Maximum) + 3 + e.Node.Level * Indent + 9;
+
+                        //绘制左侧+号
+                        if (ShowPlusMinus && e.Node.Nodes.Count > 0)
+                        {
+                            e.Graphics.FillRectangle(Color.White, new Rectangle(lineX - 4, lineY - 4, 8, 8));
+                            e.Graphics.DrawRectangle(UIFontColor.Primary, new Rectangle(lineX - 4, lineY - 4, 8, 8));
+                            e.Graphics.DrawLine(UIFontColor.Primary, lineX - 2, lineY, lineX + 2, lineY);
+                            if (!e.Node.IsExpanded)
+                                e.Graphics.DrawLine(UIFontColor.Primary, lineX, lineY - 2, lineX, lineY + 2);
+                        }
                     }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
                 }
             }
 
-            private bool TreeNodeSelected(DrawTreeNodeEventArgs e)
+            public bool TreeNodeSelected(DrawTreeNodeEventArgs e)
             {
                 return e.State == TreeNodeStates.Selected || e.State == TreeNodeStates.Focused ||
                        e.State == (TreeNodeStates.Focused | TreeNodeStates.Selected);
@@ -843,7 +1133,110 @@ namespace Sunny.UI
                     return;
                 }
 
+                if (Bar != null && !Bar.Visible)
+                {
+                    if (m.Msg == 522)
+                    {
+                        m.Result = IntPtr.Zero;
+                        return;
+                    }
+                }
+
                 base.WndProc(ref m);
+            }
+
+            private Dictionary<int, bool> DicNodeStatus = new Dictionary<int, bool>();
+
+            protected override void OnAfterCheck(TreeViewEventArgs e)
+            {
+                base.OnAfterCheck(e);
+                if (e.Action == TreeViewAction.ByMouse && TreeNodeStateSync) //鼠标点击
+                {
+                    DicNodeStatus[e.Node.GetHashCode()] = false;
+
+                    SetChildNodeCheckedState(e.Node, e.Node.Checked);
+                    SetParentNodeCheckedState(e.Node, true);
+                }
+            }
+
+            public bool TreeNodeStateSync { get; set; } = true;
+
+            private void SetParentNodeCheckedState(TreeNode currNode, bool ByMouse = false)
+            {
+                if (currNode.Parent == null)
+                {
+                    return;
+                }
+
+                TreeNode parentNode = currNode.Parent; //获得当前节点的父节点
+                var count = parentNode.Nodes.Cast<TreeNode>().Where(n => n.Checked).ToList().Count;
+
+                //判断节点Checked是否改变，只有改变时才赋值，否则不变更，以防止频繁触发OnAfterCheck事件
+                bool bChecked = count == parentNode.Nodes.Count;
+                if (parentNode.Checked != bChecked)
+                {
+                    parentNode.Checked = bChecked;
+                }
+
+                var half = parentNode.Nodes.Cast<TreeNode>().Where(n => (DicNodeStatus.ContainsKey(n.GetHashCode()) ? DicNodeStatus[n.GetHashCode()] : false)).ToList().Count;
+
+                if ((count > 0 && count < parentNode.Nodes.Count) || half > 0)
+                {
+                    DicNodeStatus[parentNode.GetHashCode()] = true;
+                }
+                else
+                {
+                    DicNodeStatus[parentNode.GetHashCode()] = false;
+                }
+
+                if (ByMouse)
+                {
+                    var g = CreateGraphics();
+                    OnDrawNode(new DrawTreeNodeEventArgs(g, parentNode,
+                        new Rectangle(0, parentNode.Bounds.Y, Width, parentNode.Bounds.Height), TreeNodeStates.Hot));
+                    g.Dispose();
+
+                    if (parentNode.Parent != null) //如果父节点之上还有父节点
+                    {
+                        SetParentNodeCheckedState(parentNode, true); //递归调用
+                    }
+                }
+            }
+
+            //选中节点之后，选中节点的所有子节点
+            private void SetChildNodeCheckedState(TreeNode currNode, bool state)
+            {
+                TreeNodeCollection nodes = currNode.Nodes; //获取所有子节点
+                if (nodes.Count > 0) //存在子节点
+                {
+                    foreach (TreeNode tn in nodes)
+                    {
+                        DicNodeStatus[tn.GetHashCode()] = false;
+                        tn.Checked = state;
+                        SetChildNodeCheckedState(tn, state);//递归调用子节点的子节点
+                    }
+                }
+            }
+
+            public bool NodeClickChangeCheckBoxes { get; set; }
+
+            protected override void OnNodeMouseClick(TreeNodeMouseClickEventArgs e)
+            {
+                base.OnNodeMouseClick(e);
+                if (CheckBoxes && NodeClickChangeCheckBoxes)
+                {
+                    int drawLeft = e.Node.Bounds.X;
+                    if (ImageList != null)
+                        drawLeft -= ImageList.ImageSize.Width;
+
+                    if (e.Location.X > drawLeft)
+                    {
+                        e.Node.Checked = !e.Node.Checked;
+                        DicNodeStatus[e.Node.GetHashCode()] = false;
+                        SetChildNodeCheckedState(e.Node, e.Node.Checked);
+                        SetParentNodeCheckedState(e.Node, true);
+                    }
+                }
             }
         }
     }

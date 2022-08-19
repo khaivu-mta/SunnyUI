@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,13 +13,13 @@
  ******************************************************************************
  * 文件名称: UIGlobal.cs
  * 文件说明: 全局参数类
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
 ******************************************************************************/
 
-using Sunny.UI.Properties;
+using System;
 
 namespace Sunny.UI
 {
@@ -31,6 +31,35 @@ namespace Sunny.UI
         /// <summary>
         /// 版本
         /// </summary>
-        public static string Version = Resources.Name + " " + Resources.Version;
+        public const string Version = "SunnyUI.Net V3.2.3";
+
+        public const int EditorMinHeight = 20;
+        public const int EditorMaxHeight = 60;
     }
+
+    public class UIDateTimeArgs : EventArgs
+    {
+        public DateTime DateTime { get; set; }
+
+        public UIDateTimeArgs()
+        {
+
+        }
+
+        public UIDateTimeArgs(DateTime datetime)
+        {
+            DateTime = datetime;
+        }
+    }
+
+    public class UITextBoxSelectionArgs : EventArgs
+    {
+        public int SelectionStart { get; set; }
+
+        public string Text { get; set; }
+    }
+
+    public delegate void OnSelectionChanged(object sender, UITextBoxSelectionArgs e);
+
+    public delegate void OnDateTimeChanged(object sender, UIDateTimeArgs e);
 }

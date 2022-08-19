@@ -2,6 +2,7 @@ using System.Runtime.InteropServices;
 
 namespace Sunny.UI.Win32
 {
+#pragma warning disable CS1591 // 缺少对公共可见类型或成员的 XML 注释
     public struct RECT
     {
         public int Left;
@@ -144,5 +145,6 @@ namespace Sunny.UI.Win32
         public short wSecond;
         public short wMilliseconds;
     }
-}
 
+#pragma warning restore CS1591 // 缺少对公共可见类型或成员的 XML 注释
+}

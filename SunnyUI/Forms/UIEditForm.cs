@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,12 +13,15 @@
  ******************************************************************************
  * 文件名称: UIEditForm.cs
  * 文件说明: 编辑窗体基类
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
  * 2021-04-26: V3.0.3 代码生成增加Switch类型，代码生成增加Combobox类型
  * 2021-05-19: V3.0.3 动态生成表单，增加校验方法 
+ * 2021-10-26: V3.0.8 代码生成增加ComboTreeView类型
+ * 2021-10-28: V3.0.8 代码生成增加ComboCheckedListBox类型
+ * 2022-04-18: V3.1.5 修改一处Show引起的无法获取控件值的问题
 ******************************************************************************/
 
 using System;
@@ -41,156 +44,116 @@ namespace Sunny.UI
 
         private readonly UIEditOption Option;
 
-        public UIEditForm(UIEditOption option)
+        private void InitEditor()
         {
-            InitializeComponent();
+            if (Option == null || Option.Infos.Count == 0) return;
 
-            btnOK.Text = UILocalize.OK;
-            btnCancel.Text = UILocalize.Cancel;
-
-            Option = option;
-            if (option == null || option.Infos.Count == 0) return;
-
-            base.Text = option.Text;
+            base.Text = Option.Text;
             int top = 55;
 
             List<Control> ctrls = new List<Control>();
 
-            if (option.AutoLabelWidth)
+            if (Option.AutoLabelWidth)
             {
                 float size = 0;
-                foreach (var info in option.Infos)
+                foreach (var info in Option.Infos)
                 {
-                    SizeF sf = info.Text.MeasureString(UIFontColor.Font);
+                    SizeF sf = info.Text.MeasureString(Font);
                     size = Math.Max(sf.Width, size);
                 }
 
-                option.LabelWidth = (int)size + 1 + 50;
+                Option.LabelWidth = (int)size + 1 + 50;
             }
 
-            Width = option.LabelWidth + option.ValueWidth + 28;
+            Width = Option.LabelWidth + Option.ValueWidth + 28;
 
-            foreach (var info in option.Infos)
+            foreach (var info in Option.Infos)
             {
                 UILabel label = new UILabel();
                 label.Text = info.Text;
                 label.AutoSize = false;
                 label.Left = 5;
-                label.Width = option.LabelWidth - 25;
+                label.Width = Option.LabelWidth - 25;
                 label.Height = 29;
                 label.Top = top;
                 label.TextAlign = ContentAlignment.MiddleRight;
                 label.Parent = this;
 
+                Control ctrl = null;
+
                 if (info.EditType == EditType.Text)
                 {
-                    UITextBox edit = new UITextBox();
-                    edit.Left = option.LabelWidth;
-                    edit.Width = option.ValueWidth;
-                    edit.Top = top;
+                    ctrl = new UITextBox();
+                    var edit = (UITextBox)ctrl;
                     edit.Text = info.Value?.ToString();
-                    edit.Parent = this;
-                    edit.Name = "Edit_" + info.DataPropertyName;
                     edit.EnterAsTab = true;
-                    edit.Enabled = info.Enabled;
-                    ctrls.Add(edit);
                 }
 
                 if (info.EditType == EditType.Password)
                 {
-                    UITextBox edit = new UITextBox();
-                    edit.Left = option.LabelWidth;
-                    edit.Width = option.ValueWidth;
-                    edit.Top = top;
+                    ctrl = new UITextBox();
+                    var edit = (UITextBox)ctrl;
                     edit.Text = info.Value?.ToString();
-                    edit.Parent = this;
                     edit.PasswordChar = '*';
-                    edit.Name = "Edit_" + info.DataPropertyName;
                     edit.EnterAsTab = true;
-                    edit.Enabled = info.Enabled;
-                    ctrls.Add(edit);
                 }
 
                 if (info.EditType == EditType.Integer)
                 {
-                    UITextBox edit = new UITextBox();
+                    ctrl = new UITextBox();
+                    var edit = (UITextBox)ctrl;
                     edit.Type = UITextBox.UIEditType.Integer;
-                    edit.Left = option.LabelWidth;
-                    edit.Width = info.HalfWidth ? option.ValueWidth / 2 : option.ValueWidth;
-                    edit.Top = top;
                     edit.IntValue = info.Value.ToString().ToInt();
-                    edit.Parent = this;
-                    edit.Name = "Edit_" + info.DataPropertyName;
-                    edit.Enabled = info.Enabled;
-                    ctrls.Add(edit);
+                    edit.EnterAsTab = true;
                 }
 
                 if (info.EditType == EditType.Double)
                 {
-                    UITextBox edit = new UITextBox();
+                    ctrl = new UITextBox();
+                    var edit = (UITextBox)ctrl;
                     edit.Type = UITextBox.UIEditType.Double;
-                    edit.Left = option.LabelWidth;
-                    edit.Width = info.HalfWidth ? option.ValueWidth / 2 : option.ValueWidth;
-                    edit.Top = top;
                     edit.DoubleValue = info.Value.ToString().ToDouble();
-                    edit.Parent = this;
-                    edit.Name = "Edit_" + info.DataPropertyName;
                     edit.EnterAsTab = true;
-                    edit.Enabled = info.Enabled;
-                    ctrls.Add(edit);
                 }
 
                 if (info.EditType == EditType.Date)
                 {
-                    UIDatePicker edit = new UIDatePicker();
-                    edit.Left = option.LabelWidth;
-                    edit.Width = info.HalfWidth ? option.ValueWidth / 2 : option.ValueWidth;
-                    edit.Top = top;
+                    ctrl = new UIDatePicker();
+                    var edit = (UIDatePicker)ctrl;
                     edit.Value = (DateTime)info.Value;
-                    edit.Parent = this;
-                    edit.Name = "Edit_" + info.DataPropertyName;
-                    edit.Enabled = info.Enabled;
-                    ctrls.Add(edit);
                 }
 
                 if (info.EditType == EditType.DateTime)
                 {
-                    UIDatetimePicker edit = new UIDatetimePicker();
-                    edit.Left = option.LabelWidth;
-                    edit.Width = info.HalfWidth ? option.ValueWidth / 2 : option.ValueWidth;
-                    edit.Top = top;
+                    ctrl = new UIDatetimePicker();
+                    var edit = (UIDatetimePicker)ctrl;
                     edit.Value = (DateTime)info.Value;
-                    edit.Parent = this;
-                    edit.Name = "Edit_" + info.DataPropertyName;
-                    edit.Enabled = info.Enabled;
-                    ctrls.Add(edit);
                 }
 
                 if (info.EditType == EditType.Switch)
                 {
-                    UISwitch edit = new UISwitch();
+                    ctrl = new UISwitch();
+                    var edit = (UISwitch)ctrl;
                     edit.SwitchShape = UISwitch.UISwitchShape.Square;
-                    edit.Left = option.LabelWidth - 1;
-                    edit.Width = 75;
                     edit.Height = 29;
-                    edit.Top = top;
                     edit.Active = (bool)info.Value;
-                    edit.Parent = this;
-                    edit.Name = "Edit_" + info.DataPropertyName;
-                    edit.Enabled = info.Enabled;
-                    ctrls.Add(edit);
+
+                    if (info.DataSource != null)
+                    {
+                        string[] items = (string[])info.DataSource;
+                        edit.ActiveText = items[0];
+                        edit.InActiveText = items[1];
+                        SizeF sf1 = GDI.MeasureString(items[0], edit.Font);
+                        SizeF sf2 = GDI.MeasureString(items[0], edit.Font);
+                        edit.Width = (int)Math.Max(sf1.Width, sf2.Width) + edit.Height + 16;
+                    }
                 }
 
                 if (info.EditType == EditType.Combobox)
                 {
-                    UIComboBox edit = new UIComboBox();
+                    ctrl = new UIComboBox();
+                    var edit = (UIComboBox)ctrl;
                     edit.DropDownStyle = UIDropDownStyle.DropDownList;
-                    edit.Left = option.LabelWidth;
-                    edit.Width = info.HalfWidth ? option.ValueWidth / 2 : option.ValueWidth;
-                    edit.Top = top;
-                    edit.Parent = this;
-                    edit.Name = "Edit_" + info.DataPropertyName;
-                    edit.Enabled = info.Enabled;
 
                     if (info.DisplayMember.IsNullOrEmpty())
                     {
@@ -210,9 +173,52 @@ namespace Sunny.UI
                         edit.DataSource = info.DataSource;
                         edit.SelectedValue = info.Value;
                     }
+                }
 
+                if (info.EditType == EditType.ComboTreeView)
+                {
+                    ctrl = new UIComboTreeView();
+                    var edit = (UIComboTreeView)ctrl;
+                    edit.CanSelectRootNode = true;
+                    edit.ShowLines = true;
+                    edit.DropDownStyle = UIDropDownStyle.DropDownList;
+                    edit.TreeView.Nodes.Clear();
+                    edit.TreeView.Nodes.AddRange((TreeNode[])info.DataSource);
+                    if (info.Value != null)
+                    {
+                        edit.TreeView.SelectedNode = (TreeNode)info.Value;
+                        edit.Text = edit.TreeView.SelectedNode.Text;
+                    }
+                }
 
-                    ctrls.Add(edit);
+                if (info.EditType == EditType.ComboCheckedListBox)
+                {
+                    ctrl = new UIComboTreeView();
+                    var edit = (UIComboTreeView)ctrl;
+                    edit.CanSelectRootNode = true;
+                    edit.CheckBoxes = true;
+                    edit.DropDownStyle = UIDropDownStyle.DropDownList;
+                    edit.TreeView.Nodes.Clear();
+                    edit.Text = info.Value?.ToString();
+                    var obj = (ComboCheckedListBoxItem[])info.DataSource;
+                    foreach (var item in obj)
+                    {
+                        TreeNode node = edit.TreeView.Nodes.Add(item.Text);
+                        node.Tag = item;
+                        node.Checked = item.Checked;
+                    }
+                }
+
+                if (ctrl != null)
+                {
+                    ctrl.Left = Option.LabelWidth;
+                    if (info.EditType != EditType.Switch)
+                        ctrl.Width = info.HalfWidth ? Option.ValueWidth / 2 : Option.ValueWidth;
+                    ctrl.Top = top;
+                    ctrl.Parent = this;
+                    ctrl.Name = "Edit_" + info.DataPropertyName;
+                    ctrl.Enabled = info.Enabled;
+                    ctrls.Add(ctrl);
                 }
 
                 top += 29 + 10;
@@ -236,6 +242,17 @@ namespace Sunny.UI
             btnOK.ShowFocusLine = btnCancel.ShowFocusLine = true;
         }
 
+        public UIEditForm(UIEditOption option)
+        {
+            InitializeComponent();
+
+            btnOK.Text = UILocalize.OK;
+            btnCancel.Text = UILocalize.Cancel;
+
+            Option = option;
+            InitEditor();
+        }
+
         public object this[string dataPropertyName]
         {
             get
@@ -254,7 +271,7 @@ namespace Sunny.UI
             }
         }
 
-        public bool IsOK { get; private set; }
+        public bool IsOK { get; protected set; }
 
         [Category("SunnyUI"), Description("确定按钮点击事件")]
         public event EventHandler ButtonOkClick;
@@ -278,30 +295,38 @@ namespace Sunny.UI
             set => btnCancel.Enabled = value;
         }
 
-        protected void btnOK_Click(object sender, EventArgs e)
+        private void btnOK_Click(object sender, EventArgs e)
         {
             if (!CheckData())
             {
                 return;
+            }
+            else
+            {
+                DialogResult = DialogResult.OK;
+                IsOK = true;
             }
 
             if (CheckedData != null)
             {
                 if (!CheckedData.Invoke(this, new EditFormEventArgs(this)))
                 {
+                    DialogResult = DialogResult.None;
+                    IsOK = false;
                     return;
+                }
+                else
+                {
+                    DialogResult = DialogResult.OK;
+                    IsOK = true;
                 }
             }
 
             if (ButtonOkClick != null)
             {
+                DialogResult = DialogResult.None;
+                IsOK = false;
                 ButtonOkClick.Invoke(sender, e);
-            }
-            else
-            {
-                DialogResult = DialogResult.OK;
-                IsOK = true;
-                Close();
             }
         }
 
@@ -388,6 +413,28 @@ namespace Sunny.UI
                         if (edit == null) continue;
                         info.Value = edit.Active;
                     }
+
+                    if (info.EditType == EditType.ComboTreeView)
+                    {
+                        UIComboTreeView edit = this.GetControl<UIComboTreeView>("Edit_" + info.DataPropertyName);
+                        if (edit == null) continue;
+                        info.Value = edit.TreeView.SelectedNode;
+                    }
+
+                    if (info.EditType == EditType.ComboCheckedListBox)
+                    {
+                        UIComboTreeView edit = this.GetControl<UIComboTreeView>("Edit_" + info.DataPropertyName);
+                        if (edit == null) continue;
+                        List<ComboCheckedListBoxItem> result = new List<ComboCheckedListBoxItem>();
+                        foreach (TreeNode item in edit.Nodes)
+                        {
+                            ComboCheckedListBoxItem obj = (ComboCheckedListBoxItem)item.Tag;
+                            obj.Checked = item.Checked;
+                            if (obj.Checked) result.Add(obj);
+                        }
+
+                        info.Value = result.ToArray();
+                    }
                 }
             }
 
@@ -413,6 +460,10 @@ namespace Sunny.UI
             public UIEditForm Form { get; set; }
         }
 
+        /// <summary>
+        /// 重载控件尺寸变更
+        /// </summary>
+        /// <param name="e">参数</param>
         protected override void OnSizeChanged(EventArgs e)
         {
             base.OnSizeChanged(e);

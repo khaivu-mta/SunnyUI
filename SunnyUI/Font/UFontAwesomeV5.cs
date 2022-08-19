@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,7 +13,7 @@
  ******************************************************************************
  * 文件名称: UFontAweSome.cs
  * 文件说明: 字体图片定义类：FontAweSome，V5.15.2
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-02-26
  *
  * 2020-02-26: V3.0.2 增加文件说明
@@ -62,6 +62,7 @@ to represent the company, product, or service to which they refer.
 
 namespace Sunny.UI
 {
+#pragma warning disable CS1591 // 缺少对公共可见类型或成员的 XML 注释
     /// <summary>
     /// fa-regular-400.ttf
     /// 2021-01-13 Release 5.15.2
@@ -1699,4 +1700,6 @@ namespace Sunny.UI
         public const int fa_yen_sign = 0xf157;
         public const int fa_yin_yang = 0xf6ad;
     }
+
+#pragma warning restore CS1591 // 缺少对公共可见类型或成员的 XML 注释
 }

@@ -58,7 +58,6 @@ namespace Sunny.UI.Demo
             this.uiTabControlMenu1.Controls.Add(this.tabPage8);
             this.uiTabControlMenu1.DrawMode = System.Windows.Forms.TabDrawMode.OwnerDrawFixed;
             this.uiTabControlMenu1.Font = new System.Drawing.Font("微软雅黑", 12F);
-            this.uiTabControlMenu1.ItemSize = new System.Drawing.Size(40, 200);
             this.uiTabControlMenu1.Location = new System.Drawing.Point(30, 321);
             this.uiTabControlMenu1.Multiline = true;
             this.uiTabControlMenu1.Name = "uiTabControlMenu1";
@@ -66,6 +65,7 @@ namespace Sunny.UI.Demo
             this.uiTabControlMenu1.Size = new System.Drawing.Size(670, 239);
             this.uiTabControlMenu1.SizeMode = System.Windows.Forms.TabSizeMode.Fixed;
             this.uiTabControlMenu1.TabIndex = 25;
+            this.uiTabControlMenu1.ZoomScaleRect = new System.Drawing.Rectangle(0, 0, 0, 0);
             // 
             // tabPage5
             // 
@@ -79,27 +79,27 @@ namespace Sunny.UI.Demo
             // tabPage6
             // 
             this.tabPage6.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
-            this.tabPage6.Location = new System.Drawing.Point(201, 0);
+            this.tabPage6.Location = new System.Drawing.Point(161, 0);
             this.tabPage6.Name = "tabPage6";
-            this.tabPage6.Size = new System.Drawing.Size(469, 239);
+            this.tabPage6.Size = new System.Drawing.Size(509, 239);
             this.tabPage6.TabIndex = 1;
             this.tabPage6.Text = "tabPage6";
             // 
             // tabPage7
             // 
             this.tabPage7.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(255)))), ((int)(((byte)(192)))));
-            this.tabPage7.Location = new System.Drawing.Point(201, 0);
+            this.tabPage7.Location = new System.Drawing.Point(161, 0);
             this.tabPage7.Name = "tabPage7";
-            this.tabPage7.Size = new System.Drawing.Size(469, 239);
+            this.tabPage7.Size = new System.Drawing.Size(509, 239);
             this.tabPage7.TabIndex = 2;
             this.tabPage7.Text = "tabPage7";
             // 
             // tabPage8
             // 
             this.tabPage8.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(192)))));
-            this.tabPage8.Location = new System.Drawing.Point(201, 0);
+            this.tabPage8.Location = new System.Drawing.Point(161, 0);
             this.tabPage8.Name = "tabPage8";
-            this.tabPage8.Size = new System.Drawing.Size(469, 239);
+            this.tabPage8.Size = new System.Drawing.Size(509, 239);
             this.tabPage8.TabIndex = 3;
             this.tabPage8.Text = "tabPage8";
             // 
@@ -113,6 +113,7 @@ namespace Sunny.UI.Demo
             this.uiLine2.TabIndex = 24;
             this.uiLine2.Text = "UITabControlMenu";
             this.uiLine2.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.uiLine2.ZoomScaleRect = new System.Drawing.Rectangle(0, 0, 0, 0);
             // 
             // uiLine1
             // 
@@ -124,6 +125,7 @@ namespace Sunny.UI.Demo
             this.uiLine1.TabIndex = 23;
             this.uiLine1.Text = "UITabControl";
             this.uiLine1.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.uiLine1.ZoomScaleRect = new System.Drawing.Rectangle(0, 0, 0, 0);
             // 
             // uiTabControl1
             // 
@@ -137,16 +139,19 @@ namespace Sunny.UI.Demo
             this.uiTabControl1.Controls.Add(this.tabPage13);
             this.uiTabControl1.DrawMode = System.Windows.Forms.TabDrawMode.OwnerDrawFixed;
             this.uiTabControl1.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.uiTabControl1.Frame = null;
             this.uiTabControl1.ItemSize = new System.Drawing.Size(150, 40);
             this.uiTabControl1.Location = new System.Drawing.Point(30, 85);
             this.uiTabControl1.MainPage = "主页";
             this.uiTabControl1.MenuStyle = Sunny.UI.UIMenuStyle.Custom;
             this.uiTabControl1.Name = "uiTabControl1";
             this.uiTabControl1.SelectedIndex = 0;
-            this.uiTabControl1.ShowActiveCloseButton = true;
+            this.uiTabControl1.ShowCloseButton = true;
             this.uiTabControl1.Size = new System.Drawing.Size(670, 183);
             this.uiTabControl1.SizeMode = System.Windows.Forms.TabSizeMode.Fixed;
             this.uiTabControl1.TabIndex = 22;
+            this.uiTabControl1.TipsFont = new System.Drawing.Font("微软雅黑", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.uiTabControl1.ZoomScaleRect = new System.Drawing.Rectangle(0, 0, 0, 0);
             this.uiTabControl1.BeforeRemoveTabPage += new Sunny.UI.UITabControl.OnBeforeRemoveTabPage(this.uiTabControl1_BeforeRemoveTabPage);
             // 
             // tabPage1
@@ -163,16 +168,16 @@ namespace Sunny.UI.Demo
             this.tabPage2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
             this.tabPage2.Location = new System.Drawing.Point(0, 40);
             this.tabPage2.Name = "tabPage2";
-            this.tabPage2.Size = new System.Drawing.Size(670, 143);
+            this.tabPage2.Size = new System.Drawing.Size(200, 60);
             this.tabPage2.TabIndex = 1;
-            this.tabPage2.Text = "tabPage2";
+            this.tabPage2.Text = "页面";
             // 
             // tabPage3
             // 
             this.tabPage3.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(255)))), ((int)(((byte)(192)))));
             this.tabPage3.Location = new System.Drawing.Point(0, 40);
             this.tabPage3.Name = "tabPage3";
-            this.tabPage3.Size = new System.Drawing.Size(670, 143);
+            this.tabPage3.Size = new System.Drawing.Size(200, 60);
             this.tabPage3.TabIndex = 2;
             this.tabPage3.Text = "tabPage3";
             // 
@@ -180,7 +185,7 @@ namespace Sunny.UI.Demo
             // 
             this.tabPage9.Location = new System.Drawing.Point(0, 40);
             this.tabPage9.Name = "tabPage9";
-            this.tabPage9.Size = new System.Drawing.Size(670, 143);
+            this.tabPage9.Size = new System.Drawing.Size(200, 60);
             this.tabPage9.TabIndex = 4;
             this.tabPage9.Text = "tabPage9";
             this.tabPage9.UseVisualStyleBackColor = true;
@@ -189,7 +194,7 @@ namespace Sunny.UI.Demo
             // 
             this.tabPage10.Location = new System.Drawing.Point(0, 40);
             this.tabPage10.Name = "tabPage10";
-            this.tabPage10.Size = new System.Drawing.Size(670, 143);
+            this.tabPage10.Size = new System.Drawing.Size(200, 60);
             this.tabPage10.TabIndex = 5;
             this.tabPage10.Text = "tabPage10";
             this.tabPage10.UseVisualStyleBackColor = true;
@@ -198,7 +203,7 @@ namespace Sunny.UI.Demo
             // 
             this.tabPage11.Location = new System.Drawing.Point(0, 40);
             this.tabPage11.Name = "tabPage11";
-            this.tabPage11.Size = new System.Drawing.Size(670, 143);
+            this.tabPage11.Size = new System.Drawing.Size(200, 60);
             this.tabPage11.TabIndex = 6;
             this.tabPage11.Text = "tabPage11";
             this.tabPage11.UseVisualStyleBackColor = true;
@@ -207,7 +212,7 @@ namespace Sunny.UI.Demo
             // 
             this.tabPage12.Location = new System.Drawing.Point(0, 40);
             this.tabPage12.Name = "tabPage12";
-            this.tabPage12.Size = new System.Drawing.Size(670, 143);
+            this.tabPage12.Size = new System.Drawing.Size(200, 60);
             this.tabPage12.TabIndex = 7;
             this.tabPage12.Text = "tabPage12";
             this.tabPage12.UseVisualStyleBackColor = true;
@@ -216,7 +221,7 @@ namespace Sunny.UI.Demo
             // 
             this.tabPage13.Location = new System.Drawing.Point(0, 40);
             this.tabPage13.Name = "tabPage13";
-            this.tabPage13.Size = new System.Drawing.Size(670, 143);
+            this.tabPage13.Size = new System.Drawing.Size(200, 60);
             this.tabPage13.TabIndex = 8;
             this.tabPage13.Text = "tabPage13";
             this.tabPage13.UseVisualStyleBackColor = true;

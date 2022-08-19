@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,11 +13,15 @@
  ******************************************************************************
  * 文件名称: UIControl.cs
  * 文件说明: 控件基类
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
  * 2020-04-25: V2.2.4 更新主题配置类
+ * 2021-12-13: V3.0.9 边框线宽可设置1或者2
+ * 2022-01-10: V3.1.0 调整边框和圆角的绘制
+ * 2022-02-16: V3.1.1 基类增加只读颜色设置
+ * 2022-03-19: V3.1.1 重构主题配色
 ******************************************************************************/
 
 using System;
@@ -32,7 +36,7 @@ namespace Sunny.UI
     /// 控件基类
     /// </summary>
     [ToolboxItem(false)]
-    public class UIControl : Control, IStyleInterface
+    public class UIControl : Control, IStyleInterface, IZoomScale
     {
         /// <summary>
         /// 构造函数
@@ -40,9 +44,47 @@ namespace Sunny.UI
         public UIControl()
         {
             Version = UIGlobal.Version;
-            base.Font = UIFontColor.Font;
+            base.Font = UIFontColor.Font();
             Size = new Size(100, 35);
             base.MinimumSize = new Size(1, 1);
+        }
+
+        [Browsable(false)]
+        public bool Disabled => !Enabled;
+
+        /// <summary>
+        /// 禁止控件跟随窗体缩放
+        /// </summary>
+        [DefaultValue(false), Category("SunnyUI"), Description("禁止控件跟随窗体缩放")]
+        public bool ZoomScaleDisabled { get; set; }
+
+        /// <summary>
+        /// 控件缩放前在其容器里的位置
+        /// </summary>
+        [Browsable(false)]
+        public Rectangle ZoomScaleRect { get; set; }
+
+        /// <summary>
+        /// 设置控件缩放比例
+        /// </summary>
+        /// <param name="scale">缩放比例</param>
+        public virtual void SetZoomScale(float scale)
+        {
+            radius = UIZoomScale.Calc(baseRadius, scale);
+        }
+
+        protected bool selected;
+
+        [Browsable(false), DefaultValue(false)]
+        public bool IsScaled { get; set; }
+
+        public virtual void SetDPIScale()
+        {
+            if (!IsScaled)
+            {
+                this.SetDPIScaleFont();
+                IsScaled = true;
+            }
         }
 
         protected void SetStyleFlags(bool supportTransparent = true, bool selectable = true, bool resizeRedraw = false)
@@ -58,6 +100,10 @@ namespace Sunny.UI
             UpdateStyles();
         }
 
+        /// <summary>
+        /// 重载控件尺寸变更
+        /// </summary>
+        /// <param name="e">参数</param>
         protected override void OnSizeChanged(EventArgs e)
         {
             base.OnSizeChanged(e);
@@ -70,16 +116,6 @@ namespace Sunny.UI
         [DefaultValue(null)]
         [Description("获取或设置包含有关控件的数据的对象字符串"), Category("SunnyUI")]
         public string TagString
-        {
-            get; set;
-        }
-
-        /// <summary>
-        /// 自定义主题风格
-        /// </summary>
-        [DefaultValue(false)]
-        [Description("获取或设置可以自定义主题风格"), Category("SunnyUI")]
-        public bool StyleCustomMode
         {
             get; set;
         }
@@ -148,6 +184,7 @@ namespace Sunny.UI
         }
 
         private int radius = 5;
+        private int baseRadius = 5;
 
         /// <summary>
         /// 圆角角度
@@ -161,7 +198,7 @@ namespace Sunny.UI
             {
                 if (radius != value)
                 {
-                    radius = Math.Max(0, value);
+                    baseRadius = radius = Math.Max(0, value);
                     Invalidate();
                 }
             }
@@ -231,41 +268,7 @@ namespace Sunny.UI
             get;
         }
 
-        /// <summary>
-        /// 设置主题样式
-        /// </summary>
-        /// <param name="style">主题样式</param>
-        public void SetStyle(UIStyle style)
-        {
-            UIBaseStyle uiColor = UIStyles.GetStyleColor(style);
-            if (!uiColor.IsCustom()) SetStyleColor(uiColor);
-            _style = style;
-        }
-
-        /// <summary>
-        /// 设置主题样式颜色
-        /// </summary>
-        /// <param name="uiColor"></param>
-        public virtual void SetStyleColor(UIBaseStyle uiColor)
-        {
-            fillColor = uiColor.ButtonFillColor;
-            rectColor = uiColor.RectColor;
-            foreColor = uiColor.ButtonForeColor;
-
-            fillDisableColor = uiColor.FillDisableColor;
-            rectDisableColor = uiColor.RectDisableColor;
-            foreDisableColor = uiColor.ForeDisableColor;
-
-            fillPressColor = fillHoverColor = fillColor;
-            rectPressColor = rectHoverColor = rectColor;
-            forePressColor = foreHoverColor = foreColor;
-
-            fillSelectedColor = uiColor.ButtonFillSelectedColor;
-
-            Invalidate();
-        }
-
-        private UIStyle _style = UIStyle.Blue;
+        protected UIStyle _style = UIStyle.Blue;
 
         /// <summary>
         /// 主题样式
@@ -275,6 +278,66 @@ namespace Sunny.UI
         {
             get => _style;
             set => SetStyle(value);
+        }
+
+        protected void SetStyleCustom(bool needRefresh = true)
+        {
+            _style = UIStyle.Custom;
+            if (needRefresh) Invalidate();
+        }
+
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="style">主题样式</param>
+        public void SetStyle(UIStyle style)
+        {
+            if (!style.IsCustom())
+            {
+                SetStyleColor(style.Colors());
+                Invalidate();
+            }
+
+            _style = style;
+        }
+
+        /// <summary>
+        /// 自定义主题风格
+        /// </summary>
+        [DefaultValue(false)]
+        [Description("获取或设置可以自定义主题风格"), Category("SunnyUI")]
+        public bool StyleCustomMode { get; set; }
+
+        /// <summary>
+        /// 设置主题样式颜色
+        /// </summary>
+        /// <param name="uiColor"></param>
+        public virtual void SetStyleColor(UIBaseStyle uiColor)
+        {
+            fillColor = uiColor.ButtonFillColor;
+            fillColor2 = uiColor.ButtonFillColor2;
+            foreColor = uiColor.ButtonForeColor;
+            rectColor = uiColor.ButtonRectColor;
+
+            fillDisableColor = uiColor.FillDisableColor;
+            foreDisableColor = uiColor.ForeDisableColor;
+            rectDisableColor = uiColor.RectDisableColor;
+
+            fillReadOnlyColor = uiColor.FillDisableColor;
+            rectReadOnlyColor = uiColor.RectDisableColor;
+            foreReadOnlyColor = uiColor.ForeDisableColor;
+
+            fillHoverColor = fillColor;
+            foreHoverColor = foreColor;
+            rectHoverColor = rectColor;
+
+            fillPressColor = fillColor;
+            forePressColor = foreColor;
+            rectPressColor = rectColor;
+
+            fillSelectedColor = fillColor;
+            foreSelectedColor = foreColor;
+            rectSelectedColor = rectColor;
         }
 
         /// <summary>
@@ -330,17 +393,19 @@ namespace Sunny.UI
             }
         }
 
+        protected bool lightStyle;
+
         /// <summary>
-        /// OnPaint
+        /// 重载绘图
         /// </summary>
-        /// <param name="e">e</param>
+        /// <param name="e">绘图参数</param>
         protected override void OnPaint(PaintEventArgs e)
         {
             if (!Visible || Width <= 0 || Height <= 0) return;
             if (IsDisposed) return;
 
             Rectangle rect = new Rectangle(0, 0, Width - 1, Height - 1);
-            GraphicsPath path = rect.CreateRoundedRectanglePath(radius, RadiusSides);
+            GraphicsPath path = rect.CreateRoundedRectanglePath(radius, RadiusSides, RectSize);
 
             //填充背景色
             if (ShowFill && fillColor.IsValid())
@@ -379,7 +444,9 @@ namespace Sunny.UI
             if (selected)
                 color = rectSelectedColor;
             if (ShowFocusColor && Focused)
-                color = rectPressColor;
+                color = rectHoverColor;
+            if (isReadOnly)
+                color = rectReadOnlyColor;
             return Enabled ? color : rectDisableColor;
         }
 
@@ -391,6 +458,8 @@ namespace Sunny.UI
             set;
         }
 
+        protected bool isReadOnly;
+
         /// <summary>
         /// 获取字体颜色
         /// </summary>
@@ -398,7 +467,7 @@ namespace Sunny.UI
         protected Color GetForeColor()
         {
             //文字
-            Color color = foreColor;
+            Color color = lightStyle ? _style.Colors().ButtonForeLightColor : foreColor;
             if (IsHover)
                 color = foreHoverColor;
             if (IsPress)
@@ -406,7 +475,9 @@ namespace Sunny.UI
             if (selected)
                 color = foreSelectedColor;
             if (ShowFocusColor && Focused)
-                color = forePressColor;
+                color = foreHoverColor;
+            if (isReadOnly)
+                color = foreReadOnlyColor;
             return Enabled ? color : foreDisableColor;
         }
 
@@ -417,7 +488,7 @@ namespace Sunny.UI
         protected Color GetFillColor()
         {
             //填充
-            Color color = fillColor;
+            Color color = lightStyle ? _style.Colors().ButtonFillLightColor : fillColor;
             if (IsHover)
                 color = fillHoverColor;
             if (IsPress)
@@ -425,7 +496,9 @@ namespace Sunny.UI
             if (selected)
                 color = fillSelectedColor;
             if (ShowFocusColor && Focused)
-                color = fillPressColor;
+                color = fillHoverColor;
+            if (isReadOnly)
+                color = fillReadOnlyColor;
             return Enabled ? color : fillDisableColor;
         }
 
@@ -438,6 +511,29 @@ namespace Sunny.UI
         {
             Color color = GetFillColor();
             g.FillPath(color, path);
+        }
+
+        private int rectSize = 1;
+
+        /// <summary>
+        /// 边框宽度
+        /// </summary>
+        [Description("边框宽度"), Category("SunnyUI")]
+        [DefaultValue(1)]
+        public int RectSize
+        {
+            get => rectSize;
+            set
+            {
+                int v = value;
+                if (v > 2) v = 2;
+                if (v < 1) v = 1;
+                if (rectSize != v)
+                {
+                    rectSize = v;
+                    Invalidate();
+                }
+            }
         }
 
         private void PaintRectDisableSides(Graphics g)
@@ -460,98 +556,63 @@ namespace Sunny.UI
             //IsRadius为True时，显示右下圆角
             bool RadiusRightBottom = RadiusSides.GetValue(UICornerRadiusSides.RightBottom);
 
-            var ShowRadius = RadiusSides > 0;
-            using (Pen pen = new Pen(GetFillColor()))
-            using (Pen penR = new Pen(GetRectColor()))
+            var ShowRadius = RadiusSides > 0 && Radius > 0;//肯定少有一个角显示圆角
+            if (!ShowRadius) return;
+
+            if (!ShowRectLeft && !RadiusLeftBottom && !RadiusLeftTop)
             {
-                if (!ShowRadius || (!RadiusLeftBottom && !RadiusLeftTop))
-                {
-                    g.DrawLine(penR, 0, 0, 0, Height - 1);
-                }
+                g.DrawLine(GetFillColor(), RectSize - 1, 0, RectSize - 1, Height, false, RectSize);
+            }
 
-                if (!ShowRadius || (!RadiusRightTop && !RadiusLeftTop))
-                {
-                    g.DrawLine(penR, 0, 0, Width - 1, 0);
-                }
+            if (!ShowRectTop && !RadiusRightTop && !RadiusLeftTop)
+            {
+                g.DrawLine(GetFillColor(), 0, RectSize - 1, Width, RectSize - 1, false, RectSize);
+            }
 
-                if (!ShowRadius || (!RadiusRightTop && !RadiusRightBottom))
-                {
-                    g.DrawLine(penR, Width - 1, 0, Width - 1, Height - 1);
-                }
+            if (!ShowRectRight && !RadiusRightTop && !RadiusRightBottom)
+            {
+                g.DrawLine(GetFillColor(), Width - 1, 0, Width - 1, Height, false, RectSize);
+            }
 
-                if (!ShowRadius || (!RadiusLeftBottom && !RadiusRightBottom))
-                {
-                    g.DrawLine(penR, 0, Height - 1, Width - 1, Height - 1);
-                }
-
-                if (!ShowRectLeft)
-                {
-                    if (!ShowRadius || (!RadiusLeftBottom && !RadiusLeftTop))
-                    {
-                        g.DrawLine(pen, 0, 1, 0, Height - 2);
-                    }
-                }
-
-                if (!ShowRectTop)
-                {
-                    if (!ShowRadius || (!RadiusRightTop && !RadiusLeftTop))
-                    {
-                        g.DrawLine(pen, 1, 0, Width - 2, 0);
-                    }
-                }
-
-                if (!ShowRectRight)
-                {
-                    if (!ShowRadius || (!RadiusRightTop && !RadiusRightBottom))
-                    {
-                        g.DrawLine(pen, Width - 1, 1, Width - 1, Height - 2);
-                    }
-                }
-
-                if (!ShowRectBottom)
-                {
-                    if (!ShowRadius || (!RadiusLeftBottom && !RadiusRightBottom))
-                    {
-                        g.DrawLine(pen, 1, Height - 1, Width - 2, Height - 1);
-                    }
-                }
-
-                if (!ShowRectLeft && !ShowRectTop)
-                {
-                    if (!ShowRadius || (!RadiusLeftBottom && !RadiusLeftTop))
-                        g.DrawLine(pen, 0, 0, 0, 1);
-                }
-
-                if (!ShowRectRight && !ShowRectTop)
-                {
-                    if (!ShowRadius || (!RadiusLeftBottom && !RadiusLeftTop))
-                        g.DrawLine(pen, Width - 1, 0, Width - 1, 1);
-                }
-
-                if (!ShowRectLeft && !ShowRectBottom)
-                {
-                    if (!ShowRadius || (!RadiusLeftBottom && !RadiusLeftTop))
-                        g.DrawLine(pen, 0, Height - 1, 0, Height - 2);
-                }
-
-                if (!ShowRectRight && !ShowRectBottom)
-                {
-                    if (!ShowRadius || (!RadiusLeftBottom && !RadiusLeftTop))
-                        g.DrawLine(pen, Width - 1, Height - 1, Width - 1, Height - 2);
-                }
+            if (!ShowRectBottom && !RadiusLeftBottom && !RadiusRightBottom)
+            {
+                g.DrawLine(GetFillColor(), 0, Height - 1, Width, Height - 1, false, RectSize);
             }
         }
 
         /// <summary>
-        /// 绘制边框
+        /// 绘制边框颜色
         /// </summary>
-        /// <param name="g">GDI绘图图面</param>
-        /// <param name="path">路径</param>
+        /// <param name="g">绘图图面</param>
+        /// <param name="path">绘图路径</param>
         protected virtual void OnPaintRect(Graphics g, GraphicsPath path)
         {
-            Color color = GetRectColor();
-            g.DrawPath(color, path);
-            PaintRectDisableSides(g);
+            radius = Math.Min(radius, Math.Min(Width, Height));
+            if (RadiusSides == UICornerRadiusSides.None || Radius == 0)
+            {
+                //IsRadius为False时，显示左侧边线
+                bool ShowRectLeft = RectSides.GetValue(ToolStripStatusLabelBorderSides.Left);
+                //IsRadius为False时，显示上侧边线
+                bool ShowRectTop = RectSides.GetValue(ToolStripStatusLabelBorderSides.Top);
+                //IsRadius为False时，显示右侧边线
+                bool ShowRectRight = RectSides.GetValue(ToolStripStatusLabelBorderSides.Right);
+                //IsRadius为False时，显示下侧边线
+                bool ShowRectBottom = RectSides.GetValue(ToolStripStatusLabelBorderSides.Bottom);
+
+                if (ShowRectLeft)
+                    g.DrawLine(GetRectColor(), RectSize - 1, 0, RectSize - 1, Height, false, RectSize);
+                if (ShowRectTop)
+                    g.DrawLine(GetRectColor(), 0, RectSize - 1, Width, RectSize - 1, false, RectSize);
+                if (ShowRectRight)
+                    g.DrawLine(GetRectColor(), Width - 1, 0, Width - 1, Height, false, RectSize);
+                if (ShowRectBottom)
+                    g.DrawLine(GetRectColor(), 0, Height - 1, Width, Height - 1, false, RectSize);
+            }
+            else
+            {
+                g.DrawPath(GetRectColor(), path, true, RectSize);
+                PaintRectDisableSides(g);
+            }
         }
 
         /// <summary>
@@ -572,111 +633,138 @@ namespace Sunny.UI
         }
 
         /// <summary>
-        /// 选中颜色
-        /// </summary>
-        protected Color fillSelectedColor = UIStyles.GetStyleColor(UIStyle.Blue).ButtonFillSelectedColor;
-
-        /// <summary>
-        /// 边框颜色
-        /// </summary>
-        protected Color rectColor = UIStyles.GetStyleColor(UIStyle.Blue).RectColor;
-
-        /// <summary>
         /// 填充颜色
         /// </summary>
-        protected Color fillColor = UIStyles.GetStyleColor(UIStyle.Blue).ButtonFillColor;
-
-        /// <summary>
-        /// 字体颜色
-        /// </summary>
-        protected Color foreColor = UIStyles.GetStyleColor(UIStyle.Blue).ButtonForeColor;
-
-        /// <summary>
-        /// 字体鼠标移上颜色
-        /// </summary>
-        protected Color foreHoverColor;
-
-        /// <summary>
-        /// 字体鼠标按下颜色
-        /// </summary>
-        protected Color forePressColor;
-
-        /// <summary>
-        /// 字体不可用颜色
-        /// </summary>
-        protected Color foreDisableColor = UIStyles.GetStyleColor(UIStyle.Blue).ForeDisableColor;
-
-        /// <summary>
-        /// 边框鼠标移上颜色
-        /// </summary>
-        protected Color rectHoverColor;
-
-        /// <summary>
-        /// 边框鼠标按下颜色
-        /// </summary>
-        protected Color rectPressColor;
-
-        /// <summary>
-        /// 边框不可用颜色
-        /// </summary>
-        protected Color rectDisableColor = UIStyles.GetStyleColor(UIStyle.Blue).RectDisableColor;
+        protected Color fillColor = UIStyles.Blue.ButtonFillColor;
 
         /// <summary>
         /// 填充鼠标移上颜色
         /// </summary>
-        protected Color fillHoverColor;
+        protected Color fillHoverColor = UIStyles.Blue.ButtonFillColor;
 
         /// <summary>
         /// 填充鼠标按下颜色
         /// </summary>
-        protected Color fillPressColor;
+        protected Color fillPressColor = UIStyles.Blue.ButtonFillColor;
+
+        /// <summary>
+        /// 选中颜色
+        /// </summary>
+        protected Color fillSelectedColor = UIStyles.Blue.ButtonFillColor;
 
         /// <summary>
         /// 填充不可用颜色
         /// </summary>
-        protected Color fillDisableColor = UIStyles.GetStyleColor(UIStyle.Blue).FillDisableColor;
+        protected Color fillDisableColor = UIStyles.Blue.FillDisableColor;
+
+        /// <summary>
+        /// 填充只读颜色
+        /// </summary>
+        protected Color fillReadOnlyColor = UIStyles.Blue.FillDisableColor;
+
+        /// <summary>
+        /// 填充颜色
+        /// </summary>
+        protected Color fillColor2 = UIStyles.Blue.ButtonFillColor2;
+
+        protected bool fillColorGradient = false;
+
+        /// <summary>
+        /// 边框颜色
+        /// </summary>
+        protected Color rectColor = UIStyles.Blue.ButtonRectColor;
+
+        /// <summary>
+        /// 边框鼠标移上颜色
+        /// </summary>
+        protected Color rectHoverColor = UIStyles.Blue.ButtonRectColor;
+
+        /// <summary>
+        /// 边框鼠标按下颜色
+        /// </summary>
+        protected Color rectPressColor = UIStyles.Blue.ButtonRectColor;
+
+        /// <summary>
+        /// 边框选中颜色
+        /// </summary>
+        protected Color rectSelectedColor = UIStyles.Blue.ButtonRectColor;
+
+        /// <summary>
+        /// 边框不可用颜色
+        /// </summary>
+        protected Color rectDisableColor = UIStyles.Blue.RectDisableColor;
+
+        /// <summary>
+        /// 边框只读颜色
+        /// </summary>
+        protected Color rectReadOnlyColor = UIStyles.Blue.RectDisableColor;
+
+        /// <summary>
+        /// 字体颜色
+        /// </summary>
+        protected Color foreColor = UIStyles.Blue.ButtonForeColor;
+
+        /// <summary>
+        /// 字体鼠标移上颜色
+        /// </summary>
+        protected Color foreHoverColor = UIStyles.Blue.ButtonForeColor;
+
+        /// <summary>
+        /// 字体鼠标按下颜色
+        /// </summary>
+        protected Color forePressColor = UIStyles.Blue.ButtonForeColor;
+
+        /// <summary>
+        /// 字体选中颜色
+        /// </summary>
+        protected Color foreSelectedColor = UIStyles.Blue.ButtonForeColor;
+
+        /// <summary>
+        /// 字体不可用颜色
+        /// </summary>
+        protected Color foreDisableColor = UIStyles.Blue.ForeDisableColor;
+
+        /// <summary>
+        /// 字体只读颜色
+        /// </summary>
+        protected Color foreReadOnlyColor = UIStyles.Blue.ForeDisableColor;
 
         /// <summary>
         /// 设置选中颜色
         /// </summary>
-        /// <param name="value">颜色</param>
-        protected void SetFillSelectedColor(Color value)
+        /// <param name="color">颜色</param>
+        protected void SetFillSelectedColor(Color color)
         {
-            if (fillSelectedColor != value)
+            if (fillSelectedColor != color)
             {
-                fillSelectedColor = value;
-                Invalidate();
+                fillSelectedColor = color;
+                SetStyleCustom();
             }
         }
 
-        protected bool selected;
-        protected Color foreSelectedColor;
-
         /// <summary>
         /// 设置选中颜色
         /// </summary>
-        /// <param name="value">颜色</param>
-        protected void SetForeSelectedColor(Color value)
+        /// <param name="color">颜色</param>
+        protected void SetForeSelectedColor(Color color)
         {
-            if (foreSelectedColor != value)
+            if (foreSelectedColor != color)
             {
-                foreSelectedColor = value;
-                Invalidate();
+                foreSelectedColor = color;
+                SetStyleCustom();
             }
         }
 
-        protected Color rectSelectedColor;
-
         /// <summary>
         /// 设置选中颜色
         /// </summary>
-        /// <param name="value">颜色</param>
-        protected void SetRectSelectedColor(Color value)
+        /// <param name="color">颜色</param>
+        protected void SetRectSelectedColor(Color color)
         {
-            if (rectSelectedColor != value)
+            if (rectSelectedColor != color)
             {
-                rectSelectedColor = value;
-                Invalidate();
+                rectSelectedColor = color;
+                SetStyleCustom();
             }
         }
 
@@ -684,10 +772,13 @@ namespace Sunny.UI
         /// 设置填充鼠标移上颜色
         /// </summary>
         /// <param name="color">颜色</param>
-        protected void SetFillHoveColor(Color color)
+        protected void SetFillHoverColor(Color color)
         {
-            fillHoverColor = color;
-            _style = UIStyle.Custom;
+            if (fillHoverColor != color)
+            {
+                fillHoverColor = color;
+                SetStyleCustom(false);
+            }
         }
 
         /// <summary>
@@ -696,8 +787,11 @@ namespace Sunny.UI
         /// <param name="color">颜色</param>
         protected void SetFillPressColor(Color color)
         {
-            fillPressColor = color;
-            _style = UIStyle.Custom;
+            if (fillPressColor != color)
+            {
+                fillPressColor = color;
+                SetStyleCustom(false);
+            }
         }
 
         /// <summary>
@@ -706,18 +800,37 @@ namespace Sunny.UI
         /// <param name="color">颜色</param>
         protected void SetFillDisableColor(Color color)
         {
-            fillDisableColor = color;
-            _style = UIStyle.Custom;
+            if (fillDisableColor != color)
+            {
+                fillDisableColor = color;
+                SetStyleCustom();
+            }
+        }
+
+        /// <summary>
+        /// 设置填充只读颜色
+        /// </summary>
+        /// <param name="color">颜色</param>
+        protected void SetFillReadOnlyColor(Color color)
+        {
+            if (fillReadOnlyColor != color)
+            {
+                fillReadOnlyColor = color;
+                SetStyleCustom();
+            }
         }
 
         /// <summary>
         /// 设备边框鼠标移上颜色
         /// </summary>
         /// <param name="color">颜色</param>
-        protected void SetRectHoveColor(Color color)
+        protected void SetRectHoverColor(Color color)
         {
-            rectHoverColor = color;
-            _style = UIStyle.Custom;
+            if (rectHoverColor != color)
+            {
+                rectHoverColor = color;
+                SetStyleCustom(false);
+            }
         }
 
         /// <summary>
@@ -726,8 +839,11 @@ namespace Sunny.UI
         /// <param name="color">颜色</param>
         protected void SetRectPressColor(Color color)
         {
-            rectPressColor = color;
-            _style = UIStyle.Custom;
+            if (rectPressColor != color)
+            {
+                rectPressColor = color;
+                SetStyleCustom(false);
+            }
         }
 
         /// <summary>
@@ -736,18 +852,37 @@ namespace Sunny.UI
         /// <param name="color">颜色</param>
         protected void SetRectDisableColor(Color color)
         {
-            rectDisableColor = color;
-            _style = UIStyle.Custom;
+            if (rectDisableColor != color)
+            {
+                rectDisableColor = color;
+                SetStyleCustom();
+            }
+        }
+
+        /// <summary>
+        /// 设置边框只读颜色
+        /// </summary>
+        /// <param name="color">颜色</param>
+        protected void SetRectReadOnlyColor(Color color)
+        {
+            if (rectReadOnlyColor != color)
+            {
+                rectReadOnlyColor = color;
+                SetStyleCustom();
+            }
         }
 
         /// <summary>
         /// 设置字体鼠标移上颜色
         /// </summary>
         /// <param name="color">颜色</param>
-        protected void SetForeHoveColor(Color color)
+        protected void SetForeHoverColor(Color color)
         {
-            foreHoverColor = color;
-            _style = UIStyle.Custom;
+            if (foreHoverColor != color)
+            {
+                foreHoverColor = color;
+                SetStyleCustom(false);
+            }
         }
 
         /// <summary>
@@ -756,8 +891,11 @@ namespace Sunny.UI
         /// <param name="color">颜色</param>
         protected void SetForePressColor(Color color)
         {
-            forePressColor = color;
-            _style = UIStyle.Custom;
+            if (forePressColor != color)
+            {
+                forePressColor = color;
+                SetStyleCustom(false);
+            }
         }
 
         /// <summary>
@@ -766,8 +904,24 @@ namespace Sunny.UI
         /// <param name="color">颜色</param>
         protected void SetForeDisableColor(Color color)
         {
-            foreDisableColor = color;
-            _style = UIStyle.Custom;
+            if (foreDisableColor != color)
+            {
+                foreDisableColor = color;
+                SetStyleCustom();
+            }
+        }
+
+        /// <summary>
+        /// 设置字体只读颜色
+        /// </summary>
+        /// <param name="color">颜色</param>
+        protected void SetForeReadonlyColor(Color color)
+        {
+            if (foreReadOnlyColor != color)
+            {
+                foreReadOnlyColor = color;
+                SetStyleCustom();
+            }
         }
 
         /// <summary>
@@ -779,8 +933,7 @@ namespace Sunny.UI
             if (rectColor != value)
             {
                 rectColor = value;
-                _style = UIStyle.Custom;
-                Invalidate();
+                SetStyleCustom();
             }
         }
 
@@ -793,8 +946,20 @@ namespace Sunny.UI
             if (fillColor != value)
             {
                 fillColor = value;
-                _style = UIStyle.Custom;
-                Invalidate();
+                SetStyleCustom();
+            }
+        }
+
+        /// <summary>
+        /// 设置填充颜色
+        /// </summary>
+        /// <param name="value">颜色</param>
+        protected void SetFillColor2(Color value)
+        {
+            if (fillColor2 != value)
+            {
+                fillColor2 = value;
+                SetStyleCustom();
             }
         }
 
@@ -807,8 +972,7 @@ namespace Sunny.UI
             if (foreColor != value)
             {
                 foreColor = value;
-                _style = UIStyle.Custom;
-                Invalidate();
+                SetStyleCustom();
             }
         }
 

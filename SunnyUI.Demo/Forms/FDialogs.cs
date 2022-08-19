@@ -64,7 +64,7 @@ namespace Sunny.UI.Demo
         private void btnStringInput_Click(object sender, EventArgs e)
         {
             string value = "请输入字符串";
-            if (this.InputStringDialog(ref value))
+            if (this.InputStringDialog(ref value, true, "请输入字符串：", true))
             {
                 ShowInfoDialog(value);
             }
@@ -109,7 +109,12 @@ namespace Sunny.UI.Demo
 
         private void uiSymbolButton2_Click(object sender, EventArgs e)
         {
-            ShowInfoNotifier("Info");
+            ShowInfoNotifier("Info", InfoNotifierClick);
+        }
+
+        private void InfoNotifierClick(object sender, EventArgs e)
+        {
+            ShowInfoTip("嗨，你点击了右下角的弹窗消息");
         }
 
         private void uiSymbolButton6_Click(object sender, EventArgs e)
@@ -192,22 +197,23 @@ namespace Sunny.UI.Demo
 
         private void uiSymbolButton11_Click(object sender, EventArgs e)
         {
-            ShowWaitForm();
-            Thread.Sleep(3000);
-            SetWaitFormDescription(UILocalize.SystemProcessing + "50%");
-            Thread.Sleep(3000);
+            ShowWaitForm("准备开始...");
+            Thread.Sleep(1000);
+            SetWaitFormDescription(UILocalize.SystemProcessing + "20%");
+            Thread.Sleep(1000);
+            SetWaitFormDescription(UILocalize.SystemProcessing + "40%");
+            Thread.Sleep(1000);
+            SetWaitFormDescription(UILocalize.SystemProcessing + "60%");
+            Thread.Sleep(1000);
+            SetWaitFormDescription(UILocalize.SystemProcessing + "80%");
+            Thread.Sleep(1000);
+            SetWaitFormDescription(UILocalize.SystemProcessing + "100%");
             HideWaitForm();
         }
 
         private void uiSymbolButton13_Click(object sender, EventArgs e)
         {
             string dir = "";
-            if (DirEx.SelectDir("系统打开文件夹", ref dir))
-            {
-                UIMessageTip.ShowOk(dir);
-            }
-
-            dir = "";
             if (DirEx.SelectDirEx("扩展打开文件夹", ref dir))
             {
                 UIMessageTip.ShowOk(dir);

@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,11 +13,12 @@
  ******************************************************************************
  * 文件名称: UITrackBar.cs
  * 文件说明: 进度指示条
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
  * 2021-04-11: V3.0.2 增加垂直显示方式
+ * 2022-03-19: V3.1.1 重构主题配色
 ******************************************************************************/
 
 using System;
@@ -43,9 +44,11 @@ namespace Sunny.UI
 
             ShowText = false;
             ShowRect = false;
-            fillColor = UIColor.LightBlue;
-            foreColor = UIColor.Blue;
-            rectColor = UIColor.Blue;
+
+            rectDisableColor = UIStyles.Blue.TrackDisableColor;
+            rectColor = UIStyles.Blue.TrackBarRectColor;
+            fillColor = UIStyles.Blue.TrackBarFillColor;
+            foreColor = UIStyles.Blue.TrackBarForeColor;
         }
 
         public enum BarDirection
@@ -125,23 +128,31 @@ namespace Sunny.UI
                 if (trackBarValue != v)
                 {
                     trackBarValue = v;
+                    ValueChanged?.Invoke(this, EventArgs.Empty);
                     Invalidate();
                 }
-
-                ValueChanged?.Invoke(this, null);
             }
         }
 
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="uiColor">主题样式</param>
         public override void SetStyleColor(UIBaseStyle uiColor)
         {
             base.SetStyleColor(uiColor);
+
             rectDisableColor = uiColor.TrackDisableColor;
             rectColor = uiColor.TrackBarRectColor;
             fillColor = uiColor.TrackBarFillColor;
             foreColor = uiColor.TrackBarForeColor;
-            Invalidate();
         }
 
+        /// <summary>
+        /// 绘制填充颜色
+        /// </summary>
+        /// <param name="g">绘图图面</param>
+        /// <param name="path">绘图路径</param>
         protected override void OnPaintFill(Graphics g, GraphicsPath path)
         {
             g.Clear(fillColor);
@@ -228,6 +239,10 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 重载鼠标移动事件
+        /// </summary>
+        /// <param name="e">鼠标参数</param>
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
@@ -249,6 +264,10 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 重载鼠标按下事件
+        /// </summary>
+        /// <param name="e">鼠标参数</param>
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
@@ -256,6 +275,10 @@ namespace Sunny.UI
             Invalidate();
         }
 
+        /// <summary>
+        /// 重载鼠标抬起事件
+        /// </summary>
+        /// <param name="e">鼠标参数</param>
         protected override void OnMouseUp(MouseEventArgs e)
         {
             base.OnMouseUp(e);
@@ -267,7 +290,7 @@ namespace Sunny.UI
         /// 填充颜色，当值为背景色或透明色或空值则不填充
         /// </summary>
         [Description("填充颜色"), Category("SunnyUI")]
-        [DefaultValue(typeof(Color), "235, 243, 255")]
+        [DefaultValue(typeof(Color), "243, 249, 255")]
         public Color FillColor
         {
             get => fillColor;
@@ -296,7 +319,7 @@ namespace Sunny.UI
             set => SetRectColor(value);
         }
 
-        [DefaultValue(typeof(Color), "173, 178, 181")]
+        [DefaultValue(typeof(Color), "Silver")]
         [Description("不可用时颜色"), Category("SunnyUI")]
         public Color DisableColor
         {

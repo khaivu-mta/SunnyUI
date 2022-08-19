@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,7 +13,7 @@
  ******************************************************************************
  * 文件名称: UIPipe.cs
  * 文件说明: 管道
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2021-07-26
  *
  * 2020-07-26: V3.0.5 增加管道控件
@@ -41,6 +41,7 @@ namespace Sunny.UI
             Style = UIStyle.Custom;
             Width = 200;
             Height = 16;
+            ZoomScaleDisabled = true;
         }
 
         private ConcurrentDictionary<UIPipe, Bitmap> linked = new ConcurrentDictionary<UIPipe, Bitmap>();
@@ -51,12 +52,6 @@ namespace Sunny.UI
             {
                 linked.TryAdd(pipe, null);
             }
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            foreach (var key in linked.Keys)
-                linked[key]?.Dispose();
         }
 
         private UILine.LineDirection direction = UILine.LineDirection.Horizontal;
@@ -179,6 +174,11 @@ namespace Sunny.UI
 
         Color[] colors;
 
+        /// <summary>
+        /// 绘制边框颜色
+        /// </summary>
+        /// <param name="g">绘图图面</param>
+        /// <param name="path">绘图路径</param>
         protected override void OnPaintRect(Graphics g, GraphicsPath path)
         {
             base.OnPaintRect(g, path);
@@ -229,6 +229,11 @@ namespace Sunny.UI
             PaintLinkedRect(g);
         }
 
+        /// <summary>
+        /// 绘制填充颜色
+        /// </summary>
+        /// <param name="g">绘图图面</param>
+        /// <param name="path">绘图路径</param>
         protected override void OnPaintFill(Graphics g, GraphicsPath path)
         {
             base.OnPaintFill(g, path);
@@ -561,7 +566,7 @@ namespace Sunny.UI
             return result;
         }
 
-        private int FlowPos = 0;
+        private int FlowPos;
 
         private void PaintFlow(Graphics g)
         {

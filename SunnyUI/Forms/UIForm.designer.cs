@@ -1,4 +1,6 @@
-﻿namespace Sunny.UI
+﻿using System;
+
+namespace Sunny.UI
 {
     partial class UIForm
     {
@@ -14,6 +16,14 @@
         protected override void Dispose(bool disposing)
         {
             this.UnRegister();
+
+            if (hotKeys != null)
+            {
+                foreach (var hotKey in hotKeys.Values)
+                {
+                    Win32.User.UnregisterHotKey(IntPtr.Zero, hotKey.id);
+                }
+            }
 
             if (disposing && (components != null))
             {
@@ -42,7 +52,6 @@
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
             this.Name = "UIForm";
             this.Padding = new System.Windows.Forms.Padding(0, 35, 0, 0);
-            this.ShowIcon = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "UIForm";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.UIForm_FormClosing);

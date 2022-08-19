@@ -1,6 +1,6 @@
 /******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,7 +13,7 @@
  ******************************************************************************
  * 文件名称: UFontImage.cs
  * 文件说明: 字体图片帮助类
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
@@ -63,11 +63,14 @@ namespace Sunny.UI
         /// </summary>
         public static readonly FontImages FontAwesomeV5Solid;
 
-        public const int FontAwesomeV4Count = 786;
-        public const int ElegantIconsCount = 360;
-        public const int FontAwesomeV5RegularCount = 151;
-        public const int FontAwesomeV5SolidCount = 1001;
-        public const int FontAwesomeV5BrandsCount = 457;
+        //public const int FontAwesomeV4Count = 786; 
+        //public const int ElegantIconsCount = 360;
+        //public const int FontAwesomeV5RegularCount = 151;
+        //public const int FontAwesomeV5SolidCount = 1001;
+        //public const int FontAwesomeV5BrandsCount = 457;
+        //public const int LineAwesomeRegularCount = 151;
+        //public const int LineAwesomeSolidCount = 960;
+        //public const int LineAwesomeBrandsCount = 433;
 
         /// <summary>
         /// 构造函数
@@ -136,7 +139,6 @@ namespace Sunny.UI
         public static void DrawFontImage(this Graphics graphics, int symbol, int symbolSize, Color color,
             RectangleF rect, int xOffset = 0, int yOffSet = 0)
         {
-            UISymbolType symbolType = (UISymbolType)symbol.Div(100000);
             SizeF sf = graphics.GetFontImageSize(symbol, symbolSize);
             graphics.DrawFontImage(symbol, symbolSize, color, rect.Left + ((rect.Width - sf.Width) / 2.0f).RoundEx(),
                 rect.Top + ((rect.Height - sf.Height) / 2.0f).RoundEx(), xOffset, yOffSet);
@@ -186,7 +188,7 @@ namespace Sunny.UI
             using (Graphics g = image.Graphics())
             {
                 SizeF sf = g.GetFontImageSize(symbol, size);
-                g.DrawFontImage(symbol, size, color, (image.Width - sf.Width) / 2.0f, (image.Height - sf.Height) / 2.0f, 0, 0);
+                g.DrawFontImage(symbol, size, color, (image.Width - sf.Width) / 2.0f, (image.Height - sf.Height) / 2.0f);
             }
 
             return image;

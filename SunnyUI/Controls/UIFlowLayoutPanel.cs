@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,13 +13,15 @@
  ******************************************************************************
  * 文件名称: UIFlowLayoutPanel.cs
  * 文件说明: FlowLayoutPanel
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-09-29
  *
  * 2020-09-29: V2.2.8 增加文件说明
  * 2021-07-10: V3.0.4 增加滚动条颜色属性 
  * 2021-07-31: V3.0.5 可像原生控件一样通过Controls.Add增加
  * 2021-08-11: V3.0.5 删除点击的Focus事件
+ * 2021-10-18: V3.0.8 增加Scroll事件
+ * 2021-11-05: V3.0.8 修改不同DPI缩放滚动条未覆盖的问题
 ******************************************************************************/
 
 using System;
@@ -30,12 +32,12 @@ using System.Windows.Forms;
 
 namespace Sunny.UI
 {
-    public class UIFlowLayoutPanel : UIPanel,IToolTip
+    public class UIFlowLayoutPanel : UIPanel, IToolTip
     {
         private UIVerScrollBarEx VBar;
         private UIHorScrollBarEx HBar;
         private FlowLayoutPanel flowLayoutPanel;
-        private readonly Timer timer = new Timer();
+        private readonly Timer timer;
 
         public UIFlowLayoutPanel()
         {
@@ -56,11 +58,30 @@ namespace Sunny.UI
             HBar.ValueChanged += HBar_ValueChanged;
 
             SizeChanged += Panel_SizeChanged;
+            timer = new Timer();
             timer.Interval = 100;
             timer.Tick += Timer_Tick;
             timer.Start();
         }
 
+        /// <summary>
+        /// 重载字体变更
+        /// </summary>
+        /// <param name="e">参数</param>
+        protected override void OnFontChanged(EventArgs e)
+        {
+            base.OnFontChanged(e);
+            if (flowLayoutPanel != null) flowLayoutPanel.Font = Font;
+            if (VBar != null) VBar.Font = Font;
+            if (HBar != null) HBar.Font = Font;
+        }
+
+        public new event ScrollEventHandler Scroll;
+
+        /// <summary>
+        /// 需要额外设置ToolTip的控件
+        /// </summary>
+        /// <returns>控件</returns>
         public Control ExToolTipControl()
         {
             return Panel;
@@ -86,10 +107,11 @@ namespace Sunny.UI
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
-            timer.Stop();
+            timer?.Stop();
+            timer?.Dispose();
         }
 
-        [DefaultValue(System.Windows.Forms.FlowDirection.LeftToRight)]
+        [DefaultValue(FlowDirection.LeftToRight)]
         [Localizable(true)]
         public FlowDirection FlowDirection
         {
@@ -233,34 +255,32 @@ namespace Sunny.UI
         [Browsable(false)]
         public FlowLayoutPanel FlowLayoutPanel => flowLayoutPanel;
 
+        /// <summary>
+        /// 绘制前景颜色
+        /// </summary>
+        /// <param name="g">绘图图面</param>
+        /// <param name="path">绘图路径</param>
         protected override void OnPaintFore(Graphics g, GraphicsPath path)
         {
         }
 
-
-
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="uiColor">主题样式</param>
         public override void SetStyleColor(UIBaseStyle uiColor)
         {
             base.SetStyleColor(uiColor);
             Panel.BackColor = uiColor.PlainColor;
+
+            HBar.FillColor = VBar.FillColor = uiColor.FlowLayoutPanelBarFillColor;
+            scrollBarColor = HBar.ForeColor = VBar.ForeColor = uiColor.FlowLayoutPanelBarForeColor;
         }
 
         protected override void AfterSetFillColor(Color color)
         {
             base.AfterSetFillColor(color);
             Panel.BackColor = color;
-            VBar.FillColor = color;
-            HBar.FillColor = color;
-        }
-
-        protected override void AfterSetForeColor(Color color)
-        {
-            base.AfterSetForeColor(color);
-
-            if (!StyleCustomMode)
-            {
-                scrollBarColor = color;
-            }
         }
 
         private Color scrollBarColor = Color.FromArgb(80, 160, 255);
@@ -268,7 +288,7 @@ namespace Sunny.UI
         /// <summary>
         /// 填充颜色，当值为背景色或透明色或空值则不填充
         /// </summary>
-        [Description("填充颜色"), Category("SunnyUI")]
+        [Description("滚动条填充颜色"), Category("SunnyUI")]
         [DefaultValue(typeof(Color), "80, 160, 255")]
         public Color ScrollBarColor
         {
@@ -298,6 +318,10 @@ namespace Sunny.UI
             Panel.Focus();
         }
 
+        /// <summary>
+        /// 重载鼠标进入事件
+        /// </summary>
+        /// <param name="e">鼠标参数</param>
         protected override void OnMouseEnter(EventArgs e)
         {
             base.OnMouseEnter(e);
@@ -337,6 +361,7 @@ namespace Sunny.UI
 
         private void Panel_Scroll(object sender, ScrollEventArgs e)
         {
+            Scroll?.Invoke(this, e);
             VBar.Value = Panel.VerticalScroll.Value;
         }
 
@@ -375,31 +400,31 @@ namespace Sunny.UI
 
         private void InitializeComponent()
         {
-            this.flowLayoutPanel = new System.Windows.Forms.FlowLayoutPanel();
-            this.VBar = new Sunny.UI.UIVerScrollBarEx();
-            this.HBar = new Sunny.UI.UIHorScrollBarEx();
+            this.flowLayoutPanel = new FlowLayoutPanel();
+            this.VBar = new UIVerScrollBarEx();
+            this.HBar = new UIHorScrollBarEx();
             this.SuspendLayout();
             // 
             // flowLayoutPanel
             // 
-            this.flowLayoutPanel.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(235)))), ((int)(((byte)(243)))), ((int)(((byte)(255)))));
-            this.flowLayoutPanel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.flowLayoutPanel.Location = new System.Drawing.Point(2, 2);
+            this.flowLayoutPanel.BackColor = Color.FromArgb(235, 243, 255);
+            this.flowLayoutPanel.Dock = DockStyle.Fill;
+            this.flowLayoutPanel.Location = new Point(2, 2);
             this.flowLayoutPanel.Name = "flowLayoutPanel";
-            this.flowLayoutPanel.Size = new System.Drawing.Size(429, 383);
+            this.flowLayoutPanel.Size = new Size(429, 383);
             this.flowLayoutPanel.TabIndex = 0;
             this.flowLayoutPanel.Tag = "69605093-6397-AD32-9F69-3C29F642F87E";
             // 
             // VBar
             // 
             this.VBar.BoundsHeight = 10;
-            this.VBar.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.VBar.Font = new Font("微软雅黑", 12F, FontStyle.Regular, GraphicsUnit.Point);
             this.VBar.LargeChange = 10;
-            this.VBar.Location = new System.Drawing.Point(410, 5);
+            this.VBar.Location = new Point(410, 5);
             this.VBar.Maximum = 100;
-            this.VBar.MinimumSize = new System.Drawing.Size(1, 1);
+            this.VBar.MinimumSize = new Size(1, 1);
             this.VBar.Name = "VBar";
-            this.VBar.Size = new System.Drawing.Size(18, 377);
+            this.VBar.Size = new Size(18, 377);
             this.VBar.TabIndex = 1;
             this.VBar.TagString = "63FD1249-41D3-E08A-F8F5-CC41CC30FD03";
             this.VBar.Text = "uiVerScrollBarEx1";
@@ -409,13 +434,13 @@ namespace Sunny.UI
             // HBar
             // 
             this.HBar.BoundsWidth = 10;
-            this.HBar.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.HBar.Font = new Font("微软雅黑", 12F, FontStyle.Regular, GraphicsUnit.Point);
             this.HBar.LargeChange = 10;
-            this.HBar.Location = new System.Drawing.Point(5, 364);
+            this.HBar.Location = new Point(5, 364);
             this.HBar.Maximum = 100;
-            this.HBar.MinimumSize = new System.Drawing.Size(1, 1);
+            this.HBar.MinimumSize = new Size(1, 1);
             this.HBar.Name = "HBar";
-            this.HBar.Size = new System.Drawing.Size(399, 18);
+            this.HBar.Size = new Size(399, 18);
             this.HBar.TabIndex = 2;
             this.HBar.TagString = "79E1E7DD-3E4D-916B-C8F1-F45B579C290C";
             this.HBar.Text = "uiHorScrollBarEx1";
@@ -428,12 +453,16 @@ namespace Sunny.UI
             this.Controls.Add(this.VBar);
             this.Controls.Add(this.flowLayoutPanel);
             this.Name = "UIFlowLayoutPanel";
-            this.Padding = new System.Windows.Forms.Padding(2);
-            this.Size = new System.Drawing.Size(433, 387);
+            this.Padding = new Padding(2);
+            this.Size = new Size(433, 387);
             this.ResumeLayout(false);
 
         }
 
+        /// <summary>
+        /// 重载控件尺寸变更
+        /// </summary>
+        /// <param name="e">参数</param>
         protected override void OnSizeChanged(EventArgs e)
         {
             base.OnSizeChanged(e);
@@ -450,10 +479,12 @@ namespace Sunny.UI
                     added = Radius / 2;
                 }
 
+                VBar.Width = ScrollBarInfo.VerticalScrollBarWidth();
                 VBar.Left = Width - VBar.Width - added;
                 VBar.Top = added;
                 VBar.Height = Height - added * 2;
 
+                HBar.Height = ScrollBarInfo.HorizontalScrollBarHeight();
                 HBar.Left = added;
                 HBar.Top = Height - HBar.Height - added;
 

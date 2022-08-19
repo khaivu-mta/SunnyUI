@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,12 +13,14 @@
  ******************************************************************************
  * 文件名称: UITitlePanel.cs
  * 文件说明: 带标题面板
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
  * 2020-04-25: V2.2.4 更新主题配置类
  * 2020-07-30: V2.2.6 增加可收缩选项
+ * 2020-09-03: V3.0.6 增加标题文字颜色
+ * 2022-05-30: V3.1.9 修复Padding设置
 ******************************************************************************/
 
 using System;
@@ -41,10 +43,22 @@ namespace Sunny.UI
             get => _titleHeight;
             set
             {
-                _titleHeight = value;
-                Padding = new Padding(0, value, 0, 0);
-                CalcSystemBoxPos();
-                Invalidate();
+                if (_titleHeight != value)
+                {
+                    _titleHeight = Math.Max(19, value);
+                    Padding = new Padding(Padding.Left, Math.Max(value, Padding.Top), Padding.Right, Padding.Bottom);
+                    CalcSystemBoxPos();
+                    Invalidate();
+                }
+            }
+        }
+
+        protected override void OnPaddingChanged(EventArgs e)
+        {
+            base.OnPaddingChanged(e);
+            if (Padding.Top != Math.Max(TitleHeight, Padding.Top))
+            {
+                Padding = new Padding(Padding.Left, Math.Max(TitleHeight, Padding.Top), Padding.Right, Padding.Bottom);
             }
         }
 
@@ -63,16 +77,21 @@ namespace Sunny.UI
             InitializeComponent();
             SetStyleFlags(true, false);
             ShowText = false;
-            foreColor = Color.White;
             CalcSystemBoxPos();
+
+            titleColor = UIStyles.Blue.PanelTitleColor;
+            titleForeColor = UIStyles.Blue.PanelTitleForeColor;
         }
 
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="uiColor">主题样式</param>
         public override void SetStyleColor(UIBaseStyle uiColor)
         {
             base.SetStyleColor(uiColor);
-            titleColor = uiColor.TitleColor;
-            foreColor = uiColor.TitleForeColor;
-            Invalidate();
+            titleColor = uiColor.PanelTitleColor;
+            titleForeColor = uiColor.PanelTitleForeColor;
         }
 
         private HorizontalAlignment textAlign = HorizontalAlignment.Center;
@@ -92,6 +111,21 @@ namespace Sunny.UI
             }
         }
 
+        private Color titleForeColor = Color.White;
+
+        [DefaultValue(typeof(Color), "White")]
+        [Description("标题文字颜色"), Category("SunnyUI")]
+        public Color TitleForeColor
+        {
+            get => titleForeColor;
+            set
+            {
+                titleForeColor = value;
+                _style = UIStyle.Custom;
+                Invalidate();
+            }
+        }
+
         private Color titleColor = UIColor.Blue;
 
         [DefaultValue(typeof(Color), "80, 160, 255")]
@@ -107,6 +141,11 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 绘制填充颜色
+        /// </summary>
+        /// <param name="g">绘图图面</param>
+        /// <param name="path">绘图路径</param>
         protected override void OnPaintFill(Graphics g, GraphicsPath path)
         {
             base.OnPaintFill(g, path);
@@ -118,8 +157,10 @@ namespace Sunny.UI
 
             Color color = Enabled ? TitleColor : UIDisableColor.Fill;
             g.FillPath(color, path);
+            if (Height > TitleHeight)
+                g.DrawLine(RectColor, 0, TitleHeight, Width, TitleHeight);
 
-            color = Enabled ? ForeColor : UIFontColor.Regular;
+            color = Enabled ? TitleForeColor : UIFontColor.Regular;
             SizeF sf = g.MeasureString(Text, Font);
             switch (TextAlign)
             {
@@ -153,6 +194,10 @@ namespace Sunny.UI
 
         private bool InControlBox;
 
+        /// <summary>
+        /// 重载鼠标移动事件
+        /// </summary>
+        /// <param name="e">鼠标参数</param>
         protected override void OnMouseMove(MouseEventArgs e)
         {
             bool inControlBox = e.Location.InRect(ControlBoxRect);
@@ -165,6 +210,10 @@ namespace Sunny.UI
             base.OnMouseMove(e);
         }
 
+        /// <summary>
+        /// 重载鼠标离开事件
+        /// </summary>
+        /// <param name="e">鼠标参数</param>
         protected override void OnMouseLeave(EventArgs e)
         {
             base.OnMouseLeave(e);
@@ -273,6 +322,10 @@ namespace Sunny.UI
             base.OnMouseClick(e);
         }
 
+        /// <summary>
+        /// 重载控件尺寸变更
+        /// </summary>
+        /// <param name="e">参数</param>
         protected override void OnSizeChanged(EventArgs e)
         {
             base.OnSizeChanged(e);

@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -170,18 +170,7 @@ namespace Sunny.UI
     {
         public override bool DrawBackground(Graphics gr, RectangleF rc)
         {
-            if (this.AnalogMeter == null)
-                return false;
-
-            Color c = this.AnalogMeter.Parent.BackColor;
-            SolidBrush br = new SolidBrush(c);
-            Pen pen = new Pen(c);
-
-            Rectangle _rcTmp = new Rectangle(0, 0, this.AnalogMeter.Width, this.AnalogMeter.Height);
-            gr.DrawRectangle(pen, _rcTmp);
-            gr.FillRectangle(br, rc);
-
-            return true;
+            return false;
         }
 
         public override bool DrawBody(Graphics Gr, RectangleF rc)

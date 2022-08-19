@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,7 +13,7 @@
  ******************************************************************************
  * 文件名称: UIDropDown.cs
  * 文件说明: 下拉框弹出窗体控制类
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
@@ -93,21 +93,30 @@ namespace Sunny.UI
             AutoSize = false;
             DoubleBuffered = true;
             //ResizeRedraw = true;
-            ToolStripControlHost _host = new ToolStripControlHost(item);
-            Padding = Margin = _host.Padding = _host.Margin = Padding.Empty;
-            item.MinimumSize = item.Size;
-            item.MaximumSize = item.Size;
-            Size = item.Size;
-            TabStop = item.TabStop = true;
-            item.Location = Point.Empty;
-            Items.Add(_host);
-            item.Disposed += (sender, e) =>
-            {
-                item = null;
-                Dispose(true);
-            };
 
-            item.RegionChanged += (sender, e) => UpdateRegion();
+            try
+            {
+                ToolStripControlHost _host = new ToolStripControlHost(item);
+                Padding = Margin = _host.Padding = _host.Margin = Padding.Empty;
+                item.MinimumSize = item.Size;
+                item.MaximumSize = item.Size;
+                Size = item.Size;
+                TabStop = item.TabStop = true;
+                item.Location = Point.Empty;
+                Items.Add(_host);
+                item.RegionChanged += (sender, e) => UpdateRegion();
+
+                item.Disposed += (sender, e) =>
+                {
+                    item = null;
+                    Dispose(true);
+                };
+            }
+            catch
+            {
+
+            }
+
             UpdateRegion();
         }
 
@@ -245,9 +254,9 @@ namespace Sunny.UI
         }
 
         /// <summary>
-        /// OnSizeChanged
+        /// 重载控件尺寸变更
         /// </summary>
-        /// <param name="e">e</param>
+        /// <param name="e">参数</param>
         protected override void OnSizeChanged(EventArgs e)
         {
             if (Item != null)
@@ -301,6 +310,7 @@ namespace Sunny.UI
         protected override void OnOpened(EventArgs e)
         {
             Item.Focus();
+            Item.InitShow();
             base.OnOpened(e);
         }
 
@@ -343,7 +353,7 @@ namespace Sunny.UI
 
         public void SetStyle(UIBaseStyle style)
         {
-            Item?.SetStyle(style);
+            Item?.SetStyleColor(style);
         }
     }
 }

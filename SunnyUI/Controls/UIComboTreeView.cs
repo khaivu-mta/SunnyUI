@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,11 +13,14 @@
  ******************************************************************************
  * 文件名称: UIComboTreeView.cs
  * 文件说明: 树形列表框
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-11-11
  *
  * 2021-07-29: V3.0.5 修复SelectedNode=null的问题
- * 2020-11-11: V3.0.0 增加文件说明
+ * 2021-11-11: V3.0.0 增加文件说明
+ * 2022-05-15: V3.0.8 显示CheckBoxes时自己选中节点文字可切换状态
+ * 2022-06-16: V3.2.0 增加下拉框宽度、高度
+ * 2022-07-12: V3.2.1 修复CanSelectRootNode时可以展开子节点
 ******************************************************************************/
 
 using System;
@@ -31,12 +34,15 @@ namespace Sunny.UI
     [DefaultEvent("NodeSelected")]
     [DefaultProperty("Nodes")]
     [ToolboxItem(true)]
-    public class UIComboTreeView : UIDropControl,IToolTip
+    public class UIComboTreeView : UIDropControl, IToolTip
     {
         public UIComboTreeView()
         {
             InitializeComponent();
             fullControlSelect = true;
+            CreateInstance();
+            DropDownWidth = 250;
+            DropDownHeight = 220;
         }
 
         private void InitializeComponent()
@@ -45,20 +51,35 @@ namespace Sunny.UI
             // 
             // UIComboTreeView
             // 
-            this.DropDownStyle = Sunny.UI.UIDropDownStyle.DropDownList;
+            this.DropDownStyle = UIDropDownStyle.DropDownList;
             this.Name = "UIComboTreeView";
-            this.Padding = new System.Windows.Forms.Padding(0, 0, 30, 0);
-            this.ButtonClick += new System.EventHandler(this.UIComboTreeView_ButtonClick);
+            this.Padding = new Padding(0, 0, 30, 0);
+            this.ButtonClick += this.UIComboTreeView_ButtonClick;
             this.ResumeLayout(false);
             this.PerformLayout();
-
         }
 
+        [DefaultValue(250)]
+        [Description("下拉框宽度"), Category("SunnyUI")]
+        public int DropDownWidth { get; set; }
+
+        [DefaultValue(220)]
+        [Description("下拉框高度"), Category("SunnyUI")]
+        public int DropDownHeight { get; set; }
+
+        /// <summary>
+        /// 需要额外设置ToolTip的控件
+        /// </summary>
+        /// <returns>控件</returns>
         public Control ExToolTipControl()
         {
             return edit;
         }
 
+        /// <summary>
+        /// 重载字体变更
+        /// </summary>
+        /// <param name="e">参数</param>
         protected override void OnFontChanged(EventArgs e)
         {
             base.OnFontChanged(e);
@@ -111,6 +132,9 @@ namespace Sunny.UI
 
         private readonly UIComboTreeViewItem item = new UIComboTreeViewItem();
 
+        /// <summary>
+        /// 创建对象
+        /// </summary>
         protected override void CreateInstance()
         {
             ItemForm = new UIDropDown(item);
@@ -133,6 +157,11 @@ namespace Sunny.UI
         public event OnNodeSelected NodeSelected;
         public event OnNodesSelected NodesSelected;
 
+        /// <summary>
+        /// 值改变事件
+        /// </summary>
+        /// <param name="sender">控件</param>
+        /// <param name="value">值</param>
         protected override void ItemForm_ValueChanged(object sender, object value)
         {
             if (!CheckBoxes)
@@ -172,13 +201,15 @@ namespace Sunny.UI
             }
         }
 
-        private void UIComboTreeView_ButtonClick(object sender, System.EventArgs e)
+        private void UIComboTreeView_ButtonClick(object sender, EventArgs e)
         {
             ItemForm.Size = ItemSize;
-            item.TreeView.ExpandAll();
+            //item.TreeView.ExpandAll();
             item.CanSelectRootNode = CanSelectRootNode;
             item.Translate();
-            ItemForm.Show(this);
+            item.SetDPIScale();
+            //ItemForm.Show(this);
+            ItemForm.Show(this, new Size(DropDownWidth < Width ? Width : DropDownWidth, DropDownHeight));
         }
 
         [DefaultValue(typeof(Size), "250, 220"), Description("下拉弹框界面大小"), Category("SunnyUI")]

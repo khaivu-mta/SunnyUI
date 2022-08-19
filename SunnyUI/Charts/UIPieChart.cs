@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,11 +13,12 @@
  ******************************************************************************
  * 文件名称: UIPieChart.cs
  * 文件说明: 饼状图
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-06-06
  *
  * 2020-06-06: V2.2.5 增加文件说明
  * 2021-07-22: V3.0.5 增加更新数据的方法
+ * 2022-07-29: V3.2.2 数据显示的小数位数重构调整至Option.DecimalPlaces
 ******************************************************************************/
 
 using System;
@@ -32,6 +33,9 @@ namespace Sunny.UI
     [ToolboxItem(true)]
     public sealed class UIPieChart : UIChart
     {
+        /// <summary>
+        /// 默认创建空的图表参数
+        /// </summary>
         protected override void CreateEmptyOption()
         {
             if (emptyOption != null) return;
@@ -64,6 +68,10 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 重载控件尺寸变更
+        /// </summary>
+        /// <param name="e">参数</param>
         protected override void OnSizeChanged(EventArgs e)
         {
             base.OnSizeChanged(e);
@@ -81,6 +89,10 @@ namespace Sunny.UI
             CalcData();
         }
 
+        /// <summary>
+        /// 绘制图表参数
+        /// </summary>
+        /// <param name="g">绘制图面</param>
         protected override void DrawOption(Graphics g)
         {
             if (Option == null) return;
@@ -91,6 +103,9 @@ namespace Sunny.UI
 
         private bool AllIsZero;
 
+        /// <summary>
+        /// 计算数据用于显示
+        /// </summary>
         protected override void CalcData()
         {
             Angles.Clear();
@@ -122,13 +137,13 @@ namespace Sunny.UI
                             UITemplate template = new UITemplate(Option.ToolTip.Formatter);
                             template.Set("a", pie.Name);
                             template.Set("b", pie.Data[i].Name);
-                            template.Set("c", pie.Data[i].Value.ToString(Option.ToolTip.ValueFormat));
+                            template.Set("c", pie.Data[i].Value.ToString("F" + Option.DecimalPlaces));
                             template.Set("d", percent.ToString("F2"));
                             text = template.Render();
                         }
                         catch
                         {
-                            text = pie.Data[i].Name + " : " + pie.Data[i].Value.ToString("F2") + "(" + percent.ToString("F2") + "%)";
+                            text = pie.Data[i].Name + " : " + pie.Data[i].Value.ToString("F" + Option.DecimalPlaces) + "(" + percent.ToString("F2") + "%)";
                             if (pie.Name.IsValid()) text = pie.Name + '\n' + text;
                         }
                     }
@@ -158,6 +173,7 @@ namespace Sunny.UI
             {
                 var pie = series[pieIndex];
                 RectangleF rect = GetSeriesRect(pie);
+
                 for (int azIndex = 0; azIndex < pie.Data.Count; azIndex++)
                 {
                     Color color = ChartStyle.GetColor(azIndex);
@@ -165,7 +181,7 @@ namespace Sunny.UI
                     if (data.StyleCustomMode) color = data.Color;
                     RectangleF rectx = new RectangleF(rect.X - 10, rect.Y - 10, rect.Width + 20, rect.Width + 20);
                     g.FillPie(color, (ActivePieIndex == pieIndex && ActiveAzIndex == azIndex) ? rectx : rect, Angles[pieIndex][azIndex].Start - 90, Angles[pieIndex][azIndex].Sweep);
-                    Angles[pieIndex][azIndex].TextSize = g.MeasureString(Angles[pieIndex][azIndex].Text, LegendFont);
+                    Angles[pieIndex][azIndex].TextSize = g.MeasureString(Angles[pieIndex][azIndex].Text, TempFont);
 
                     if (pie.Label.Show)
                     {
@@ -176,8 +192,8 @@ namespace Sunny.UI
                         string name = Option.Legend != null ? Option.Legend.Data[azIndex] + " : " : "";
                         if (pie.Data[azIndex].Value > 0)
                         {
-                            string text = name + pie.Data[azIndex].Value.ToString("F0");
-                            SizeF sf = g.MeasureString(text, SubFont);
+                            string text = name + pie.Data[azIndex].Value.ToString("F" + Option.DecimalPlaces);
+                            SizeF sf = g.MeasureString(text, TempFont);
                             PointF pf;
                             int added = 9;
                             if (az >= 0 && az < 90)
@@ -190,7 +206,7 @@ namespace Sunny.UI
                                 pf = new PointF((float)(DrawCenter(pie).X - RadiusSize(pie) * x - added) - sf.Width, (float)(DrawCenter(pie).Y - RadiusSize(pie) * y) - sf.Height - added);
 
                             if (pie.Data[azIndex].Value > 0)
-                                g.DrawString(text, SubFont, color, pf.X, pf.Y);
+                                g.DrawString(text, TempFont, color, pf.X, pf.Y);
                         }
                     }
                 }
@@ -199,6 +215,9 @@ namespace Sunny.UI
 
         private readonly ConcurrentDictionary<int, ConcurrentDictionary<int, Angle>> Angles = new ConcurrentDictionary<int, ConcurrentDictionary<int, Angle>>();
 
+        /// <summary>
+        /// 图表参数
+        /// </summary>
         [Browsable(false), DefaultValue(null)]
         public UIPieOption Option
         {
@@ -214,6 +233,10 @@ namespace Sunny.UI
             // }
         }
 
+        /// <summary>
+        /// 重载鼠标移动事件
+        /// </summary>
+        /// <param name="e">鼠标参数</param>
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
@@ -232,9 +255,9 @@ namespace Sunny.UI
                 if (!e.Location.InRect(rect)) continue;
 
                 PointF pf = new PointF(rect.Left + rect.Width / 2.0f, rect.Top + rect.Height / 2.0f);
-                if (MathEx.CalcDistance(e.Location, pf) * 2 > rect.Width) continue;
+                if (Drawing.CalcDistance(e.Location, pf) * 2 > rect.Width) continue;
 
-                double az = MathEx.CalcAngle(e.Location, pf);
+                double az = Drawing.CalcAngle(e.Location, pf);
                 for (int azIndex = 0; azIndex < Option.Series[pieIndex].Data.Count; azIndex++)
                 {
                     Angle angle = Angles[pieIndex][azIndex];

@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,16 +13,16 @@
  ******************************************************************************
  * 文件名称: UIStyle.cs
  * 文件说明: 控件样式定义类
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
  * 2021-07-12: V3.0.5 增加紫色主题
  * 2021-07-18: V3.0.5 增加多彩主题，以颜色深色，文字白色为主
+ * 2021-09-24: V3.0.7 修改默认字体的GdiCharSet
+ * 2021-10-16: V3.0.8 增加系统DPI缩放自适应
 ******************************************************************************/
 
-using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Reflection;
@@ -55,6 +55,10 @@ namespace Sunny.UI
         void SetStyleColor(UIBaseStyle uiColor);
 
         void SetStyle(UIStyle style);
+
+        bool IsScaled { get; }
+
+        void SetDPIScale();
     }
 
     /// <summary>
@@ -99,422 +103,46 @@ namespace Sunny.UI
         Gray = 5,
 
         /// <summary>
-        /// 白
+        /// 紫
         /// </summary>
-        [DisplayText("White")]
-        White = 6,
+        [DisplayText("Purple")]
+        Purple = 6,
+
+        /// <summary>
+        /// LayuiGreen
+        /// </summary>
+        [DisplayText("LayuiGreen")]
+        LayuiGreen = 7,
+
+        /// <summary>
+        /// LayuiRed
+        /// </summary>
+        [DisplayText("LayuiRed")]
+        LayuiRed = 8,
+
+        /// <summary>
+        /// LayuiOrange
+        /// </summary>
+        [DisplayText("LayuiOrange")]
+        LayuiOrange = 9,
 
         /// <summary>
         /// 深蓝
         /// </summary>
         [DisplayText("DarkBlue")]
-        DarkBlue = 7,
+        DarkBlue = 101,
 
         /// <summary>
         /// 黑
         /// </summary>
         [DisplayText("Black")]
-        Black = 8,
-
-        /// <summary>
-        /// 紫
-        /// </summary>
-        [DisplayText("Purple")]
-        Purple = 9,
-
-        /// <summary>
-        /// Office蓝
-        /// </summary>
-        [DisplayText("Office2010Blue")]
-        Office2010Blue = 101,
-
-        /// <summary>
-        /// Office银
-        /// </summary>
-        [DisplayText("Office2010Silver")]
-        Office2010Silver = 102,
-
-        /// <summary>
-        /// Office黑
-        /// </summary>
-        [DisplayText("Office2010Black")]
-        Office2010Black = 103,
-
-        /// <summary>
-        /// 浅蓝
-        /// </summary>
-        [DisplayText("LightBlue")]
-        LightBlue = 201,
-
-        /// <summary>
-        /// 浅绿
-        /// </summary>
-        [DisplayText("LightGreen")]
-        LightGreen = 202,
-
-        /// <summary>
-        /// 浅橙
-        /// </summary>
-        [DisplayText("LightOrange")]
-        LightOrange = 203,
-
-        /// <summary>
-        /// 浅红
-        /// </summary>
-        [DisplayText("LightRed")]
-        LightRed = 204,
-
-        /// <summary>
-        /// 浅灰
-        /// </summary>
-        [DisplayText("LightGray")]
-        LightGray = 205,
-
-        /// <summary>
-        /// 浅紫
-        /// </summary>
-        [DisplayText("LightPurple")]
-        LightPurple = 209,
+        Black = 102,
 
         /// <summary>
         /// 多彩的
         /// </summary>
         [DisplayText("Colorful")]
         Colorful = 999
-    }
-
-    /// <summary>
-    /// 主题样式管理类
-    /// </summary>
-    public static class UIStyles
-    {
-        public static List<UIStyle> PopularStyles()
-        {
-            List<UIStyle> styles = new List<UIStyle>();
-            foreach (UIStyle style in Enum.GetValues(typeof(UIStyle)))
-            {
-                if (style.Value() >= UIStyle.Blue.Value() && style.Value() <= UIStyle.Office2010Black.Value())
-                {
-                    styles.Add(style);
-                }
-            }
-
-            return styles;
-        }
-
-        /// <summary>
-        /// 自定义
-        /// </summary>
-        private readonly static UIBaseStyle Custom = new UICustomStyle();
-
-        /// <summary>
-        /// 白
-        /// </summary>
-        private readonly static UIBaseStyle White = new UIWhiteStyle();
-
-        /// <summary>
-        /// 蓝
-        /// </summary>
-        private readonly static UIBaseStyle Blue = new UIBlueStyle();
-
-        /// <summary>
-        /// 浅蓝
-        /// </summary>
-        private readonly static UIBaseStyle LightBlue = new UILightBlueStyle();
-
-        /// <summary>
-        /// 橙
-        /// </summary>
-        private readonly static UIBaseStyle Orange = new UIOrangeStyle();
-
-        /// <summary>
-        /// 浅橙
-        /// </summary>
-        private readonly static UIBaseStyle LightOrange = new UILightOrangeStyle();
-
-        /// <summary>
-        /// 灰
-        /// </summary>
-        private readonly static UIBaseStyle Gray = new UIGrayStyle();
-
-        /// <summary>
-        /// 浅灰
-        /// </summary>
-        private readonly static UIBaseStyle LightGray = new UILightGrayStyle();
-
-        /// <summary>
-        /// 绿
-        /// </summary>
-        private readonly static UIBaseStyle Green = new UIGreenStyle();
-
-        /// <summary>
-        /// 浅绿
-        /// </summary>
-        private readonly static UIBaseStyle LightGreen = new UILightGreenStyle();
-
-        /// <summary>
-        /// 红
-        /// </summary>
-        private readonly static UIBaseStyle Red = new UIRedStyle();
-
-        /// <summary>
-        /// 浅红
-        /// </summary>
-        private readonly static UIBaseStyle LightRed = new UILightRedStyle();
-
-        /// <summary>
-        /// 深蓝
-        /// </summary>
-        private readonly static UIBaseStyle DarkBlue = new UIDarkBlueStyle();
-
-        /// <summary>
-        /// 黑
-        /// </summary>
-        private readonly static UIBaseStyle Black = new UIBlackStyle();
-
-        /// <summary>
-        /// Office蓝
-        /// </summary>
-        private readonly static UIBaseStyle Office2010Blue = new UIOffice2010BlueStyle();
-
-        /// <summary>
-        /// Office银
-        /// </summary>
-        private readonly static UIBaseStyle Office2010Silver = new UIOffice2010SilverStyle();
-
-        /// <summary>
-        /// 紫
-        /// </summary>
-        private readonly static UIBaseStyle Purple = new UIPurpleStyle();
-
-        /// <summary>
-        /// 浅紫
-        /// </summary>
-        private readonly static UIBaseStyle LightPurple = new UILightPurpleStyle();
-
-        /// <summary>
-        /// 多彩
-        /// </summary>
-        private readonly static UIColorfulStyle Colorful = new UIColorfulStyle();
-
-        /// <summary>
-        /// Office黑
-        /// </summary>
-        private readonly static UIBaseStyle Office2010Black = new UIOffice2010BlackStyle();
-
-        public static void InitColorful(Color styleColor, Color foreColor)
-        {
-            Colorful.Init(styleColor, foreColor);
-            Style = UIStyle.Colorful;
-            SetStyle(Style);
-        }
-
-        private static readonly ConcurrentDictionary<UIStyle, UIBaseStyle> Styles = new ConcurrentDictionary<UIStyle, UIBaseStyle>();
-        private static readonly ConcurrentDictionary<Guid, UIForm> Forms = new ConcurrentDictionary<Guid, UIForm>();
-        private static readonly ConcurrentDictionary<Guid, UIPage> Pages = new ConcurrentDictionary<Guid, UIPage>();
-
-        /// <summary>
-        /// 菜单颜色集合
-        /// </summary>
-        public static readonly ConcurrentDictionary<UIMenuStyle, UIMenuColor> MenuColors = new ConcurrentDictionary<UIMenuStyle, UIMenuColor>();
-
-        static UIStyles()
-        {
-            AddStyle(Custom);
-            AddStyle(Blue);
-            AddStyle(LightBlue);
-            AddStyle(Orange);
-            AddStyle(LightOrange);
-            AddStyle(Gray);
-            AddStyle(LightGray);
-            AddStyle(Green);
-            AddStyle(LightGreen);
-            AddStyle(Red);
-            AddStyle(LightRed);
-            AddStyle(DarkBlue);
-            AddStyle(Black);
-            AddStyle(White);
-            AddStyle(Purple);
-            AddStyle(LightPurple);
-            AddStyle(Office2010Blue);
-            AddStyle(Office2010Silver);
-            AddStyle(Office2010Black);
-            AddStyle(Colorful);
-
-            MenuColors.TryAdd(UIMenuStyle.Custom, new UIMenuCustomColor());
-            MenuColors.TryAdd(UIMenuStyle.Black, new UIMenuBlackColor());
-            MenuColors.TryAdd(UIMenuStyle.White, new UIMenuWhiteColor());
-        }
-
-        /// <summary>
-        /// 主题样式整数值
-        /// </summary>
-        /// <param name="style">主题样式</param>
-        /// <returns>整数值</returns>
-        public static int Value(this UIStyle style)
-        {
-            return (int)style;
-        }
-
-        /// <summary>
-        /// 注册窗体
-        /// </summary>
-        /// <param name="guid">GUID</param>
-        /// <param name="form">窗体</param>
-        public static bool Register(Guid guid, UIForm form)
-        {
-            if (!Forms.ContainsKey(guid))
-            {
-                Forms.TryAddOrUpdate(guid, form);
-                return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// 注册页面
-        /// </summary>
-        /// <param name="guid">GUID</param>
-        /// <param name="page">页面</param>
-        public static bool Register(Guid guid, UIPage page)
-        {
-            if (!Pages.ContainsKey(guid))
-            {
-                Pages.TryAddOrUpdate(guid, page);
-                return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// 注册窗体
-        /// </summary>
-        /// <param name="form">窗体</param>
-        public static bool Register(this UIForm form)
-        {
-            if (!Forms.ContainsKey(form.Guid))
-            {
-                Forms.TryAddOrUpdate(form.Guid, form);
-                return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// 注册页面
-        /// </summary>
-        /// <param name="page">页面</param>
-        public static bool Register(this UIPage page)
-        {
-            if (!Pages.ContainsKey(page.Guid))
-            {
-                Pages.TryAddOrUpdate(page.Guid, page);
-                return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// 反注册窗体
-        /// </summary>
-        /// <param name="form">窗体</param>
-        public static void UnRegister(this UIForm form)
-        {
-            Forms.TryRemove(form.Guid, out _);
-        }
-
-        /// <summary>
-        /// 反注册页面
-        /// </summary>
-        /// <param name="page">页面</param>
-        public static void UnRegister(this UIPage page)
-        {
-            Pages.TryRemove(page.Guid, out _);
-        }
-
-        /// <summary>
-        /// 反注册窗体、页面
-        /// </summary>
-        /// <param name="guid">GUID</param>
-        /// <param name="form">窗体</param>
-        public static void UnRegister(Guid guid)
-        {
-            if (Forms.ContainsKey(guid))
-                Forms.TryRemove(guid, out _);
-
-            if (Pages.ContainsKey(guid))
-                Pages.TryRemove(guid, out _);
-
-        }
-
-        /// <summary>
-        /// 获取主题样式
-        /// </summary>
-        /// <param name="style">主题样式名称</param>
-        /// <returns>主题样式</returns>
-        public static UIBaseStyle GetStyleColor(UIStyle style)
-        {
-            if (Styles.ContainsKey(style))
-            {
-                return Styles[style];
-            }
-            else
-            {
-                Style = UIStyle.Blue;
-                return Styles[Style];
-            }
-        }
-
-        public static UIBaseStyle ActiveStyleColor
-        {
-            get => GetStyleColor(Style);
-        }
-
-        private static void AddStyle(UIBaseStyle uiColor)
-        {
-            if (Styles.ContainsKey(uiColor.Name))
-            {
-                MessageBox.Show(uiColor.Name + " is already exist.");
-            }
-
-            Styles.TryAdd(uiColor.Name, uiColor);
-        }
-
-        /// <summary>
-        /// 主题样式
-        /// </summary>
-        public static UIStyle Style { get; private set; } = UIStyle.Blue;
-
-        /// <summary>
-        /// 设置主题样式
-        /// </summary>
-        /// <param name="style">主题样式</param>
-        public static void SetStyle(UIStyle style)
-        {
-            Style = style;
-
-            foreach (var form in Forms.Values)
-            {
-                form.Style = style;
-            }
-
-            foreach (var page in Pages.Values)
-            {
-                page.Style = style;
-            }
-        }
-
-        public static void Translate()
-        {
-            foreach (var form in Forms.Values)
-            {
-                form.Translate();
-            }
-        }
     }
 
     /// <summary>
@@ -548,9 +176,39 @@ namespace Sunny.UI
         public static readonly Color Orange = Color.FromArgb(220, 155, 40);
 
         /// <summary>
+        /// LayuiGreen
+        /// </summary>
+        public static readonly Color LayuiGreen = Color.FromArgb(0, 150, 136);
+
+        /// <summary>
+        /// LayuiRed
+        /// </summary>
+        public static readonly Color LayuiRed = Color.FromArgb(255, 87, 34);
+
+        /// <summary>
+        /// LayuiOrange
+        /// </summary>
+        public static readonly Color LayuiOrange = Color.FromArgb(255, 184, 0);
+
+        /// <summary>
+        /// LayuiCyan
+        /// </summary>
+        public static readonly Color LayuiCyan = Color.FromArgb(46, 57, 79);
+
+        /// <summary>
+        /// LayuiCyan
+        /// </summary>
+        public static readonly Color LayuiBlue = Color.FromArgb(69, 149, 255);
+
+        /// <summary>
+        /// LayuiCyan
+        /// </summary>
+        public static readonly Color LayuiBlack = Color.FromArgb(52, 55, 66);
+
+        /// <summary>
         /// 深蓝
         /// </summary>
-        public static readonly Color DarkBlue = Color.FromArgb(15, 40, 70);
+        public static readonly Color DarkBlue = Color.FromArgb(14, 30, 63);
 
         /// <summary>
         /// 白
@@ -565,7 +223,7 @@ namespace Sunny.UI
         /// <summary>
         /// 紫
         /// </summary>
-        public static readonly Color Purple = Color.FromArgb(102, 58, 183);// Color.FromArgb(123, 81, 201);
+        public static readonly Color Purple = Color.FromArgb(102, 58, 183);
 
         /// <summary>
         /// 浅紫
@@ -649,15 +307,69 @@ namespace Sunny.UI
     /// </summary>
     public static class UIFontColor
     {
-        /// <summary>
-        /// 默认字体
-        /// </summary>
-        public static readonly Font Font = new Font("微软雅黑", 12);
+        public static byte GdiCharSet
+        {
+            get
+            {
+                byte value = 1;
+                // 注解
+                // 除非在构造函数中指定了不同的字符集，否则此属性将返回 1 
+                // Font(String, Single, FontStyle, GraphicsUnit, Byte) 。 
+                // 此属性采用 Windows SDK 头文件 WinGDI 中定义的列表的值。 下表列出了字符集和字节值。
+                // 字符集 “值”
+                // ANSI    0
+                // DEFAULT 1
+                // 代号  2
+                // SHIFTJIS    128
+                // HANGEUL 129
+                // 文字  129
+                // GB2312  134
+                // CHINESEBIG5 136
+                // OEM 255
+                // JOHAB   130
+                // 希伯来语    177
+                // 阿拉伯语    178
+                // 希腊语 161
+                // 土耳其语    162
+                // 越南语 163
+                // 泰语  222
+                // EASTEUROPE  238
+                // 俄语  204
+                // MAC 77
+                // 波罗  186
+
+                if (System.Text.Encoding.Default.BodyName.ToUpper() == "GB2312") value = 134;
+                return value;
+            }
+        }
 
         /// <summary>
         /// 默认字体
         /// </summary>
-        public static readonly Font SubFont = new Font("微软雅黑", 9);
+        public static Font Font()
+        {
+            return new Font("微软雅黑", FontSize, FontStyle.Regular, GraphicsUnit.Point, GdiCharSet);
+        }
+
+        /// <summary>
+        /// 默认字体
+        /// </summary>
+        public static Font Font(float fontSize)
+        {
+            return new Font("微软雅黑", fontSize, FontStyle.Regular, GraphicsUnit.Point, GdiCharSet);
+        }
+
+        public static float FontSize = 12;
+
+        /// <summary>
+        /// 默认二级字体
+        /// </summary>
+        public static Font SubFont()
+        {
+            return new Font("微软雅黑", SubFontSize, FontStyle.Regular, GraphicsUnit.Point, GdiCharSet);
+        }
+
+        public static float SubFontSize = 9;
 
         /// <summary>
         /// 主要颜色
@@ -678,6 +390,11 @@ namespace Sunny.UI
         /// 其他颜色
         /// </summary>
         public static readonly Color Plain = Color.Silver;
+
+        /// <summary>
+        /// 白色
+        /// </summary>
+        public static readonly Color White = Color.FromArgb(248, 248, 248);
     }
 
     /// <summary>
@@ -729,6 +446,16 @@ namespace Sunny.UI
 
     public static class UIStyleHelper
     {
+        /// <summary>
+        /// 主题的调色板
+        /// </summary>
+        /// <param name="style"></param>
+        /// <returns></returns>
+        public static UIBaseStyle Colors(this UIStyle style)
+        {
+            return UIStyles.GetStyleColor(style);
+        }
+
         public static bool IsCustom(this UIStyle style)
         {
             return style.Equals(UIStyle.Custom);
@@ -797,7 +524,7 @@ namespace Sunny.UI
                 if (obj is UIPage) continue;
                 if (obj is UITableLayoutPanel) continue;
                 if (obj is UIFlowLayoutPanel) continue;
-                if (obj is UIPanel) continue;
+                if (obj is UIUserControl) continue;
 
                 if (obj is TableLayoutPanel) continue;
 

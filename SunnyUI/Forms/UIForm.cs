@@ -1,6 +1,6 @@
 /******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,7 +13,7 @@
  ******************************************************************************
  * 文件名称: UIForm.cs
  * 文件说明: 窗体基类
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
@@ -26,9 +26,22 @@
  * 2021-05-06: V3.0.3 增加属性，标题栏可放置控件
  * 2021-08-17: V3.0.6 增加TitleFont属性
  * 2021-08-17: V3.0.6 适应主屏幕任务栏在屏幕各个方向均可
+ * 2021-08-17: V3.0.8 增加IFrame接口
+ * 2022-01-03: V3.0.9 标题栏按钮可以设置颜色
+ * 2022-02-09: V3.1.0 增加页面间传值方法SetParamToPage
+ * 2022-03-19: V3.1.1 重构主题配色
+ * 2022-03-28: V3.1.1 增加了查找页面的方法
+ * 2022-04-02: V3.1.2 默认设置AutoScaleMode为None
+ * 2022-04-26: V3.1.8 屏蔽一些属性
+ * 2022-05-06: V3.1.8 可拖拽时Padding可以调整大小
+ * 2022-06-11: V3.1.9 弹窗默认关闭半透明遮罩
+ * 2022-07-05: V3.2.1 多页面框架增加PageAdded，PageSelected，PageRemoved事件
+ * 2022-07-14: V3.2.1 增加UnRegisterHotKey，卸载全局热键
+ * 2022-07-25: V3.2.2 多页面框架增加程序关闭时调用UIPage的Final和FormClosed事件
 ******************************************************************************/
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
@@ -38,10 +51,8 @@ using System.Windows.Forms;
 
 namespace Sunny.UI
 {
-    public partial class UIForm : Form, IStyleInterface, ITranslate
+    public partial class UIForm : Form, IStyleInterface, ITranslate, IFrame
     {
-        private readonly UIButton btn = new UIButton();
-
         public readonly Guid Guid = Guid.NewGuid();
 
         public UIForm()
@@ -67,7 +78,131 @@ namespace Sunny.UI
             FormBorderStyle = FormBorderStyle.None;
             m_aeroEnabled = false;
             showTitleIcon = false;
+
+            controlBoxForeColor = UIStyles.Blue.FormControlBoxForeColor;
+            controlBoxFillHoverColor = UIStyles.Blue.FormControlBoxFillHoverColor;
+            ControlBoxCloseFillHoverColor = UIStyles.Blue.FormControlBoxCloseFillHoverColor;
+            rectColor = UIStyles.Blue.FormRectColor;
+            foreColor = UIStyles.Blue.FormForeColor;
+            BackColor = UIStyles.Blue.FormBackColor;
+            titleColor = UIStyles.Blue.FormTitleColor;
+            titleForeColor = UIStyles.Blue.FormTitleForeColor;
         }
+
+        [Browsable(false)]
+        public new bool IsMdiContainer
+        {
+            get => base.IsMdiContainer;
+            set => base.IsMdiContainer = false;
+        }
+
+        [Browsable(false)]
+        public new bool AutoScroll
+        {
+            get => base.AutoScroll;
+            set => base.AutoScroll = false;
+        }
+
+        /// <summary>
+        /// 禁止控件跟随窗体缩放
+        /// </summary>
+        [DefaultValue(false), Category("SunnyUI"), Description("禁止控件跟随窗体缩放")]
+        public bool ZoomScaleDisabled { get; set; }
+
+        [Browsable(false)]
+        public bool IsScaled { get; private set; }
+
+        public void SetDPIScale()
+        {
+            if (DesignMode) return;
+            if (!IsScaled && UIStyles.DPIScale)
+            {
+                this.SetDPIScaleFont();
+
+                if (!UIDPIScale.DPIScaleIsOne())
+                {
+                    TitleFont = TitleFont.DPIScaleFont();
+                }
+
+                foreach (Control control in this.GetAllDPIScaleControls())
+                {
+                    if (control is UIDataGridView dgv)
+                    {
+                        dgv.SetDPIScale();
+                    }
+                    else
+                    {
+                        control.SetDPIScaleFont();
+                    }
+                }
+
+                IsScaled = true;
+            }
+        }
+
+        private void SetZoomScaleRect()
+        {
+            if (ZoomScaleRect.Width == 0 && ZoomScaleRect.Height == 0)
+            {
+                ZoomScaleRect = new Rectangle(ZoomScaleSize.Width, ZoomScaleSize.Height, 0, 0);
+            }
+
+            if (ZoomScaleRect.Width == 0 && ZoomScaleRect.Height == 0)
+            {
+                ZoomScaleRect = new Rectangle(Left, Top, Width, Height);
+            }
+
+            ZoomScaleRectChanged?.Invoke(this, ZoomScaleRect);
+        }
+
+        [DefaultValue(typeof(Size), "0, 0")]
+        [Description("设计界面大小"), Category("SunnyUI")]
+        public Size ZoomScaleSize
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// 控件缩放前在其容器里的位置
+        /// </summary>
+        [Browsable(false)]
+        public Rectangle ZoomScaleRect { get; set; }
+
+        /// <summary>
+        /// 设置控件缩放比例
+        /// </summary>
+        /// <param name="scale">缩放比例</param>
+        private void SetZoomScale()
+        {
+            if (ZoomScaleDisabled) return;
+            if (!UIStyles.DPIScale || !UIStyles.ZoomScale) return;
+            if (ZoomScaleRect.Width == 0 || ZoomScaleRect.Height == 0) return;
+            if (Width == 0 || Height == 0) return;
+            float scale = Math.Min(Width * 1.0f / ZoomScaleRect.Width, Height * 1.0f / ZoomScaleRect.Height);
+            if (scale.EqualsFloat(0)) return;
+            foreach (Control control in this.GetAllZoomScaleControls())
+            {
+                if (control is IZoomScale ctrl)
+                {
+                    UIZoomScale.SetZoomScale(control, scale);
+                }
+            }
+
+            ZoomScaleChanged?.Invoke(this, scale);
+        }
+
+        public event OnZoomScaleChanged ZoomScaleChanged;
+
+        public void ResetDPIScale()
+        {
+            IsScaled = false;
+            SetDPIScale();
+        }
+
+        [DefaultValue(true)]
+        [Description("是否点击标题栏可以移动窗体"), Category("SunnyUI")]
+        public bool Movable { get; set; } = true;
 
         public void Translate()
         {
@@ -114,7 +249,7 @@ namespace Sunny.UI
         private int extendSymbol;
 
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
-        [Editor(typeof(UIImagePropertyEditor), typeof(UITypeEditor))]
+        [Editor("Sunny.UI.UIImagePropertyEditor, " + AssemblyRefEx.SystemDesign, typeof(UITypeEditor))]
         [DefaultValue(0)]
         [Description("扩展按钮字体图标"), Category("SunnyUI")]
         public int ExtendSymbol
@@ -364,12 +499,14 @@ namespace Sunny.UI
             get => titleHeight;
             set
             {
-                titleHeight = Math.Max(value, 31);
-                Padding = new Padding(0, showTitle ? titleHeight : 0, 0, 0);
+                titleHeight = Math.Max(value, 29);
+                Padding = new Padding(Padding.Left, showTitle ? titleHeight : Padding.Top, Padding.Right, Padding.Bottom);
                 Invalidate();
                 CalcSystemBoxPos();
             }
         }
+
+        private Color titleColor;
 
         /// <summary>
         /// 标题栏颜色
@@ -377,14 +514,21 @@ namespace Sunny.UI
         [Description("标题栏颜色"), Category("SunnyUI"), DefaultValue(typeof(Color), "80, 160, 255")]
         public Color TitleColor
         {
-            get => RectColor;
-            set => RectColor = value;
+            get => titleColor;
+            set
+            {
+                if (titleColor != value)
+                {
+                    titleColor = value;
+                    SetStyleCustom();
+                }
+            }
         }
 
         /// <summary>
         /// 标题颜色
         /// </summary>
-        private Color titleForeColor = Color.White;
+        private Color titleForeColor;
 
         /// <summary>
         /// 标题颜色
@@ -395,16 +539,18 @@ namespace Sunny.UI
             get => titleForeColor;
             set
             {
-                titleForeColor = value;
-                _style = UIStyle.Custom;
-                Invalidate();
+                if (titleForeColor != value)
+                {
+                    titleForeColor = value;
+                    SetStyleCustom();
+                }
             }
         }
 
         /// <summary>
         /// 标题字体
         /// </summary>
-        private Font titleFont = UIFontColor.Font;
+        private Font titleFont = UIFontColor.Font();
 
         /// <summary>
         /// 标题字体
@@ -420,7 +566,6 @@ namespace Sunny.UI
                 Invalidate();
             }
         }
-
 
         private Rectangle ControlBoxRect;
 
@@ -493,9 +638,9 @@ namespace Sunny.UI
             }
         }
 
-        protected Color foreColor = UIFontColor.Primary;
+        protected Color foreColor;
 
-        protected Color rectColor = UIColor.Blue;
+        protected Color rectColor;
 
         /// <summary>
         /// 填充颜色，当值为背景色或透明色或空值则不填充
@@ -510,9 +655,8 @@ namespace Sunny.UI
                 if (foreColor != value)
                 {
                     foreColor = value;
-                    _style = UIStyle.Custom;
                     AfterSetForeColor(ForeColor);
-                    Invalidate();
+                    SetStyleCustom();
                 }
             }
         }
@@ -529,9 +673,8 @@ namespace Sunny.UI
             {
                 rectColor = value;
                 AfterSetRectColor(value);
-                RectColorChanged?.Invoke(this, null);
-                _style = UIStyle.Custom;
-                Invalidate();
+                RectColorChanged?.Invoke(this, EventArgs.Empty);
+                SetStyleCustom();
             }
         }
 
@@ -566,7 +709,7 @@ namespace Sunny.UI
                     }
                     else
                     {
-                        ExtendBoxClick?.Invoke(this, null);
+                        ExtendBoxClick?.Invoke(this, EventArgs.Empty);
                     }
                 }
             }
@@ -598,7 +741,7 @@ namespace Sunny.UI
                 size = Size;
                 // 若窗体从正常模式->最大化模式，该操作是由移动窗体至顶部触发的，记录的是移动前的窗体位置
                 location = IsOnMoving ? FormLocation : Location;
-                GDIEx.SetFormRoundRectRegion(this, 0);
+                FormEx.SetFormRoundRectRegion(this, 0);
                 WindowState = FormWindowState.Maximized;
             }
             else if (WindowState == FormWindowState.Maximized)
@@ -620,7 +763,7 @@ namespace Sunny.UI
                 }
 
                 Location = location;
-                GDIEx.SetFormRoundRectRegion(this, ShowRadius ? 5 : 0);
+                FormEx.SetFormRoundRectRegion(this, ShowRadius ? 5 : 0);
                 WindowState = FormWindowState.Normal;
             }
 
@@ -639,6 +782,10 @@ namespace Sunny.UI
         /// </summary>
         private Point mouseOffset;
 
+        /// <summary>
+        /// 重载鼠标按下事件
+        /// </summary>
+        /// <param name="e">鼠标参数</param>
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
@@ -647,7 +794,7 @@ namespace Sunny.UI
             if (!ShowTitle) return;
             if (e.Y > Padding.Top) return;
 
-            if (e.Button == MouseButtons.Left)
+            if (e.Button == MouseButtons.Left && Movable)
             {
                 FormMoveMouseDown = true;
                 FormLocation = Location;
@@ -690,6 +837,10 @@ namespace Sunny.UI
         /// </summary>
         private long TopBorderStayTicks;
 
+        /// <summary>
+        /// 重载鼠标抬起事件
+        /// </summary>
+        /// <param name="e">鼠标参数</param>
         protected override void OnMouseUp(MouseEventArgs e)
         {
             base.OnMouseUp(e);
@@ -722,6 +873,10 @@ namespace Sunny.UI
             FormMoveMouseDown = false;
         }
 
+        /// <summary>
+        /// 重载鼠标移动事件
+        /// </summary>
+        /// <param name="e">鼠标参数</param>
         protected override void OnMouseMove(MouseEventArgs e)
         {
             if (FormMoveMouseDown && !MousePosition.Equals(mouseOffset))
@@ -807,6 +962,10 @@ namespace Sunny.UI
             base.OnMouseMove(e);
         }
 
+        /// <summary>
+        /// 重载鼠标离开事件
+        /// </summary>
+        /// <param name="e">鼠标参数</param>
         protected override void OnMouseLeave(EventArgs e)
         {
             base.OnMouseLeave(e);
@@ -842,6 +1001,10 @@ namespace Sunny.UI
 
         protected bool IsActive;
 
+        /// <summary>
+        /// 重载绘图
+        /// </summary>
+        /// <param name="e">绘图参数</param>
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
@@ -856,12 +1019,10 @@ namespace Sunny.UI
                 return;
             }
 
-            //Color showTitleColor = IsDesignMode || IsActive ? rectColor : Color.FromArgb(173, 178, 181);
-            Color showTitleColor = rectColor;
-
             if (ShowTitle)
             {
-                e.Graphics.FillRectangle(showTitleColor, 0, 0, Width, TitleHeight);
+                e.Graphics.FillRectangle(titleColor, 0, 0, Width, TitleHeight);
+                e.Graphics.DrawLine(RectColor, 0, titleHeight, Width, titleHeight);
             }
 
             if (ShowRect)
@@ -897,14 +1058,14 @@ namespace Sunny.UI
                         };
                 }
 
-                e.Graphics.DrawLines(showTitleColor, points);
+                e.Graphics.DrawLines(rectColor, points);
 
                 if (!unShowRadius)
                 {
-                    e.Graphics.DrawLine(Color.FromArgb(120, showTitleColor), new Point(2, 1), new Point(1, 2));
-                    e.Graphics.DrawLine(Color.FromArgb(120, showTitleColor), new Point(2, Height - 1 - 1), new Point(1, Height - 1 - 2));
-                    e.Graphics.DrawLine(Color.FromArgb(120, showTitleColor), new Point(Width - 1 - 2, 1), new Point(Width - 1 - 1, 2));
-                    e.Graphics.DrawLine(Color.FromArgb(120, showTitleColor), new Point(Width - 1 - 2, Height - 1 - 1), new Point(Width - 1 - 1, Height - 1 - 2));
+                    e.Graphics.DrawLine(Color.FromArgb(120, rectColor), new Point(2, 1), new Point(1, 2));
+                    e.Graphics.DrawLine(Color.FromArgb(120, rectColor), new Point(2, Height - 1 - 1), new Point(1, Height - 1 - 2));
+                    e.Graphics.DrawLine(Color.FromArgb(120, rectColor), new Point(Width - 1 - 2, 1), new Point(Width - 1 - 1, 2));
+                    e.Graphics.DrawLine(Color.FromArgb(120, rectColor), new Point(Width - 1 - 2, Height - 1 - 1), new Point(Width - 1 - 1, Height - 1 - 2));
                 }
             }
 
@@ -919,19 +1080,17 @@ namespace Sunny.UI
                 if (InControlBox)
                 {
                     if (ShowRadius)
-                        e.Graphics.FillRoundRectangle(UIColor.Red, ControlBoxRect, 5);
+                        e.Graphics.FillRoundRectangle(ControlBoxCloseFillHoverColor, ControlBoxRect, 5);
                     else
-                        e.Graphics.FillRectangle(UIColor.Red, ControlBoxRect);
+                        e.Graphics.FillRectangle(ControlBoxCloseFillHoverColor, ControlBoxRect);
                 }
 
-                //e.Graphics.DrawFontImage(61453, 24, Color.White, ControlBoxRect, 1);
-
-                e.Graphics.DrawLine(Color.White,
+                e.Graphics.DrawLine(controlBoxForeColor,
                     ControlBoxRect.Left + ControlBoxRect.Width / 2 - 5,
                     ControlBoxRect.Top + ControlBoxRect.Height / 2 - 5,
                     ControlBoxRect.Left + ControlBoxRect.Width / 2 + 5,
                     ControlBoxRect.Top + ControlBoxRect.Height / 2 + 5);
-                e.Graphics.DrawLine(Color.White,
+                e.Graphics.DrawLine(controlBoxForeColor,
                     ControlBoxRect.Left + ControlBoxRect.Width / 2 - 5,
                     ControlBoxRect.Top + ControlBoxRect.Height / 2 + 5,
                     ControlBoxRect.Left + ControlBoxRect.Width / 2 + 5,
@@ -943,42 +1102,37 @@ namespace Sunny.UI
                 if (InMaxBox)
                 {
                     if (ShowRadius)
-                        e.Graphics.FillRoundRectangle(btn.FillHoverColor, MaximizeBoxRect, 5);
+                        e.Graphics.FillRoundRectangle(ControlBoxFillHoverColor, MaximizeBoxRect, 5);
                     else
-                        e.Graphics.FillRectangle(btn.FillHoverColor, MaximizeBoxRect);
+                        e.Graphics.FillRectangle(ControlBoxFillHoverColor, MaximizeBoxRect);
                 }
-
-                // e.Graphics.DrawFontImage(
-                //     windowState == FormWindowState.Maximized
-                //         ? FontAwesomeIcons.fa_window_restore
-                //         : FontAwesomeIcons.fa_window_maximize, 24, Color.White, MaximizeBoxRect, 1);
 
                 if (WindowState == FormWindowState.Maximized)
                 {
-                    e.Graphics.DrawRectangle(Color.White,
+                    e.Graphics.DrawRectangle(controlBoxForeColor,
                         MaximizeBoxRect.Left + MaximizeBoxRect.Width / 2 - 5,
                         MaximizeBoxRect.Top + MaximizeBoxRect.Height / 2 - 1,
                         7, 7);
 
-                    e.Graphics.DrawLine(Color.White,
+                    e.Graphics.DrawLine(controlBoxForeColor,
                         MaximizeBoxRect.Left + MaximizeBoxRect.Width / 2 - 2,
                         MaximizeBoxRect.Top + MaximizeBoxRect.Height / 2 - 1,
                         MaximizeBoxRect.Left + MaximizeBoxRect.Width / 2 - 2,
                         MaximizeBoxRect.Top + MaximizeBoxRect.Height / 2 - 4);
 
-                    e.Graphics.DrawLine(Color.White,
+                    e.Graphics.DrawLine(controlBoxForeColor,
                         MaximizeBoxRect.Left + MaximizeBoxRect.Width / 2 - 2,
                         MaximizeBoxRect.Top + MaximizeBoxRect.Height / 2 - 4,
                         MaximizeBoxRect.Left + MaximizeBoxRect.Width / 2 + 5,
                         MaximizeBoxRect.Top + MaximizeBoxRect.Height / 2 - 4);
 
-                    e.Graphics.DrawLine(Color.White,
+                    e.Graphics.DrawLine(controlBoxForeColor,
                         MaximizeBoxRect.Left + MaximizeBoxRect.Width / 2 + 5,
                         MaximizeBoxRect.Top + MaximizeBoxRect.Height / 2 - 4,
                         MaximizeBoxRect.Left + MaximizeBoxRect.Width / 2 + 5,
                         MaximizeBoxRect.Top + MaximizeBoxRect.Height / 2 + 3);
 
-                    e.Graphics.DrawLine(Color.White,
+                    e.Graphics.DrawLine(controlBoxForeColor,
                         MaximizeBoxRect.Left + MaximizeBoxRect.Width / 2 + 5,
                         MaximizeBoxRect.Top + MaximizeBoxRect.Height / 2 + 3,
                         MaximizeBoxRect.Left + MaximizeBoxRect.Width / 2 + 3,
@@ -987,7 +1141,7 @@ namespace Sunny.UI
 
                 if (WindowState == FormWindowState.Normal)
                 {
-                    e.Graphics.DrawRectangle(Color.White,
+                    e.Graphics.DrawRectangle(controlBoxForeColor,
                         MaximizeBoxRect.Left + MaximizeBoxRect.Width / 2 - 5,
                         MaximizeBoxRect.Top + MaximizeBoxRect.Height / 2 - 4,
                         10, 9);
@@ -999,17 +1153,16 @@ namespace Sunny.UI
                 if (InMinBox)
                 {
                     if (ShowRadius)
-                        e.Graphics.FillRoundRectangle(btn.FillHoverColor, MinimizeBoxRect, 5);
+                        e.Graphics.FillRoundRectangle(ControlBoxFillHoverColor, MinimizeBoxRect, 5);
                     else
-                        e.Graphics.FillRectangle(btn.FillHoverColor, MinimizeBoxRect);
+                        e.Graphics.FillRectangle(ControlBoxFillHoverColor, MinimizeBoxRect);
                 }
 
-                e.Graphics.DrawLine(Color.White,
+                e.Graphics.DrawLine(controlBoxForeColor,
                     MinimizeBoxRect.Left + MinimizeBoxRect.Width / 2 - 6,
                     MinimizeBoxRect.Top + MinimizeBoxRect.Height / 2,
                     MinimizeBoxRect.Left + MinimizeBoxRect.Width / 2 + 5,
                     MinimizeBoxRect.Top + MinimizeBoxRect.Height / 2);
-                //e.Graphics.DrawFontImage(62161, 24, Color.White, MinimizeBoxRect, 1);
             }
 
             if (ExtendBox)
@@ -1017,20 +1170,20 @@ namespace Sunny.UI
                 if (InExtendBox)
                 {
                     if (ShowRadius)
-                        e.Graphics.FillRoundRectangle(btn.FillHoverColor, ExtendBoxRect, 5);
+                        e.Graphics.FillRoundRectangle(ControlBoxFillHoverColor, ExtendBoxRect, 5);
                     else
-                        e.Graphics.FillRectangle(btn.FillHoverColor, ExtendBoxRect);
+                        e.Graphics.FillRectangle(ControlBoxFillHoverColor, ExtendBoxRect);
                 }
 
                 if (ExtendSymbol == 0)
                 {
-                    e.Graphics.DrawLine(Color.White,
+                    e.Graphics.DrawLine(controlBoxForeColor,
                         ExtendBoxRect.Left + ExtendBoxRect.Width / 2 - 5 - 1,
                         ExtendBoxRect.Top + ExtendBoxRect.Height / 2 - 2,
                         ExtendBoxRect.Left + ExtendBoxRect.Width / 2 - 1,
                         ExtendBoxRect.Top + ExtendBoxRect.Height / 2 + 3);
 
-                    e.Graphics.DrawLine(Color.White,
+                    e.Graphics.DrawLine(controlBoxForeColor,
                         ExtendBoxRect.Left + ExtendBoxRect.Width / 2 + 5 - 1,
                         ExtendBoxRect.Top + ExtendBoxRect.Height / 2 - 2,
                         ExtendBoxRect.Left + ExtendBoxRect.Width / 2 - 1,
@@ -1038,7 +1191,7 @@ namespace Sunny.UI
                 }
                 else
                 {
-                    e.Graphics.DrawFontImage(extendSymbol, ExtendSymbolSize, Color.White, ExtendBoxRect, ExtendSymbolOffset.X, ExtendSymbolOffset.Y);
+                    e.Graphics.DrawFontImage(extendSymbol, ExtendSymbolSize, controlBoxForeColor, ExtendBoxRect, ExtendSymbolOffset.X, ExtendSymbolOffset.Y);
                 }
             }
 
@@ -1111,14 +1264,73 @@ namespace Sunny.UI
             get; set;
         }
 
+        private Color controlBoxForeColor = Color.White;
+        /// <summary>
+        /// 标题栏颜色
+        /// </summary>
+        [Description("标题栏按钮颜色"), Category("SunnyUI"), DefaultValue(typeof(Color), "White")]
+        public Color ControlBoxForeColor
+        {
+            get => controlBoxForeColor;
+            set
+            {
+                if (controlBoxForeColor != value)
+                {
+                    controlBoxForeColor = value;
+                    _style = UIStyle.Custom;
+                    Invalidate();
+                }
+            }
+        }
+
+        private Color controlBoxFillHoverColor;
+        /// <summary>
+        /// 标题栏颜色
+        /// </summary>
+        [Description("标题栏按钮移上背景颜色"), Category("SunnyUI"), DefaultValue(typeof(Color), "115, 179, 255")]
+        public Color ControlBoxFillHoverColor
+        {
+            get => controlBoxFillHoverColor;
+            set
+            {
+                if (ControlBoxFillHoverColor != value)
+                {
+                    controlBoxFillHoverColor = value;
+                    _style = UIStyle.Custom;
+                    Invalidate();
+                }
+            }
+        }
+
+        private Color controlBoxCloseFillHoverColor;
+        /// <summary>
+        /// 标题栏颜色
+        /// </summary>
+        [Description("标题栏关闭按钮移上背景颜色"), Category("SunnyUI"), DefaultValue(typeof(Color), "Red")]
+        public Color ControlBoxCloseFillHoverColor
+        {
+            get => controlBoxCloseFillHoverColor;
+            set
+            {
+                if (controlBoxCloseFillHoverColor != value)
+                {
+                    controlBoxCloseFillHoverColor = value;
+                    Invalidate();
+                }
+            }
+        }
+
         public void SetStyle(UIStyle style)
         {
             this.SuspendLayout();
             UIStyleHelper.SetChildUIStyle(this, style);
-            btn.SetStyle(style);
 
-            UIBaseStyle uiColor = UIStyles.GetStyleColor(style);
-            if (!uiColor.IsCustom()) SetStyleColor(uiColor);
+            if (!style.IsCustom())
+            {
+                SetStyleColor(style.Colors());
+                Invalidate();
+            }
+
             _style = style;
             UIStyleChanged?.Invoke(this, new EventArgs());
             this.ResumeLayout();
@@ -1128,11 +1340,20 @@ namespace Sunny.UI
 
         public virtual void SetStyleColor(UIBaseStyle uiColor)
         {
-            rectColor = uiColor.RectColor;
-            foreColor = UIFontColor.Primary;
-            BackColor = uiColor.PlainColor;
-            titleForeColor = uiColor.TitleForeColor;
-            Invalidate();
+            controlBoxForeColor = uiColor.FormControlBoxForeColor;
+            controlBoxFillHoverColor = uiColor.FormControlBoxFillHoverColor;
+            ControlBoxCloseFillHoverColor = uiColor.FormControlBoxCloseFillHoverColor;
+            rectColor = uiColor.FormRectColor;
+            foreColor = uiColor.FormForeColor;
+            BackColor = uiColor.FormBackColor;
+            titleColor = uiColor.FormTitleColor;
+            titleForeColor = uiColor.FormTitleForeColor;
+        }
+
+        protected void SetStyleCustom(bool needRefresh = true)
+        {
+            _style = UIStyle.Custom;
+            if (needRefresh) Invalidate();
         }
 
         protected override void OnLocationChanged(EventArgs e)
@@ -1145,9 +1366,14 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 重载控件尺寸变更
+        /// </summary>
+        /// <param name="e">参数</param>
         protected override void OnSizeChanged(EventArgs e)
         {
             base.OnSizeChanged(e);
+            SetZoomScale();
             CalcSystemBoxPos();
 
             if (isShow)
@@ -1175,10 +1401,16 @@ namespace Sunny.UI
         protected override void OnShown(EventArgs e)
         {
             base.OnShown(e);
+            if (AutoScaleMode == AutoScaleMode.Font) AutoScaleMode = AutoScaleMode.None;
+
             CalcSystemBoxPos();
             SetRadius();
             isShow = true;
+            SetDPIScale();
+            SetZoomScaleRect();
         }
+
+        public event OnZoomScaleRectChanged ZoomScaleRectChanged;
 
         /// <summary>
         /// 是否显示圆角
@@ -1371,11 +1603,11 @@ namespace Sunny.UI
 
             if (WindowState == FormWindowState.Maximized)
             {
-                GDIEx.SetFormRoundRectRegion(this, 0);
+                FormEx.SetFormRoundRectRegion(this, 0);
             }
             else
             {
-                GDIEx.SetFormRoundRectRegion(this, ShowRadius ? 5 : 0);
+                FormEx.SetFormRoundRectRegion(this, ShowRadius ? 5 : 0);
             }
 
             Invalidate();
@@ -1387,9 +1619,24 @@ namespace Sunny.UI
         {
             if (CloseAskString.IsValid())
             {
-                if (!this.ShowAskDialog(CloseAskString))
+                if (!this.ShowAskDialog(CloseAskString, false))
                 {
                     e.Cancel = true;
+                }
+            }
+        }
+
+        protected override void OnFormClosed(FormClosedEventArgs e)
+        {
+            base.OnFormClosed(e);
+
+            if (MainTabControl != null)
+            {
+                foreach (var item in MainTabControl.GetControls<UIPage>(true))
+                {
+                    item.Final();
+                    item.Close();
+                    item.Dispose();
                 }
             }
         }
@@ -1449,7 +1696,7 @@ namespace Sunny.UI
                 {
                     ShowRect = true;
                     ShowRadius = false;
-                    Padding = new Padding(2, showTitle ? TitleHeight : 2, 2, 2);
+                    Padding = new Padding(Math.Max(Padding.Left, 2), showTitle ? TitleHeight + 1 : 2, Math.Max(Padding.Right, 2), Math.Max(Padding.Bottom, 2));
                 }
                 else
                 {
@@ -1458,6 +1705,34 @@ namespace Sunny.UI
                 }
             }
         }
+
+        public void RegisterHotKey(Sunny.UI.ModifierKeys modifierKey, Keys key)
+        {
+            if (hotKeys == null) hotKeys = new ConcurrentDictionary<int, HotKey>();
+
+            int id = HotKey.CalculateID(modifierKey, key);
+            if (!hotKeys.ContainsKey(id))
+            {
+                HotKey newHotkey = new HotKey(modifierKey, key);
+                hotKeys.TryAdd(id, newHotkey);
+                Win32.User.RegisterHotKey(Handle, id, (int)newHotkey.ModifierKey, (int)newHotkey.Key);
+            }
+        }
+
+        public void UnRegisterHotKey(Sunny.UI.ModifierKeys modifierKey, Keys key)
+        {
+            if (hotKeys == null) return;
+            int id = HotKey.CalculateID(modifierKey, key);
+            if (hotKeys.ContainsKey(id))
+            {
+                hotKeys.TryRemove(id, out _);
+                Win32.User.UnregisterHotKey(Handle, id);
+            }
+        }
+
+        public event HotKeyEventHandler HotKeyEventHandler;
+
+        private ConcurrentDictionary<int, HotKey> hotKeys;
 
         #region 拉拽调整窗体大小
 
@@ -1468,6 +1743,14 @@ namespace Sunny.UI
                 case Win32.User.WM_ERASEBKGND:
                     m.Result = IntPtr.Zero;
                     break;
+
+                case Win32.User.WM_HOTKEY:
+                    int hotKeyId = (int)(m.WParam);
+                    if (hotKeys.ContainsKey(hotKeyId))
+                        HotKeyEventHandler?.Invoke(this, new HotKeyEventArgs(hotKeys[hotKeyId], DateTime.Now));
+
+                    break;
+
                 default:
                     base.WndProc(ref m);
                     break;
@@ -1475,7 +1758,7 @@ namespace Sunny.UI
 
             if (m.Msg == Win32.User.WM_NCHITTEST && ShowDragStretch && WindowState == FormWindowState.Normal)
             {
-                //Point vPoint = new Point((int)m.LParam & 0xFFFF, (int)m.LParam >> 16 & 0xFFFF);                
+                //Point vPoint = new Point((int)m.LParam & 0xFFFF, (int)m.LParam >> 16 & 0xFFFF);
                 Point vPoint = new Point(MousePosition.X, MousePosition.Y);//修正有分屏后，调整窗体大小时鼠标显示左右箭头问题
                 vPoint = PointToClient(vPoint);
                 int dragSize = 5;
@@ -1592,7 +1875,7 @@ namespace Sunny.UI
         /// </summary>
         /// <param name="msg">信息</param>
         /// <param name="showMask">显示遮罩层</param>
-        public void ShowSuccessDialog(string msg, bool showMask = true)
+        public void ShowSuccessDialog(string msg, bool showMask = false)
         {
             UIMessageDialog.ShowMessageDialog(msg, UILocalize.SuccessTitle, false, UIStyle.Green, showMask, TopMost);
         }
@@ -1602,7 +1885,7 @@ namespace Sunny.UI
         /// </summary>
         /// <param name="msg">信息</param>
         /// <param name="showMask">显示遮罩层</param>
-        public void ShowInfoDialog(string msg, bool showMask = true)
+        public void ShowInfoDialog(string msg, bool showMask = false)
         {
             UIMessageDialog.ShowMessageDialog(msg, UILocalize.InfoTitle, false, UIStyle.Gray, showMask, TopMost);
         }
@@ -1612,7 +1895,7 @@ namespace Sunny.UI
         /// </summary>
         /// <param name="msg">信息</param>
         /// <param name="showMask">显示遮罩层</param>
-        public void ShowWarningDialog(string msg, bool showMask = true)
+        public void ShowWarningDialog(string msg, bool showMask = false)
         {
             UIMessageDialog.ShowMessageDialog(msg, UILocalize.WarningTitle, false, UIStyle.Orange, showMask, TopMost);
         }
@@ -1622,7 +1905,7 @@ namespace Sunny.UI
         /// </summary>
         /// <param name="msg">信息</param>
         /// <param name="showMask">显示遮罩层</param>
-        public void ShowErrorDialog(string msg, bool showMask = true)
+        public void ShowErrorDialog(string msg, bool showMask = false)
         {
             UIMessageDialog.ShowMessageDialog(msg, UILocalize.ErrorTitle, false, UIStyle.Red, showMask, TopMost);
         }
@@ -1633,7 +1916,7 @@ namespace Sunny.UI
         /// <param name="msg">信息</param>
         /// <param name="showMask">显示遮罩层</param>
         /// <returns>结果</returns>
-        public bool ShowAskDialog(string msg, bool showMask = true)
+        public bool ShowAskDialog(string msg, bool showMask = false)
         {
             return UIMessageDialog.ShowMessageDialog(msg, UILocalize.AskTitle, true, UIStyle.Blue, showMask, TopMost);
         }
@@ -1645,7 +1928,7 @@ namespace Sunny.UI
         /// <param name="msg">信息</param>
         /// <param name="style">主题</param>
         /// <param name="showMask">显示遮罩层</param>
-        public void ShowSuccessDialog(string title, string msg, UIStyle style = UIStyle.Green, bool showMask = true)
+        public void ShowSuccessDialog(string title, string msg, UIStyle style = UIStyle.Green, bool showMask = false)
         {
             UIMessageDialog.ShowMessageDialog(msg, title, false, style, showMask, TopMost);
         }
@@ -1657,7 +1940,7 @@ namespace Sunny.UI
         /// <param name="msg">信息</param>
         /// <param name="style">主题</param>
         /// <param name="showMask">显示遮罩层</param>
-        public void ShowInfoDialog(string title, string msg, UIStyle style = UIStyle.Gray, bool showMask = true)
+        public void ShowInfoDialog(string title, string msg, UIStyle style = UIStyle.Gray, bool showMask = false)
         {
             UIMessageDialog.ShowMessageDialog(msg, title, false, style, showMask, TopMost);
         }
@@ -1669,7 +1952,7 @@ namespace Sunny.UI
         /// <param name="msg">信息</param>
         /// <param name="style">主题</param>
         /// <param name="showMask">显示遮罩层</param>
-        public void ShowWarningDialog(string title, string msg, UIStyle style = UIStyle.Orange, bool showMask = true)
+        public void ShowWarningDialog(string title, string msg, UIStyle style = UIStyle.Orange, bool showMask = false)
         {
             UIMessageDialog.ShowMessageDialog(msg, title, false, style, showMask, TopMost);
         }
@@ -1681,7 +1964,7 @@ namespace Sunny.UI
         /// <param name="msg">信息</param>
         /// <param name="style">主题</param>
         /// <param name="showMask">显示遮罩层</param>
-        public void ShowErrorDialog(string title, string msg, UIStyle style = UIStyle.Red, bool showMask = true)
+        public void ShowErrorDialog(string title, string msg, UIStyle style = UIStyle.Red, bool showMask = false)
         {
             UIMessageDialog.ShowMessageDialog(msg, title, false, style, showMask, TopMost);
         }
@@ -1694,7 +1977,7 @@ namespace Sunny.UI
         /// <param name="style">主题</param>
         /// <param name="showMask">显示遮罩层</param>
         /// <returns>结果</returns>
-        public bool ShowAskDialog(string title, string msg, UIStyle style = UIStyle.Blue, bool showMask = true)
+        public bool ShowAskDialog(string title, string msg, UIStyle style = UIStyle.Blue, bool showMask = false)
         {
             return UIMessageDialog.ShowMessageDialog(msg, title, true, style, showMask, TopMost);
         }
@@ -1795,6 +2078,162 @@ namespace Sunny.UI
             UINotifierHelper.ShowNotifier(desc, UINotifierType.ERROR, UILocalize.ErrorTitle, isDialog, timeout);
         }
 
-        #endregion
+        public void ShowInfoNotifier(string desc, EventHandler clickEvent, int timeout = 2000)
+        {
+            UINotifierHelper.ShowNotifier(desc, clickEvent, UINotifierType.INFO, UILocalize.InfoTitle, timeout);
+        }
+
+        public void ShowSuccessNotifier(string desc, EventHandler clickEvent, int timeout = 2000)
+        {
+            UINotifierHelper.ShowNotifier(desc, clickEvent, UINotifierType.OK, UILocalize.SuccessTitle, timeout);
+        }
+
+        public void ShowWarningNotifier(string desc, EventHandler clickEvent, int timeout = 2000)
+        {
+            UINotifierHelper.ShowNotifier(desc, clickEvent, UINotifierType.WARNING, UILocalize.WarningTitle, timeout);
+        }
+
+        public void ShowErrorNotifier(string desc, EventHandler clickEvent, int timeout = 2000)
+        {
+            UINotifierHelper.ShowNotifier(desc, clickEvent, UINotifierType.ERROR, UILocalize.ErrorTitle, timeout);
+        }
+
+        #endregion 一些辅助窗口
+
+        #region IFrame实现
+
+        private UITabControl mainTabControl;
+
+        [DefaultValue(null)]
+        public UITabControl MainTabControl
+        {
+            get => mainTabControl;
+            set
+            {
+                mainTabControl = value;
+                mainTabControl.Frame = this;
+            }
+        }
+
+        public UIPage AddPage(UIPage page, int index)
+        {
+            page.PageIndex = index;
+            return AddPage(page);
+        }
+
+        public UIPage AddPage(UIPage page, Guid guid)
+        {
+            page.PageGuid = guid;
+            return AddPage(page);
+        }
+
+        public UIPage AddPage(UIPage page)
+        {
+            SetDefaultTabControl();
+
+            if (MainTabControl == null)
+            {
+                throw (new ApplicationException("未指定MainTabControl，无法承载多页面。"));
+            }
+
+            page.Frame = this;
+            MainTabControl?.AddPage(page);
+            return page;
+        }
+
+        private UIForm SetDefaultTabControl()
+        {
+            List<UITabControl> ctrls = this.GetControls<UITabControl>();
+            if (ctrls.Count == 1)
+            {
+                if (MainTabControl == null)
+                {
+                    MainTabControl = ctrls[0];
+                }
+
+                List<UINavMenu> Menus = this.GetControls<UINavMenu>();
+                if (Menus.Count == 1 && Menus[0].TabControl == null)
+                {
+                    Menus[0].TabControl = ctrls[0];
+                }
+
+                List<UINavBar> Bars = this.GetControls<UINavBar>();
+                if (Bars.Count == 1 && Bars[0].TabControl == null)
+                {
+                    Bars[0].TabControl = ctrls[0];
+                }
+            }
+
+            return this;
+        }
+
+        public virtual bool SelectPage(int pageIndex)
+        {
+            SetDefaultTabControl();
+            if (MainTabControl == null) return false;
+            return MainTabControl.SelectPage(pageIndex);
+        }
+
+        public virtual bool SelectPage(Guid guid)
+        {
+            SetDefaultTabControl();
+            if (MainTabControl == null) return false;
+            return MainTabControl.SelectPage(guid);
+        }
+
+        public bool RemovePage(int pageIndex) => MainTabControl?.RemovePage(pageIndex) ?? false;
+
+        public bool RemovePage(Guid guid) => MainTabControl?.RemovePage(guid) ?? false;
+
+        public virtual void FeedbackFormPage(int fromPageIndex, params object[] objects) { }
+
+        public UIPage GetPage(int pageIndex) => SetDefaultTabControl().MainTabControl?.GetPage(pageIndex);
+
+        public UIPage GetPage(Guid guid) => SetDefaultTabControl().MainTabControl?.GetPage(guid);
+
+        public bool ExistPage(int pageIndex) => GetPage(pageIndex) != null;
+
+        public bool ExistPage(Guid guid) => GetPage(guid) != null;
+
+        public bool SetParamToPage(int toPageIndex, int fromPageIndex, params object[] objects)
+        {
+            SetDefaultTabControl();
+            UIPage page = GetPage(toPageIndex);
+            if (page == null) return false;
+            return page.SetParam(fromPageIndex, objects);
+        }
+
+        public bool SetParamToPage(Guid toPageGuid, Guid fromPageGuid, params object[] objects)
+        {
+            SetDefaultTabControl();
+            UIPage page = GetPage(toPageGuid);
+            if (page == null) return false;
+            return page.SetParam(fromPageGuid, objects);
+        }
+
+        public T GetPage<T>() where T : UIPage => SetDefaultTabControl().MainTabControl?.GetPage<T>();
+
+        public List<T> GetPages<T>() where T : UIPage => SetDefaultTabControl().MainTabControl?.GetPages<T>();
+
+        public event OnUIPageChanged PageAdded;
+
+        public void DealPageAdded(UIPage page)
+        {
+            PageAdded?.Invoke(this, new UIPageEventArgs(page));
+        }
+
+        public event OnUIPageChanged PageSelected;
+        public void DealPageSelected(UIPage page)
+        {
+            PageSelected?.Invoke(this, new UIPageEventArgs(page));
+        }
+
+        public event OnUIPageChanged PageRemoved;
+        public void DealPageRemoved(UIPage page)
+        {
+            PageRemoved?.Invoke(this, new UIPageEventArgs(page));
+        }
+
+        #endregion IFrame实现
     }
 }

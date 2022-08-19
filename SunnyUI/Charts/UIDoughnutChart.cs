@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,11 +13,12 @@
  ******************************************************************************
  * 文件名称: UIDoughnutChart.cs
  * 文件说明: 甜甜圈图
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-06-06
  *
  * 2020-06-06: V2.2.5 增加文件说明
  * 2021-07-22: V3.0.5 增加更新数据的方法
+ * 2022-07-29: V3.2.2 数据显示的小数位数重构调整至Option.DecimalPlaces
 ******************************************************************************/
 
 using System;
@@ -32,6 +33,9 @@ namespace Sunny.UI
     [ToolboxItem(true), Description("甜甜圈图")]
     public sealed class UIDoughnutChart : UIChart
     {
+        /// <summary>
+        /// 默认创建空的图表参数
+        /// </summary>
         protected override void CreateEmptyOption()
         {
             if (emptyOption != null) return;
@@ -65,6 +69,10 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 重载控件尺寸变更
+        /// </summary>
+        /// <param name="e">参数</param>
         protected override void OnSizeChanged(EventArgs e)
         {
             base.OnSizeChanged(e);
@@ -82,6 +90,10 @@ namespace Sunny.UI
             CalcData();
         }
 
+        /// <summary>
+        /// 绘制图表参数
+        /// </summary>
+        /// <param name="g">绘制图面</param>
         protected override void DrawOption(Graphics g)
         {
             if (Option == null) return;
@@ -90,6 +102,9 @@ namespace Sunny.UI
             DrawLegend(g, Option.Legend);
         }
 
+        /// <summary>
+        /// 计算数据用于显示
+        /// </summary>
         protected override void CalcData()
         {
             Angles.Clear();
@@ -120,7 +135,7 @@ namespace Sunny.UI
                             UITemplate template = new UITemplate(Option.ToolTip.Formatter);
                             template.Set("a", pie.Name);
                             template.Set("b", pie.Data[i].Name);
-                            template.Set("c", pie.Data[i].Value.ToString(Option.ToolTip.ValueFormat));
+                            template.Set("c", pie.Data[i].Value.ToString("F" + Option.DecimalPlaces));
                             template.Set("d", percent.ToString("F2"));
                             text = template.Render();
                         }
@@ -159,7 +174,7 @@ namespace Sunny.UI
                     else
                         g.FillFan(color, angle.Center, angle.Inner, angle.Outer, angle.Start - 90, angle.Sweep);
 
-                    Angles[pieIndex][azIndex].TextSize = g.MeasureString(Angles[pieIndex][azIndex].Text, LegendFont);
+                    Angles[pieIndex][azIndex].TextSize = g.MeasureString(Angles[pieIndex][azIndex].Text, TempFont);
 
                     if (pie.Label.Show && ActiveAzIndex == azIndex)
                     {
@@ -175,6 +190,9 @@ namespace Sunny.UI
 
         private readonly ConcurrentDictionary<int, ConcurrentDictionary<int, Angle>> Angles = new ConcurrentDictionary<int, ConcurrentDictionary<int, Angle>>();
 
+        /// <summary>
+        /// 图表参数
+        /// </summary>
         [Browsable(false), DefaultValue(null)]
         public UIDoughnutOption Option
         {
@@ -191,6 +209,10 @@ namespace Sunny.UI
             // }
         }
 
+        /// <summary>
+        /// 重载鼠标移动事件
+        /// </summary>
+        /// <param name="e">鼠标参数</param>
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
@@ -207,9 +229,9 @@ namespace Sunny.UI
                 {
                     Angle angle = Angles[pieIndex][azIndex];
                     PointF pf = angle.Center;
-                    if (MathEx.CalcDistance(e.Location, pf) > angle.Outer) continue;
-                    if (MathEx.CalcDistance(e.Location, pf) < angle.Inner) continue;
-                    double az = MathEx.CalcAngle(e.Location, pf);
+                    if (Drawing.CalcDistance(e.Location, pf) > angle.Outer) continue;
+                    if (Drawing.CalcDistance(e.Location, pf) < angle.Inner) continue;
+                    double az = Drawing.CalcAngle(e.Location, pf);
                     if (az >= angle.Start && az <= angle.Start + angle.Sweep)
                     {
                         SetPieAndAzIndex(pieIndex, azIndex);

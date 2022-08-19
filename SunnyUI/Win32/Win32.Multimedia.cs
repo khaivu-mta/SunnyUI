@@ -7,6 +7,7 @@ using HWND = System.IntPtr;
 
 namespace Sunny.UI.Win32
 {
+#pragma warning disable CS1591 // 缺少对公共可见类型或成员的 XML 注释
     public struct SMPTE
     {
         public byte hour;
@@ -1484,6 +1485,7 @@ namespace Sunny.UI.Win32
         public const int WOM_DONE = MM_WOM_DONE;
         public const int WOM_OPEN = MM_WOM_OPEN;
         public const string CFSEPCHAR = "+";
-
     }
+
+#pragma warning restore CS1591 // 缺少对公共可见类型或成员的 XML 注释
 }

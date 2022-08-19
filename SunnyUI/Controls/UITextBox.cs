@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,7 +13,7 @@
  ******************************************************************************
  * 文件名称: UITextBox.cs
  * 文件说明: 输入框
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
@@ -26,6 +26,17 @@
  * 2021-07-18: V3.0.5 修改Focus可用
  * 2021-08-03: V3.0.5 增加GotFocus和LostFocus事件
  * 2021-08-15: V3.0.6 重写了水印文字的画法，并增加水印文字颜色
+ * 2021-09-07: V3.0.6 增加按钮
+ * 2021-10-14: V3.0.8 调整最小高度限制
+ * 2021-10-15: V3.0.8 支持修改背景色
+ * 2022-01-07: V3.1.0 按钮支持自定义颜色
+ * 2022-02-16: V3.1.1 增加了只读的颜色设置
+ * 2022-03-14: V3.1.1 增加滚动条的颜色设置
+ * 2022-04-11: V3.1.3 增加对按钮设置ToolTip
+ * 2022-06-10: V3.1.9 尺寸改变时重绘
+ * 2022-06-23: V3.2.0 重写水印文字，解决不同背景色下泛白的问题
+ * 2022-07-17: V3.2.1 增加SelectionChanged事件
+ * 2022-07-28: V3.2.2 修复了有水印文字时，不响应Click和DoubleClick事件的问题
 ******************************************************************************/
 
 using System;
@@ -43,26 +54,32 @@ namespace Sunny.UI
     {
         private readonly UIEdit edit = new UIEdit();
         private readonly UIScrollBar bar = new UIScrollBar();
+        private readonly UISymbolButton btn = new UISymbolButton();
 
         public UITextBox()
         {
             InitializeComponent();
-            SetStyleFlags();
-            CalcEditHeight();
-            Height = MinHeight;
-            ShowText = false;
-            Font = UIFontColor.Font;
-            Padding = new Padding(0);
+            InitializeComponentEnd = true;
+            SetStyleFlags(true, true, true);
 
+            ShowText = false;
+            Font = UIFontColor.Font();
+            Padding = new Padding(0);
+            MinimumSize = new Size(1, 16);
+
+            Width = 150;
+            Height = 29;
+
+            edit.AutoSize = false;
             edit.Top = (Height - edit.Height) / 2;
             edit.Left = 4;
             edit.Width = Width - 8;
             edit.Text = String.Empty;
             edit.BorderStyle = BorderStyle.None;
-            edit.TextChanged += EditTextChanged;
-            edit.KeyDown += EditOnKeyDown;
-            edit.KeyUp += EditOnKeyUp;
-            edit.KeyPress += EditOnKeyPress;
+            edit.TextChanged += Edit_TextChanged;
+            edit.KeyDown += Edit_OnKeyDown;
+            edit.KeyUp += Edit_OnKeyUp;
+            edit.KeyPress += Edit_OnKeyPress;
             edit.MouseEnter += Edit_MouseEnter;
             edit.Click += Edit_Click;
             edit.DoubleClick += Edit_DoubleClick;
@@ -71,18 +88,34 @@ namespace Sunny.UI
             edit.Validating += Edit_Validating;
             edit.GotFocus += Edit_GotFocus;
             edit.LostFocus += Edit_LostFocus;
+            edit.MouseLeave += Edit_MouseLeave;
+            edit.MouseWheel += Edit_MouseWheel;
+            edit.MouseDown += Edit_MouseDown;
+            edit.MouseUp += Edit_MouseUp;
+            edit.MouseMove += Edit_MouseMove;
+            edit.SelectionChanged += Edit_SelectionChanged;
+
+            btn.Parent = this;
+            btn.Visible = false;
+            btn.Text = "";
+            btn.Symbol = 361761;
+            btn.SymbolOffset = new Point(0, 1);
+            btn.Top = 1;
+            btn.Height = 25;
+            btn.Width = 29;
+            btn.BackColor = Color.Transparent;
+            btn.Click += Btn_Click;
+            btn.Radius = 3;
 
             edit.Invalidate();
             Controls.Add(edit);
             fillColor = Color.White;
-            Width = 150;
 
             bar.Parent = this;
             bar.Dock = DockStyle.None;
             bar.Style = UIStyle.Custom;
             bar.Visible = false;
             bar.ValueChanged += Bar_ValueChanged;
-            edit.MouseWheel += OnMouseWheel;
             bar.MouseEnter += Bar_MouseEnter;
             TextAlignment = ContentAlignment.MiddleLeft;
 
@@ -92,6 +125,125 @@ namespace Sunny.UI
             TextAlignmentChange += UITextBox_TextAlignmentChange;
         }
 
+        private void Edit_SelectionChanged(object sender, UITextBoxSelectionArgs e)
+        {
+            SelectionChanged?.Invoke(this, e);
+        }
+
+        public event OnSelectionChanged SelectionChanged;
+
+        public void SetButtonToolTip(ToolTip toolTip, string tipText)
+        {
+            toolTip.SetToolTip(btn, tipText);
+        }
+
+        /// <summary>
+        /// 填充颜色，当值为背景色或透明色或空值则不填充
+        /// </summary>
+        [Description("填充颜色，当值为背景色或透明色或空值则不填充"), Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "White")]
+        public new Color FillColor
+        {
+            get
+            {
+                return fillColor;
+            }
+            set
+            {
+                if (fillColor != value)
+                {
+                    fillColor = value;
+                    _style = UIStyle.Custom;
+                    Invalidate();
+                }
+
+                AfterSetFillColor(value);
+            }
+        }
+
+        /// <summary>
+        /// 字体只读颜色
+        /// </summary>
+        [DefaultValue(typeof(Color), "109, 109, 103")]
+        public Color ForeReadOnlyColor
+        {
+            get => foreReadOnlyColor;
+            set => SetForeReadOnlyColor(value);
+        }
+
+        /// <summary>
+        /// 边框只读颜色
+        /// </summary>
+        [DefaultValue(typeof(Color), "173, 178, 181")]
+        public Color RectReadOnlyColor
+        {
+            get => rectReadOnlyColor;
+            set => SetRectReadOnlyColor(value);
+        }
+
+        /// <summary>
+        /// 填充只读颜色
+        /// </summary>
+        [DefaultValue(typeof(Color), "244, 244, 244")]
+        public Color FillReadOnlyColor
+        {
+            get => fillReadOnlyColor;
+            set => SetFillReadOnlyColor(value);
+        }
+
+        private void Btn_Click(object sender, EventArgs e)
+        {
+            ButtonClick?.Invoke(this, e);
+        }
+
+        public event EventHandler ButtonClick;
+
+        [DefaultValue(29), Category("SunnyUI"), Description("按钮宽度")]
+        public int ButtonWidth { get => btn.Width; set { btn.Width = Math.Max(20, value); SizeChange(); } }
+
+        [DefaultValue(false), Category("SunnyUI"), Description("显示按钮")]
+        public bool ShowButton
+        {
+            get => btn.Visible;
+            set
+            {
+                if (Multiline)
+                {
+                    btn.Visible = false;
+                }
+                else
+                {
+                    btn.Visible = value;
+                }
+
+                SizeChange();
+            }
+        }
+
+        private void Edit_MouseMove(object sender, MouseEventArgs e)
+        {
+            MouseMove?.Invoke(this, e);
+        }
+
+        private void Edit_MouseUp(object sender, MouseEventArgs e)
+        {
+            MouseUp?.Invoke(this, e);
+        }
+
+        private void Edit_MouseDown(object sender, MouseEventArgs e)
+        {
+            MouseDown?.Invoke(this, e);
+        }
+
+        private void Edit_MouseLeave(object sender, EventArgs e)
+        {
+            MouseLeave?.Invoke(this, e);
+        }
+
+        /// <summary>
+        /// 需要额外设置ToolTip的控件
+        /// </summary>
+        /// <returns>控件</returns>
         public Control ExToolTipControl()
         {
             return edit;
@@ -112,10 +264,22 @@ namespace Sunny.UI
             Validating?.Invoke(this, e);
         }
 
-        public new EventHandler GotFocus;
-        public new EventHandler LostFocus;
-        public new CancelEventHandler Validating;
+        public new event MouseEventHandler MouseDown;
+        public new event MouseEventHandler MouseUp;
+        public new event MouseEventHandler MouseMove;
+        public new event EventHandler GotFocus;
+        public new event EventHandler LostFocus;
+        public new event CancelEventHandler Validating;
         public new event EventHandler Validated;
+        public new event EventHandler MouseLeave;
+        public new event EventHandler DoubleClick;
+        public new event EventHandler Click;
+        [Browsable(true)]
+        public new event EventHandler TextChanged;
+        public new event KeyEventHandler KeyDown;
+        public new event KeyEventHandler KeyUp;
+        public new event KeyPressEventHandler KeyPress;
+        public new event EventHandler Leave;
 
         private void Edit_Validated(object sender, EventArgs e)
         {
@@ -139,7 +303,7 @@ namespace Sunny.UI
         protected override void OnEnabledChanged(EventArgs e)
         {
             base.OnEnabledChanged(e);
-            edit.BackColor = Enabled ? Color.White : FillDisableColor;
+            edit.BackColor = GetFillColor();
             edit.Enabled = Enabled;
         }
 
@@ -174,9 +338,6 @@ namespace Sunny.UI
             DoubleClick?.Invoke(this, e);
         }
 
-        public new event EventHandler DoubleClick;
-        public new event EventHandler Click;
-
         private void Edit_Click(object sender, EventArgs e)
         {
             Click?.Invoke(this, e);
@@ -205,9 +366,9 @@ namespace Sunny.UI
             }
         }
 
-        private void OnMouseWheel(object sender, MouseEventArgs e)
+        private void Edit_MouseWheel(object sender, MouseEventArgs e)
         {
-            base.OnMouseWheel(e);
+            OnMouseWheel(e);
             if (bar != null && bar.Visible && edit != null)
             {
                 var si = ScrollBarInfo.GetInfo(edit.Handle);
@@ -302,12 +463,12 @@ namespace Sunny.UI
             edit.ScrollToCaret();
         }
 
-        private void EditOnKeyPress(object sender, KeyPressEventArgs e)
+        private void Edit_OnKeyPress(object sender, KeyPressEventArgs e)
         {
             KeyPress?.Invoke(this, e);
         }
 
-        private void EditOnKeyDown(object sender, KeyEventArgs e)
+        private void Edit_OnKeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
             {
@@ -319,7 +480,7 @@ namespace Sunny.UI
 
         public event EventHandler DoEnter;
 
-        private void EditOnKeyUp(object sender, KeyEventArgs e)
+        private void Edit_OnKeyUp(object sender, KeyEventArgs e)
         {
             KeyUp?.Invoke(this, e);
         }
@@ -340,6 +501,14 @@ namespace Sunny.UI
             set => edit.WaterMarkColor = value;
         }
 
+        [DefaultValue(typeof(Color), "Gray")]
+        [Description("水印文字激活颜色"), Category("SunnyUI")]
+        public Color WatermarkActiveColor
+        {
+            get => edit.WaterMarkActiveForeColor;
+            set => edit.WaterMarkActiveForeColor = value;
+        }
+
         public void SelectAll()
         {
             edit.Focus();
@@ -351,34 +520,32 @@ namespace Sunny.UI
             edit.CheckMaxMin();
         }
 
-        [Browsable(true)]
-        public new event EventHandler TextChanged;
-
-        public new event KeyEventHandler KeyDown;
-
-        public new event KeyEventHandler KeyUp;
-
-        public new event KeyPressEventHandler KeyPress;
-
-        public new event EventHandler Leave;
-
-        private void EditTextChanged(object s, EventArgs e)
+        private void Edit_TextChanged(object s, EventArgs e)
         {
             TextChanged?.Invoke(this, e);
             SetScrollInfo();
         }
 
+        /// <summary>
+        /// 重载字体变更
+        /// </summary>
+        /// <param name="e">参数</param>
         protected override void OnFontChanged(EventArgs e)
         {
             base.OnFontChanged(e);
+            edit.IsScaled = true;
             edit.Font = Font;
-            CalcEditHeight();
             SizeChange();
             Invalidate();
         }
 
+        /// <summary>
+        /// 重载控件尺寸变更
+        /// </summary>
+        /// <param name="e">参数</param>
         protected override void OnSizeChanged(EventArgs e)
         {
+            base.OnSizeChanged(e);
             SizeChange();
         }
 
@@ -407,27 +574,20 @@ namespace Sunny.UI
             }
         }
 
-        private int MinHeight;
-        private int MaxHeight;
-
-        private void CalcEditHeight()
-        {
-            TextBox edt = new();
-            edt.Font = edit.Font;
-            MinHeight = edt.PreferredHeight;
-            edt.BorderStyle = BorderStyle.None;
-            MaxHeight = edt.PreferredHeight * 2 + MinHeight - edt.PreferredHeight;
-            edt.Dispose();
-        }
-
         private void SizeChange()
         {
+            if (!InitializeComponentEnd) return;
+            if (edit == null) return;
+            if (btn == null) return;
+
             if (!multiline)
             {
-                if (Height < MinHeight) Height = MinHeight;
-                if (Height > MaxHeight) Height = MaxHeight;
+                if (Height < UIGlobal.EditorMinHeight) Height = UIGlobal.EditorMinHeight;
+                if (Height > UIGlobal.EditorMaxHeight) Height = UIGlobal.EditorMaxHeight;
 
+                edit.Height = Math.Min(Height - RectSize * 2, edit.PreferredHeight);
                 edit.Top = (Height - edit.Height) / 2;
+
                 if (icon == null && Symbol == 0)
                 {
                     edit.Left = 4 + Padding.Left;
@@ -446,13 +606,24 @@ namespace Sunny.UI
                         edit.Width = Width - 8 - SymbolSize - Padding.Left - Padding.Right;
                     }
                 }
+
+                btn.Left = Width - 2 - ButtonWidth;
+                btn.Top = 2;
+                btn.Height = Height - 4;
+
+                if (ShowButton)
+                {
+                    edit.Width = edit.Width - btn.Width - 3;
+                }
             }
             else
             {
+                btn.Visible = false;
                 edit.Top = 3;
                 edit.Height = Height - 6;
                 edit.Left = 1;
                 edit.Width = Width - 2;
+
                 bar.Top = 2;
                 bar.Width = ScrollBarInfo.VerticalScrollBarWidth();
                 bar.Left = Width - bar.Width - 1;
@@ -486,11 +657,13 @@ namespace Sunny.UI
         [Description("是否只读"), Category("SunnyUI")]
         public bool ReadOnly
         {
-            get => edit.ReadOnly;
+            get => isReadOnly;
             set
             {
+                isReadOnly = value;
                 edit.ReadOnly = value;
-                edit.BackColor = Enabled ? Color.White : FillDisableColor;
+                edit.BackColor = GetFillColor();
+                Invalidate();
             }
         }
 
@@ -506,7 +679,7 @@ namespace Sunny.UI
         /// 当InputType为数字类型时，能输入的最大值
         /// </summary>
         [Description("当InputType为数字类型时，能输入的最大值。"), Category("SunnyUI")]
-        [DefaultValue(int.MaxValue)]
+        [DefaultValue(2147483647D)]
         public double Maximum
         {
             get => edit.MaxValue;
@@ -517,7 +690,7 @@ namespace Sunny.UI
         /// 当InputType为数字类型时，能输入的最小值
         /// </summary>
         [Description("当InputType为数字类型时，能输入的最小值。"), Category("SunnyUI")]
-        [DefaultValue(int.MinValue)]
+        [DefaultValue(-2147483648D)]
         public double Minimum
         {
             get => edit.MinValue;
@@ -565,7 +738,7 @@ namespace Sunny.UI
         }
 
         [DefaultValue(0)]
-        [Description("整形返回值"), Category("SunnyUI")]
+        [Description("整型返回值"), Category("SunnyUI")]
         public int IntValue
         {
             get => edit.IntValue;
@@ -581,19 +754,16 @@ namespace Sunny.UI
             set => edit.Text = value;
         }
 
-        /// <summary>
-        /// 当InputType为数字类型时，小数位数。
-        /// </summary>
-        [Description("当InputType为数字类型时，小数位数。")]
-        [DefaultValue(2), Category("SunnyUI")]
-        public int DecLength
+        [Description("浮点数，显示文字小数位数"), Category("SunnyUI")]
+        [DefaultValue(2)]
+        public int DecimalPlaces
         {
             get => edit.DecLength;
             set => edit.DecLength = Math.Max(value, 0);
         }
 
         [DefaultValue(false)]
-        [Description("整形或浮点输入时，是否可空显示"), Category("SunnyUI")]
+        [Description("整型或浮点输入时，是否可空显示"), Category("SunnyUI")]
         public bool CanEmpty
         {
             get => edit.CanEmpty;
@@ -608,6 +778,10 @@ namespace Sunny.UI
 
         public bool IsEmpty => edit.Text == "";
 
+        /// <summary>
+        /// 重载鼠标按下事件
+        /// </summary>
+        /// <param name="e">鼠标参数</param>
         protected override void OnMouseDown(MouseEventArgs e)
         {
             ActiveControl = edit;
@@ -620,33 +794,105 @@ namespace Sunny.UI
             set => edit.MaxLength = Math.Max(value, 1);
         }
 
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="uiColor">主题样式</param>
         public override void SetStyleColor(UIBaseStyle uiColor)
         {
             base.SetStyleColor(uiColor);
-            edit.BackColor = fillColor = Enabled ? Color.White : FillDisableColor;
-            edit.ForeColor = foreColor = UIFontColor.Primary;
+
+            fillColor = uiColor.EditorBackColor;
+            foreColor = UIFontColor.Primary;
+            edit.BackColor = GetFillColor();
+            edit.ForeColor = GetForeColor();
 
             if (bar != null)
             {
                 bar.ForeColor = uiColor.PrimaryColor;
                 bar.HoverColor = uiColor.ButtonFillHoverColor;
                 bar.PressColor = uiColor.ButtonFillPressColor;
-                bar.FillColor = Color.White;
+                bar.FillColor = fillColor;
+                scrollBarColor = uiColor.PrimaryColor;
+                scrollBarBackColor = fillColor;
             }
 
-            Invalidate();
+            if (btn != null)
+            {
+                btn.ForeColor = uiColor.ButtonForeColor;
+                btn.FillColor = uiColor.ButtonFillColor;
+                btn.RectColor = uiColor.RectColor;
+
+                btn.FillHoverColor = uiColor.ButtonFillHoverColor;
+                btn.RectHoverColor = uiColor.ButtonRectHoverColor;
+                btn.ForeHoverColor = uiColor.ButtonForeHoverColor;
+
+                btn.FillPressColor = uiColor.ButtonFillPressColor;
+                btn.RectPressColor = uiColor.ButtonRectPressColor;
+                btn.ForePressColor = uiColor.ButtonForePressColor;
+            }
+        }
+
+        private Color scrollBarColor = Color.FromArgb(80, 160, 255);
+
+        /// <summary>
+        /// 填充颜色，当值为背景色或透明色或空值则不填充
+        /// </summary>
+        [Description("滚动条填充颜色"), Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "80, 160, 255")]
+        public Color ScrollBarColor
+        {
+            get => scrollBarColor;
+            set
+            {
+                scrollBarColor = value;
+                bar.HoverColor = bar.PressColor = bar.ForeColor = value;
+                Invalidate();
+            }
+        }
+
+        private Color scrollBarBackColor = Color.White;
+
+        /// <summary>
+        /// 填充颜色，当值为背景色或透明色或空值则不填充
+        /// </summary>
+        [Description("滚动条背景颜色"), Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "White")]
+        public Color ScrollBarBackColor
+        {
+            get => scrollBarBackColor;
+            set
+            {
+                scrollBarBackColor = value;
+                bar.FillColor = value;
+                _style = UIStyle.Custom;
+                Invalidate();
+            }
         }
 
         protected override void AfterSetForeColor(Color color)
         {
             base.AfterSetForeColor(color);
-            edit.ForeColor = color;
+            edit.ForeColor = GetForeColor();
         }
 
         protected override void AfterSetFillColor(Color color)
         {
             base.AfterSetFillColor(color);
-            edit.BackColor = Enabled ? color : FillDisableColor;
+            edit.BackColor = GetFillColor();
+            bar.FillColor = color;
+        }
+
+        protected override void AfterSetFillReadOnlyColor(Color color)
+        {
+            base.AfterSetFillReadOnlyColor(color);
+            edit.BackColor = GetFillColor();
+        }
+
+        protected override void AfterSetForeReadOnlyColor(Color color)
+        {
+            base.AfterSetForeReadOnlyColor(color);
+            edit.ForeColor = GetForeColor();
         }
 
         public enum UIEditType
@@ -917,12 +1163,16 @@ namespace Sunny.UI
             get => iconSize;
             set
             {
-                iconSize = Math.Min(MinHeight, value);
+                iconSize = Math.Min(UIGlobal.EditorMinHeight, value);
                 SizeChange();
                 Invalidate();
             }
         }
 
+        /// <summary>
+        /// 重载绘图
+        /// </summary>
+        /// <param name="e">绘图参数</param>
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
@@ -939,6 +1189,10 @@ namespace Sunny.UI
         }
 
         public Color _symbolColor = UIFontColor.Primary;
+
+        /// <summary>
+        /// 字体图标颜色
+        /// </summary>
         [DefaultValue(typeof(Color), "48, 48, 48")]
         [Description("字体图标颜色"), Category("SunnyUI")]
         public Color SymbolColor
@@ -951,10 +1205,13 @@ namespace Sunny.UI
             }
         }
 
-        private int _symbol = 0;
+        private int _symbol;
 
+        /// <summary>
+        /// 字体图标
+        /// </summary>
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
-        [Editor(typeof(UIImagePropertyEditor), typeof(UITypeEditor))]
+        [Editor("Sunny.UI.UIImagePropertyEditor, " + AssemblyRefEx.SystemDesign, typeof(UITypeEditor))]
         [DefaultValue(0)]
         [Description("字体图标"), Category("SunnyUI")]
         public int Symbol
@@ -970,6 +1227,9 @@ namespace Sunny.UI
 
         private int _symbolSize = 24;
 
+        /// <summary>
+        /// 字体图标大小
+        /// </summary>
         [DefaultValue(24)]
         [Description("字体图标大小"), Category("SunnyUI")]
         public int SymbolSize
@@ -978,7 +1238,7 @@ namespace Sunny.UI
             set
             {
                 _symbolSize = Math.Max(value, 16);
-                _symbolSize = Math.Min(value, MinHeight);
+                _symbolSize = Math.Min(value, UIGlobal.EditorMaxHeight);
                 SizeChange();
                 Invalidate();
             }
@@ -986,6 +1246,9 @@ namespace Sunny.UI
 
         private Point symbolOffset = new Point(0, 0);
 
+        /// <summary>
+        /// 字体图标的偏移位置
+        /// </summary>
         [DefaultValue(typeof(Point), "0, 0")]
         [Description("字体图标的偏移位置"), Category("SunnyUI")]
         public Point SymbolOffset
@@ -995,6 +1258,149 @@ namespace Sunny.UI
             {
                 symbolOffset = value;
                 Invalidate();
+            }
+        }
+
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
+        [Editor("Sunny.UI.UIImagePropertyEditor, " + AssemblyRefEx.SystemDesign, typeof(UITypeEditor))]
+        [DefaultValue(361761)]
+        [Description("按钮字体图标"), Category("SunnyUI")]
+        public int ButtonSymbol
+        {
+            get => btn.Symbol;
+            set => btn.Symbol = value;
+        }
+
+        [DefaultValue(24)]
+        [Description("按钮字体图标大小"), Category("SunnyUI")]
+        public int ButtonSymbolSize
+        {
+            get => btn.SymbolSize;
+            set => btn.SymbolSize = value;
+        }
+
+        [DefaultValue(typeof(Point), "0, 1")]
+        [Description("按钮字体图标的偏移位置"), Category("SunnyUI")]
+        public Point ButtonSymbolOffset
+        {
+            get => btn.SymbolOffset;
+            set => btn.SymbolOffset = value;
+        }
+
+        /// <summary>
+        /// 填充颜色，当值为背景色或透明色或空值则不填充
+        /// </summary>
+        [Description("按钮填充颜色"), Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "80, 160, 255")]
+        public Color ButtonFillColor
+        {
+            get => btn.FillColor;
+            set
+            {
+                btn.FillColor = value;
+                _style = UIStyle.Custom;
+            }
+        }
+
+        /// <summary>
+        /// 字体颜色
+        /// </summary>
+        [Description("按钮字体颜色"), Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "White")]
+        public Color ButtonForeColor
+        {
+            get => btn.ForeColor;
+            set
+            {
+                btn.SymbolColor = btn.ForeColor = value;
+                _style = UIStyle.Custom;
+            }
+        }
+
+        /// <summary>
+        /// 边框颜色
+        /// </summary>
+        [Description("按钮边框颜色"), Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "80, 160, 255")]
+        public Color ButtonRectColor
+        {
+            get => btn.RectColor;
+            set
+            {
+                btn.RectColor = value;
+                _style = UIStyle.Custom;
+            }
+        }
+
+        [DefaultValue(typeof(Color), "115, 179, 255"), Category("SunnyUI")]
+        [Description("按钮鼠标移上时填充颜色")]
+        public Color ButtonFillHoverColor
+        {
+            get => btn.FillHoverColor;
+            set
+            {
+                btn.FillHoverColor = value;
+                _style = UIStyle.Custom;
+            }
+        }
+
+        [DefaultValue(typeof(Color), "White"), Category("SunnyUI")]
+        [Description("按钮鼠标移上时字体颜色")]
+        public Color ButtonForeHoverColor
+        {
+            get => btn.ForeHoverColor;
+            set
+            {
+                btn.SymbolHoverColor = btn.ForeHoverColor = value;
+                _style = UIStyle.Custom;
+            }
+        }
+
+        [DefaultValue(typeof(Color), "115, 179, 255"), Category("SunnyUI")]
+        [Description("鼠标移上时边框颜色")]
+        public Color ButtonRectHoverColor
+        {
+            get => btn.RectHoverColor;
+            set
+            {
+                btn.RectHoverColor = value;
+                _style = UIStyle.Custom;
+            }
+        }
+
+        [DefaultValue(typeof(Color), "64, 128, 204"), Category("SunnyUI")]
+        [Description("按钮鼠标按下时填充颜色")]
+        public Color ButtonFillPressColor
+        {
+            get => btn.FillPressColor;
+            set
+            {
+                btn.FillPressColor = value;
+                _style = UIStyle.Custom;
+            }
+        }
+
+        [DefaultValue(typeof(Color), "White"), Category("SunnyUI")]
+        [Description("按钮鼠标按下时字体颜色")]
+        public Color ButtonForePressColor
+        {
+            get => btn.ForePressColor;
+            set
+            {
+                btn.SymbolPressColor = btn.ForePressColor = value;
+                _style = UIStyle.Custom;
+            }
+        }
+
+        [DefaultValue(typeof(Color), "64, 128, 204"), Category("SunnyUI")]
+        [Description("按钮鼠标按下时边框颜色")]
+        public Color ButtonRectPressColor
+        {
+            get => btn.RectPressColor;
+            set
+            {
+                btn.RectPressColor = value;
+                _style = UIStyle.Custom;
             }
         }
     }

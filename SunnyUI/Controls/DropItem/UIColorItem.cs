@@ -11,6 +11,30 @@ namespace Sunny.UI
             Translate();
         }
 
+        public override void SetDPIScale()
+        {
+            if (!IsScaled)
+            {
+                m_opacitySlider.SetDPIScaleFont();
+                m_colorBar.SetDPIScaleFont();
+
+                foreach (var label in this.GetControls<UILabel>())
+                {
+                    label.SetDPIScaleFont();
+                }
+
+                foreach (var label in this.GetControls<UITextBox>())
+                {
+                    label.SetDPIScaleFont();
+                }
+
+                btnOK.SetDPIScaleFont();
+                btnCancel.SetDPIScaleFont();
+            }
+
+            base.SetDPIScale();
+        }
+
         public void Translate()
         {
             btnOK.Text = UILocalize.OK;
@@ -554,13 +578,13 @@ namespace Sunny.UI
 
         private void btnCancel_Click(object sender, EventArgs e)
         {
-            CloseParent();
+            Close();
         }
 
         private void btnOK_Click(object sender, EventArgs e)
         {
             DoValueChanged(this, SelectedColor);
-            CloseParent();
+            Close();
         }
 
         private void m_colorSample_Paint(object sender, System.Windows.Forms.PaintEventArgs e)
@@ -581,7 +605,11 @@ namespace Sunny.UI
             e.Graphics.FillRectangle(c, r);
         }
 
-        public override void SetStyle(UIBaseStyle uiColor)
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="uiColor">主题样式</param>
+        public override void SetStyleColor(UIBaseStyle uiColor)
         {
             base.SetStyleColor(uiColor);
             RectColor = uiColor.RectColor;

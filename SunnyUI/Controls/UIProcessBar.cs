@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,13 +13,15 @@
  ******************************************************************************
  * 文件名称: UIProcessBar.cs
  * 文件说明: 进度条
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
  * 2020-04-19: V2.2.5 增加数值变化事件
  * 2021-08-07: V3.0.5 增加垂直方向的进度显示
  * 2021-08-14: V3.0.6 修改不显示百分比时，显示数值
+ * 2021-10-14: V3.0.8 调整最小高度为3
+ * 2022-03-19: V3.1.1 重构主题配色
 ******************************************************************************/
 
 using System;
@@ -43,7 +45,7 @@ namespace Sunny.UI
         public UIProcessBar()
         {
             SetStyleFlags(true, false);
-            MinimumSize = new Size(70, 5);
+            MinimumSize = new Size(70, 3);
             Size = new Size(300, 29);
             ShowText = false;
 
@@ -88,10 +90,14 @@ namespace Sunny.UI
             get => posValue;
             set
             {
-                posValue = Math.Max(value, 0);
-                posValue = Math.Min(posValue, maximum);
-                ValueChanged?.Invoke(this, posValue);
-                Invalidate();
+                value = Math.Max(value, 0);
+                value = Math.Min(value, maximum);
+                if (posValue != value)
+                {
+                    posValue = value;
+                    ValueChanged?.Invoke(this, posValue);
+                    Invalidate();
+                }
             }
         }
 
@@ -121,6 +127,10 @@ namespace Sunny.UI
         private Bitmap image;
         private int imageRadius;
 
+        /// <summary>
+        /// 重载绘图
+        /// </summary>
+        /// <param name="e">绘图参数</param>
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
@@ -134,7 +144,7 @@ namespace Sunny.UI
                 processSize = posValue * Height * 1.0f / Maximum;
 
             if (ShowPercent)
-                processText = (posValue * 100.0 / maximum).ToString("F" + DecimalCount) + "%";
+                processText = (posValue * 100.0 / maximum).ToString("F" + decimalCount) + "%";
             else
                 processText = posValue.ToString();
 
@@ -183,6 +193,10 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 重载控件尺寸变更
+        /// </summary>
+        /// <param name="e">参数</param>
         protected override void OnSizeChanged(EventArgs e)
         {
             base.OnSizeChanged(e);
@@ -203,29 +217,32 @@ namespace Sunny.UI
             }
         }
 
-        private int decimalCount = 1;
-
         [Description("显示文字小数位数"), Category("SunnyUI")]
         [DefaultValue(1)]
-        public int DecimalCount
+        public int DecimalPlaces
         {
             get => decimalCount;
             set => decimalCount = Math.Max(value, 0);
         }
 
+        private int decimalCount = 1;
+
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="uiColor">主题样式</param>
         public override void SetStyleColor(UIBaseStyle uiColor)
         {
             base.SetStyleColor(uiColor);
             fillColor = uiColor.ProcessBarFillColor;
             foreColor = uiColor.ProcessBarForeColor;
-            Invalidate();
         }
 
         /// <summary>
         /// 填充颜色，当值为背景色或透明色或空值则不填充
         /// </summary>
         [Description("填充颜色"), Category("SunnyUI")]
-        [DefaultValue(typeof(Color), "235, 243, 255")]
+        [DefaultValue(typeof(Color), "243, 249, 255")]
         public Color FillColor
         {
             get => fillColor;

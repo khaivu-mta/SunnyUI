@@ -7,8 +7,9 @@ using System.Windows.Forms;
 
 namespace Sunny.UI
 {
+#pragma warning disable CS1591 // 缺少对公共可见类型或成员的 XML 注释
     [ToolboxItem(false)]
-    public sealed class UIColorWheel : Control, IStyleInterface
+    public sealed class UIColorWheel : Control, IStyleInterface, IZoomScale
     {
         public event EventHandler SelectedColorChanged;
 
@@ -30,6 +31,39 @@ namespace Sunny.UI
                 m_selectedColor = value;
                 SelectedColorChanged?.Invoke(this, null);
                 Refresh();//Invalidate(UIColorUtil.Rect(ColorSelectorRectangle));
+            }
+        }
+
+        /// <summary>
+        /// 禁止控件跟随窗体缩放
+        /// </summary>
+        [DefaultValue(false), Category("SunnyUI"), Description("禁止控件跟随窗体缩放")]
+        public bool ZoomScaleDisabled { get; set; }
+
+        /// <summary>
+        /// 控件缩放前在其容器里的位置
+        /// </summary>
+        [Browsable(false)]
+        public Rectangle ZoomScaleRect { get; set; }
+
+        /// <summary>
+        /// 设置控件缩放比例
+        /// </summary>
+        /// <param name="scale">缩放比例</param>
+        public void SetZoomScale(float scale)
+        {
+
+        }
+
+        [Browsable(false)]
+        public bool IsScaled { get; private set; }
+
+        public void SetDPIScale()
+        {
+            if (!IsScaled)
+            {
+                this.SetDPIScaleFont();
+                IsScaled = true;
             }
         }
 
@@ -82,6 +116,10 @@ namespace Sunny.UI
             Invalidate();
         }
 
+        /// <summary>
+        /// 重载绘图
+        /// </summary>
+        /// <param name="e">绘图参数</param>
         protected override void OnPaint(PaintEventArgs e)
         {
             if (Width != Height)
@@ -130,6 +168,10 @@ namespace Sunny.UI
             ReCalcWheelPoints();
         }
 
+        /// <summary>
+        /// 重载鼠标移动事件
+        /// </summary>
+        /// <param name="e">鼠标参数</param>
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
@@ -138,6 +180,10 @@ namespace Sunny.UI
                 SetColor(mousePoint);
         }
 
+        /// <summary>
+        /// 重载鼠标按下事件
+        /// </summary>
+        /// <param name="e">鼠标参数</param>
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
@@ -283,8 +329,12 @@ namespace Sunny.UI
         /// <param name="style">主题样式</param>
         public void SetStyle(UIStyle style)
         {
-            UIBaseStyle uiColor = UIStyles.GetStyleColor(style);
-            if (!uiColor.IsCustom()) SetStyleColor(uiColor);
+            if (!style.IsCustom())
+            {
+                SetStyleColor(style.Colors());
+                Invalidate();
+            }
+
             _style = style;
         }
 
@@ -294,9 +344,8 @@ namespace Sunny.UI
         /// <param name="uiColor"></param>
         public void SetStyleColor(UIBaseStyle uiColor)
         {
-            FrameColor = uiColor.RectColor;
-            BackColor = uiColor.PlainColor;
-            Invalidate();
+            FrameColor = uiColor.ColorWheelFrameColor;
+            BackColor = uiColor.ColorWheelBackColor;
         }
 
         /// <summary>
@@ -315,4 +364,6 @@ namespace Sunny.UI
         [Description("获取或设置包含有关控件的数据的对象字符串"), Category("SunnyUI")]
         public string TagString { get; set; }
     }
+
+#pragma warning restore CS1591 // 缺少对公共可见类型或成员的 XML 注释
 }

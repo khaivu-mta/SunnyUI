@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,7 +13,7 @@
  ******************************************************************************
  * 文件名称: UIDatePicker.cs
  * 文件说明: 日期选择框
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
@@ -32,7 +32,7 @@ namespace Sunny.UI
     [ToolboxItem(true)]
     [DefaultProperty("Value")]
     [DefaultEvent("ValueChanged")]
-    public sealed partial class UIDatePicker : UIDropControl,IToolTip
+    public sealed partial class UIDatePicker : UIDropControl, IToolTip
     {
         public delegate void OnDateTimeChanged(object sender, DateTime value);
 
@@ -44,6 +44,8 @@ namespace Sunny.UI
             MaxLength = 10;
             EditorLostFocus += UIDatePicker_LostFocus;
             TextChanged += UIDatePicker_TextChanged;
+
+            CreateInstance();
         }
 
         [DefaultValue(false)]
@@ -79,6 +81,10 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 需要额外设置ToolTip的控件
+        /// </summary>
+        /// <returns>控件</returns>
         public Control ExToolTipControl()
         {
             return edit;
@@ -112,7 +118,7 @@ namespace Sunny.UI
                 try
                 {
                     DateTime dt = Text.ToDateTime(DateFormat);
-                    Value = dt;
+                    if (Value != dt) Value = dt;
                 }
                 catch
                 {
@@ -132,7 +138,7 @@ namespace Sunny.UI
             try
             {
                 DateTime dt = Text.ToDateTime(DateFormat);
-                Value = dt;
+                if (Value != dt) Value = dt;
             }
             catch
             {
@@ -142,16 +148,22 @@ namespace Sunny.UI
 
         public event OnDateTimeChanged ValueChanged;
 
+        /// <summary>
+        /// 值改变事件
+        /// </summary>
+        /// <param name="sender">控件</param>
+        /// <param name="value">值</param>
         protected override void ItemForm_ValueChanged(object sender, object value)
         {
             Value = (DateTime)value;
-            Text = Value.ToString(dateFormat);
             Invalidate();
-            ValueChanged?.Invoke(this, Value);
         }
 
         private readonly UIDateItem item = new UIDateItem();
 
+        /// <summary>
+        /// 创建对象
+        /// </summary>
         protected override void CreateInstance()
         {
             ItemForm = new UIDropDown(item);
@@ -166,7 +178,13 @@ namespace Sunny.UI
                 if (value < new DateTime(1900, 1, 1))
                     value = new DateTime(1900, 1, 1);
                 Text = value.ToString(dateFormat);
-                item.Date = value;
+
+                if (item.Date != value)
+                {
+                    item.Date = value;
+                }
+
+                ValueChanged?.Invoke(this, Value);
             }
         }
 
@@ -177,6 +195,8 @@ namespace Sunny.UI
             item.ShowToday = ShowToday;
             item.PrimaryColor = RectColor;
             item.Translate();
+            item.SetDPIScale();
+            item.SetStyleColor(UIStyles.ActiveStyleColor);
             ItemForm.Show(this);
         }
 

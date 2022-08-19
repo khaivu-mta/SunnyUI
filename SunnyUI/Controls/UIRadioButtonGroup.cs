@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,7 +13,7 @@
  ******************************************************************************
  * 文件名称: UICheckBoxGroup.cs
  * 文件说明: 单选框组
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-04-19: V2.2.3 增加单元
@@ -97,7 +97,8 @@ namespace Sunny.UI
                         Font = Font,
                         Parent = this,
                         Tag = i,
-                        Style = Style
+                        Style = Style,
+                        IsScaled = IsScaled
                     };
 
                     button.ValueChanged += Button_ValueChanged;
@@ -106,6 +107,10 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 重载绘图
+        /// </summary>
+        /// <param name="e">绘图参数</param>
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
@@ -248,15 +253,6 @@ namespace Sunny.UI
             {
                 rowInterval = value;
                 Invalidate();
-            }
-        }
-
-        protected override void OnFontChanged(EventArgs e)
-        {
-            base.OnFontChanged(e);
-            foreach (var button in buttons)
-            {
-                button.Font = Font;
             }
         }
     }

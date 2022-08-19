@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,7 +13,7 @@
  ******************************************************************************
  * 文件名称: UIEdit.cs
  * 文件说明: 文本输入框
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
@@ -42,29 +42,153 @@ namespace Sunny.UI
         {
             //设置为单选边框
             BorderStyle = BorderStyle.FixedSingle;
-            base.Font = UIFontColor.Font;
+            base.Font = UIFontColor.Font();
             base.ForeColor = UIFontColor.Primary;
             Width = 150;
             base.MaxLength = 32767;
-            JoinEvents(true);
+
+            waterMarkBrush = new SolidBrush(_waterMarkActiveColor);
+            waterMarkContainer = null;
+
+            DrawWaterMark();
+            this.Enter += new EventHandler(ThisHasFocus);
+            this.Leave += new EventHandler(ThisWasLeaved);
+            this.TextChanged += new EventHandler(ThisTextChanged);
         }
 
-        private string watermark;
+        private void DrawWaterMark()
+        {
+            if (this.waterMarkContainer == null && this.TextLength <= 0)
+            {
+                waterMarkContainer = new Panel();
+                waterMarkContainer.Paint += new PaintEventHandler(waterMarkContainer_Paint);
+                waterMarkContainer.Invalidate();
+                waterMarkContainer.Click += new EventHandler(waterMarkContainer_Click);
+                waterMarkContainer.DoubleClick += WaterMarkContainer_DoubleClick;
+                this.Controls.Add(waterMarkContainer);
+            }
+        }
+
+        private void WaterMarkContainer_DoubleClick(object sender, EventArgs e)
+        {
+            this.Focus();
+            base.OnDoubleClick(EventArgs.Empty);
+        }
+
+        private void waterMarkContainer_Paint(object sender, PaintEventArgs e)
+        {
+            waterMarkContainer.Location = new Point(2, 0);
+            waterMarkContainer.Height = this.Height;
+            waterMarkContainer.Width = this.Width;
+            waterMarkContainer.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+
+            if (this.ContainsFocus)
+            {
+                waterMarkBrush = new SolidBrush(this._waterMarkActiveColor);
+            }
+            else
+            {
+                waterMarkBrush = new SolidBrush(this._waterMarkColor);
+            }
+
+            Graphics g = e.Graphics;
+            g.DrawString(this._waterMarkText, Font, waterMarkBrush, new PointF(-2f, 1f));//Take a look at that point
+        }
+
+        private void RemoveWaterMark()
+        {
+            if (waterMarkContainer != null)
+            {
+                Controls.Remove(waterMarkContainer);
+                waterMarkContainer = null;
+            }
+        }
+
+        private void ThisHasFocus(object sender, EventArgs e)
+        {
+            waterMarkBrush = new SolidBrush(this._waterMarkActiveColor);
+
+            if (this.TextLength <= 0)
+            {
+                RemoveWaterMark();
+                DrawWaterMark();
+            }
+        }
+
+        private void ThisWasLeaved(object sender, EventArgs e)
+        {
+            if (this.TextLength > 0)
+            {
+                RemoveWaterMark();
+            }
+            else
+            {
+                Invalidate();
+            }
+        }
+
+        private void ThisTextChanged(object sender, EventArgs e)
+        {
+            if (this.TextLength > 0)
+            {
+                RemoveWaterMark();
+            }
+            else
+            {
+                DrawWaterMark();
+            }
+        }
+
+        private void waterMarkContainer_Click(object sender, EventArgs e)
+        {
+            this.Focus();
+            base.OnClick(EventArgs.Empty);
+        }
+
+        /// <summary>
+        /// 重载绘图
+        /// </summary>
+        /// <param name="e">绘图参数</param>
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            base.OnPaint(e);
+            DrawWaterMark();
+        }
+
+        protected override void OnInvalidated(InvalidateEventArgs e)
+        {
+            base.OnInvalidated(e);
+            if (waterMarkContainer != null)
+                waterMarkContainer.Invalidate();
+        }
+
+        [Browsable(false), DefaultValue(false)]
+        public bool IsScaled { get; set; }
+
+        public void SetDPIScale()
+        {
+            if (!IsScaled)
+            {
+                this.SetDPIScaleFont();
+                IsScaled = true;
+            }
+        }
+
+        private Panel waterMarkContainer;
+        private SolidBrush waterMarkBrush;
+
+        private string _waterMarkText = "";
 
         [DefaultValue(null)]
         public string Watermark
         {
-            get => watermark;
+            get => _waterMarkText;
             set
             {
-                watermark = value;
+                _waterMarkText = value;
                 Invalidate();
-                //Win32.User.SendMessage(Handle, 0x1501, (int)IntPtr.Zero, value);
             }
         }
-
-        private Font oldFont;
-        private Boolean waterMarkTextEnabled;
 
         private Color _waterMarkColor = Color.Gray;
         public Color WaterMarkColor
@@ -77,69 +201,30 @@ namespace Sunny.UI
             }
         }
 
-        protected override void OnCreateControl()
-        {
-            base.OnCreateControl();
-            WaterMark_Toggle(null, null);
-        }
+        private Color _waterMarkActiveColor = Color.Gray;
 
-        protected override void OnPaint(PaintEventArgs args)
+        public Color WaterMarkActiveForeColor
         {
-            // Use the same font that was defined in base class
-            Font drawFont = new Font(Font.FontFamily, Font.Size, Font.Style, Font.Unit);
-            //Create new brush with gray color or 
-            SolidBrush drawBrush = new SolidBrush(WaterMarkColor);//use Water mark color
-            //Draw Text or WaterMark
-            args.Graphics.DrawString((waterMarkTextEnabled ? Watermark : Text), drawFont, drawBrush, new PointF(0.0F, 0.0F));
-            base.OnPaint(args);
-        }
-
-        private void JoinEvents(Boolean join)
-        {
-            if (join)
+            get => _waterMarkActiveColor;
+            set
             {
-                TextChanged += WaterMark_Toggle;
-                LostFocus += WaterMark_Toggle;
-                FontChanged += WaterMark_FontChanged;
+                _waterMarkActiveColor = value;
+                Invalidate();
             }
         }
 
-        private void WaterMark_Toggle(object sender, EventArgs args)
+        public event OnSelectionChanged SelectionChanged;
+
+        protected override void OnKeyUp(KeyEventArgs e)
         {
-            if (Text.Length <= 0)
-                EnableWaterMark();
-            else
-                DisableWaterMark();
+            base.OnKeyUp(e);
+            SelectionChanged?.Invoke(this, new UITextBoxSelectionArgs() { SelectionStart = this.SelectionStart, Text = this.Text });
         }
 
-        private void EnableWaterMark()
+        protected override void OnMouseDown(MouseEventArgs e)
         {
-            //Save current font until returning the UserPaint style to false (NOTE: It is a try and error advice)
-            oldFont = new Font(Font.FontFamily, Font.Size, Font.Style, Font.Unit);
-            //Enable OnPaint event handler
-            SetStyle(ControlStyles.UserPaint, true);
-            waterMarkTextEnabled = true;
-            //OnPaint right now
-            Refresh();
-        }
-
-        private void DisableWaterMark()
-        {
-            //Disable OnPaint event handler
-            waterMarkTextEnabled = false;
-            SetStyle(ControlStyles.UserPaint, false);
-            //Return back oldFont if existed
-            if (oldFont != null)
-                Font = new Font(oldFont.FontFamily, oldFont.Size, oldFont.Style, oldFont.Unit);
-        }
-
-        private void WaterMark_FontChanged(object sender, EventArgs args)
-        {
-            if (waterMarkTextEnabled)
-            {
-                oldFont = new Font(Font.FontFamily, Font.Size, Font.Style, Font.Unit);
-                Refresh();
-            }
+            base.OnMouseDown(e);
+            SelectionChanged?.Invoke(this, new UITextBoxSelectionArgs() { SelectionStart = this.SelectionStart, Text = this.Text });
         }
 
         protected override void OnKeyDown(KeyEventArgs e)
@@ -160,7 +245,6 @@ namespace Sunny.UI
 
                     e.Handled = true;
                 }
-
 
                 if (e.KeyData == Keys.Up)
                 {
@@ -273,7 +357,7 @@ namespace Sunny.UI
                     if (_uiEditType == UITextBox.UIEditType.Double)
                     {
                         mask = DecimalToMask(decLength);
-                        Text = mask;
+                        Text = DoubleValue.ToString(mask);
                         Invalidate();
                     }
                 }
@@ -582,7 +666,7 @@ namespace Sunny.UI
         {
             base.OnLeave(e);
 
-            //如果为整形,为空时自动为0
+            //如果为整型,为空时自动为0
             if (_uiEditType == UITextBox.UIEditType.Integer)
             {
                 if (Text == "" && CanEmpty) return;

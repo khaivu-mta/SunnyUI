@@ -4,12 +4,46 @@ using System.Windows.Forms;
 
 namespace Sunny.UI
 {
+#pragma warning disable CS1591 // 缺少对公共可见类型或成员的 XML 注释
     [ToolboxItem(false)]
-    public class LabelRotate : Control, IStyleInterface
+    public class LabelRotate : Control, IStyleInterface, IZoomScale
     {
         private float m_textAngle = 0;
         private ContentAlignment m_rotatePointAlignment = ContentAlignment.MiddleCenter;
         private ContentAlignment m_textAlignment = ContentAlignment.MiddleLeft;
+
+        /// <summary>
+        /// 禁止控件跟随窗体缩放
+        /// </summary>
+        [DefaultValue(false), Category("SunnyUI"), Description("禁止控件跟随窗体缩放")]
+        public bool ZoomScaleDisabled { get; set; }
+
+        /// <summary>
+        /// 控件缩放前在其容器里的位置
+        /// </summary>
+        [Browsable(false)]
+        public Rectangle ZoomScaleRect { get; set; }
+
+        /// <summary>
+        /// 设置控件缩放比例
+        /// </summary>
+        /// <param name="scale">缩放比例</param>
+        public virtual void SetZoomScale(float scale)
+        {
+
+        }
+
+        [Browsable(false)]
+        public bool IsScaled { get; private set; }
+
+        public void SetDPIScale()
+        {
+            if (!IsScaled)
+            {
+                this.SetDPIScaleFont();
+                IsScaled = true;
+            }
+        }
 
         public new string Text
         {
@@ -72,6 +106,10 @@ namespace Sunny.UI
             Version = UIGlobal.Version;
         }
 
+        /// <summary>
+        /// 重载绘图
+        /// </summary>
+        /// <param name="e">绘图参数</param>
         protected override void OnPaint(PaintEventArgs e)
         {
             e.Graphics.FillRectangle(BackColor, ClientRectangle);
@@ -203,8 +241,12 @@ namespace Sunny.UI
         /// <param name="style">主题样式</param>
         public void SetStyle(UIStyle style)
         {
-            UIBaseStyle uiColor = UIStyles.GetStyleColor(style);
-            if (!uiColor.IsCustom()) SetStyleColor(uiColor);
+            if (!style.IsCustom())
+            {
+                SetStyleColor(style.Colors());
+                Invalidate();
+            }
+
             _style = style;
         }
 
@@ -212,11 +254,10 @@ namespace Sunny.UI
         /// 设置主题样式颜色
         /// </summary>
         /// <param name="uiColor"></param>
-        public virtual void SetStyleColor(UIBaseStyle uiColor)
+        public void SetStyleColor(UIBaseStyle uiColor)
         {
-            FrameColor = uiColor.RectColor;
-            ForeColor = uiColor.PanelForeColor;
-            Invalidate();
+            FrameColor = uiColor.LabelRotateFrameColor;
+            ForeColor = uiColor.LabelRotateForeColor;
         }
 
         /// <summary>
@@ -235,4 +276,6 @@ namespace Sunny.UI
         [Description("获取或设置包含有关控件的数据的对象字符串"), Category("SunnyUI")]
         public string TagString { get; set; }
     }
+
+#pragma warning restore CS1591 // 缺少对公共可见类型或成员的 XML 注释
 }

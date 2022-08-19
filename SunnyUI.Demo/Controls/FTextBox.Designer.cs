@@ -45,20 +45,20 @@ namespace Sunny.UI.Demo
             this.uiLabel2 = new Sunny.UI.UILabel();
             this.uiTextBox2 = new Sunny.UI.UITextBox();
             this.uiLabel1 = new Sunny.UI.UILabel();
-            this.uiTextBox1 = new Sunny.UI.UITextBox();
             this.uiIntegerUpDown1 = new Sunny.UI.UIIntegerUpDown();
             this.uiToolTip1 = new Sunny.UI.UIToolTip(this.components);
+            this.uiTextBox1 = new Sunny.UI.UITextBox();
+            this.uiLine6 = new Sunny.UI.UILine();
+            this.uiipTextBox1 = new Sunny.UI.UIIPTextBox();
             this.SuspendLayout();
             // 
             // uiTextBox6
             // 
+            this.uiTextBox6.ButtonWidth = 100;
             this.uiTextBox6.Cursor = System.Windows.Forms.Cursors.IBeam;
-            this.uiTextBox6.FillColor = System.Drawing.Color.White;
             this.uiTextBox6.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.uiTextBox6.Location = new System.Drawing.Point(117, 167);
             this.uiTextBox6.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.uiTextBox6.Maximum = 2147483647D;
-            this.uiTextBox6.Minimum = -2147483648D;
             this.uiTextBox6.MinimumSize = new System.Drawing.Size(1, 1);
             this.uiTextBox6.Name = "uiTextBox6";
             this.uiTextBox6.Padding = new System.Windows.Forms.Padding(5);
@@ -70,14 +70,12 @@ namespace Sunny.UI.Demo
             // 
             // uiTextBox5
             // 
+            this.uiTextBox5.ButtonWidth = 100;
             this.uiTextBox5.Cursor = System.Windows.Forms.Cursors.IBeam;
-            this.uiTextBox5.FillColor = System.Drawing.Color.White;
             this.uiTextBox5.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.uiTextBox5.Icon = global::Sunny.UI.Demo.Properties.Resources.Home_32x32;
             this.uiTextBox5.Location = new System.Drawing.Point(117, 128);
             this.uiTextBox5.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.uiTextBox5.Maximum = 2147483647D;
-            this.uiTextBox5.Minimum = -2147483648D;
             this.uiTextBox5.MinimumSize = new System.Drawing.Size(1, 1);
             this.uiTextBox5.Name = "uiTextBox5";
             this.uiTextBox5.Padding = new System.Windows.Forms.Padding(5);
@@ -88,17 +86,16 @@ namespace Sunny.UI.Demo
             // 
             // uiTextBox4
             // 
+            this.uiTextBox4.ButtonWidth = 100;
             this.uiTextBox4.Cursor = System.Windows.Forms.Cursors.IBeam;
-            this.uiTextBox4.FillColor = System.Drawing.Color.White;
             this.uiTextBox4.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.uiTextBox4.Location = new System.Drawing.Point(30, 325);
             this.uiTextBox4.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.uiTextBox4.Maximum = 2147483647D;
-            this.uiTextBox4.Minimum = -2147483648D;
             this.uiTextBox4.MinimumSize = new System.Drawing.Size(1, 1);
             this.uiTextBox4.Multiline = true;
             this.uiTextBox4.Name = "uiTextBox4";
             this.uiTextBox4.Padding = new System.Windows.Forms.Padding(5);
+            this.uiTextBox4.ShowScrollBar = true;
             this.uiTextBox4.Size = new System.Drawing.Size(308, 226);
             this.uiTextBox4.TabIndex = 5;
             this.uiTextBox4.Text = "Blog: https://www.cnblogs.com/yhuse\r\nGitee: https://gitee.com/yhuse/SunnyUI\r\nGitH" +
@@ -131,7 +128,6 @@ namespace Sunny.UI.Demo
             // 
             // uiRichTextBox1
             // 
-            this.uiRichTextBox1.AutoWordSelection = true;
             this.uiRichTextBox1.FillColor = System.Drawing.Color.White;
             this.uiRichTextBox1.Font = new System.Drawing.Font("微软雅黑", 12F);
             this.uiRichTextBox1.Location = new System.Drawing.Point(388, 325);
@@ -145,7 +141,6 @@ namespace Sunny.UI.Demo
     ": https://github.com/yhuse/SunnyUI\nSunnyUI.Net 系列文章目录\n欢迎交流，QQ群： 56829229 (SunnyU" +
     "I技术交流群)，请给源码项目点个Star吧！！！";
             this.uiRichTextBox1.TextAlignment = System.Drawing.ContentAlignment.MiddleCenter;
-            this.uiRichTextBox1.WordWrap = true;
             // 
             // uiLine5
             // 
@@ -191,7 +186,7 @@ namespace Sunny.UI.Demo
             this.uiDoubleUpDown1.TabIndex = 8;
             this.uiDoubleUpDown1.Text = "uiDoubleUpDown1";
             this.uiDoubleUpDown1.TextAlignment = System.Drawing.ContentAlignment.MiddleCenter;
-            this.uiDoubleUpDown1.Value = 0D;
+            this.uiDoubleUpDown1.Value = 10D;
             // 
             // uiLabel3
             // 
@@ -206,14 +201,12 @@ namespace Sunny.UI.Demo
             // 
             // uiTextBox3
             // 
+            this.uiTextBox3.ButtonWidth = 100;
             this.uiTextBox3.CanEmpty = true;
             this.uiTextBox3.Cursor = System.Windows.Forms.Cursors.IBeam;
-            this.uiTextBox3.FillColor = System.Drawing.Color.White;
             this.uiTextBox3.Font = new System.Drawing.Font("微软雅黑", 12F);
             this.uiTextBox3.Location = new System.Drawing.Point(117, 245);
             this.uiTextBox3.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.uiTextBox3.Maximum = 2147483647D;
-            this.uiTextBox3.Minimum = -2147483648D;
             this.uiTextBox3.MinimumSize = new System.Drawing.Size(1, 1);
             this.uiTextBox3.Name = "uiTextBox3";
             this.uiTextBox3.Padding = new System.Windows.Forms.Padding(5);
@@ -236,10 +229,10 @@ namespace Sunny.UI.Demo
             // 
             // uiTextBox2
             // 
+            this.uiTextBox2.ButtonWidth = 100;
             this.uiTextBox2.CanEmpty = true;
             this.uiTextBox2.Cursor = System.Windows.Forms.Cursors.IBeam;
             this.uiTextBox2.DoubleValue = 5D;
-            this.uiTextBox2.FillColor = System.Drawing.Color.White;
             this.uiTextBox2.Font = new System.Drawing.Font("微软雅黑", 12F);
             this.uiTextBox2.IntValue = 5;
             this.uiTextBox2.Location = new System.Drawing.Point(117, 206);
@@ -267,24 +260,6 @@ namespace Sunny.UI.Demo
             this.uiLabel1.Text = "String";
             this.uiLabel1.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
-            // uiTextBox1
-            // 
-            this.uiTextBox1.Cursor = System.Windows.Forms.Cursors.IBeam;
-            this.uiTextBox1.FillColor = System.Drawing.Color.White;
-            this.uiTextBox1.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.uiTextBox1.Location = new System.Drawing.Point(117, 89);
-            this.uiTextBox1.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.uiTextBox1.Maximum = 2147483647D;
-            this.uiTextBox1.Minimum = -2147483648D;
-            this.uiTextBox1.MinimumSize = new System.Drawing.Size(1, 1);
-            this.uiTextBox1.Name = "uiTextBox1";
-            this.uiTextBox1.Padding = new System.Windows.Forms.Padding(5);
-            this.uiTextBox1.Size = new System.Drawing.Size(221, 29);
-            this.uiTextBox1.TabIndex = 0;
-            this.uiTextBox1.TextAlignment = System.Drawing.ContentAlignment.MiddleLeft;
-            this.uiToolTip1.SetToolTip(this.uiTextBox1, "Hello world!");
-            this.uiTextBox1.Watermark = "水印文字";
-            // 
             // uiIntegerUpDown1
             // 
             this.uiIntegerUpDown1.Font = new System.Drawing.Font("微软雅黑", 12F);
@@ -298,6 +273,7 @@ namespace Sunny.UI.Demo
             this.uiIntegerUpDown1.TabIndex = 7;
             this.uiIntegerUpDown1.Text = "_uiIntegerUpDown1";
             this.uiIntegerUpDown1.TextAlignment = System.Drawing.ContentAlignment.MiddleCenter;
+            this.uiIntegerUpDown1.Value = 10;
             // 
             // uiToolTip1
             // 
@@ -305,11 +281,52 @@ namespace Sunny.UI.Demo
             this.uiToolTip1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(239)))), ((int)(((byte)(239)))), ((int)(((byte)(239)))));
             this.uiToolTip1.OwnerDraw = true;
             // 
+            // uiTextBox1
+            // 
+            this.uiTextBox1.Cursor = System.Windows.Forms.Cursors.IBeam;
+            this.uiTextBox1.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.uiTextBox1.Location = new System.Drawing.Point(117, 89);
+            this.uiTextBox1.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.uiTextBox1.MinimumSize = new System.Drawing.Size(1, 16);
+            this.uiTextBox1.Name = "uiTextBox1";
+            this.uiTextBox1.ShowButton = true;
+            this.uiTextBox1.Size = new System.Drawing.Size(221, 29);
+            this.uiTextBox1.TabIndex = 52;
+            this.uiTextBox1.TextAlignment = System.Drawing.ContentAlignment.MiddleLeft;
+            this.uiToolTip1.SetToolTip(this.uiTextBox1, "Hello world!");
+            this.uiTextBox1.Watermark = "水印文字";
+            this.uiTextBox1.ButtonClick += new System.EventHandler(this.uiTextBox1_ButtonClick);
+            // 
+            // uiLine6
+            // 
+            this.uiLine6.Font = new System.Drawing.Font("微软雅黑", 12F);
+            this.uiLine6.Location = new System.Drawing.Point(388, 211);
+            this.uiLine6.MinimumSize = new System.Drawing.Size(16, 16);
+            this.uiLine6.Name = "uiLine6";
+            this.uiLine6.Size = new System.Drawing.Size(306, 20);
+            this.uiLine6.TabIndex = 54;
+            this.uiLine6.Text = "UIIPTextBox";
+            this.uiLine6.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // uiipTextBox1
+            // 
+            this.uiipTextBox1.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.uiipTextBox1.Location = new System.Drawing.Point(388, 245);
+            this.uiipTextBox1.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.uiipTextBox1.MinimumSize = new System.Drawing.Size(1, 1);
+            this.uiipTextBox1.Name = "uiipTextBox1";
+            this.uiipTextBox1.Padding = new System.Windows.Forms.Padding(1);
+            this.uiipTextBox1.Size = new System.Drawing.Size(150, 29);
+            this.uiipTextBox1.TabIndex = 55;
+            this.uiipTextBox1.TextAlignment = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
             // FTextBox
             // 
             this.AllowShowTitle = true;
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.ClientSize = new System.Drawing.Size(800, 562);
+            this.Controls.Add(this.uiipTextBox1);
+            this.Controls.Add(this.uiLine6);
             this.Controls.Add(this.uiTextBox6);
             this.Controls.Add(this.uiTextBox5);
             this.Controls.Add(this.uiTextBox4);
@@ -325,8 +342,8 @@ namespace Sunny.UI.Demo
             this.Controls.Add(this.uiLabel2);
             this.Controls.Add(this.uiTextBox2);
             this.Controls.Add(this.uiLabel1);
-            this.Controls.Add(this.uiTextBox1);
             this.Controls.Add(this.uiIntegerUpDown1);
+            this.Controls.Add(this.uiTextBox1);
             this.Name = "FTextBox";
             this.Padding = new System.Windows.Forms.Padding(0, 35, 0, 0);
             this.ShowTitle = true;
@@ -355,8 +372,10 @@ namespace Sunny.UI.Demo
         private UILabel uiLabel2;
         private UITextBox uiTextBox2;
         private UILabel uiLabel1;
-        private UITextBox uiTextBox1;
         private UIIntegerUpDown uiIntegerUpDown1;
         private UIToolTip uiToolTip1;
+        private UITextBox uiTextBox1;
+        private UILine uiLine6;
+        private UIIPTextBox uiipTextBox1;
     }
 }

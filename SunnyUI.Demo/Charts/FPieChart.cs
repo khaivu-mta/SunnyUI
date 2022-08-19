@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Sunny.UI.Demo.Controls
+namespace Sunny.UI.Demo
 {
     public partial class FPieChart : UIPage
     {
@@ -70,6 +70,9 @@ namespace Sunny.UI.Demo.Controls
             //增加Series
             option.Series.Clear();
             option.Series.Add(series);
+
+            //显示数据小数位数
+            option.DecimalPlaces = 1;
 
             //设置Option
             PieChart.SetOption(option);

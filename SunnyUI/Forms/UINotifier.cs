@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -28,9 +28,10 @@
 //      If you are looking for something professional, you can do it by yourself and of course share it!
 //
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Drawing;
+using System.Linq;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -40,6 +41,29 @@ namespace Sunny.UI
 {
     public sealed partial class UINotifier : Form
     {
+
+        [Browsable(false)]
+        public bool IsScaled { get; private set; }
+
+        public void SetDPIScale()
+        {
+            if (!IsScaled && UIStyles.DPIScale)
+            {
+                this.SetDPIScaleFont();
+
+                noteTitle.Font = noteTitle.Font.DPIScaleFont();
+                noteContent.Font = noteContent.Font.DPIScaleFont();
+                noteDate.Font = noteDate.Font.DPIScaleFont();
+
+                foreach (Control control in this.GetAllDPIScaleControls())
+                {
+                    control.SetDPIScaleFont();
+                }
+
+                IsScaled = true;
+            }
+        }
+
         #region GLOBALS
 
         private class NoteLocation                                              // Helper class to handle Note position
@@ -57,7 +81,7 @@ namespace Sunny.UI
             }
         }
 
-        private static readonly List<UINotifier> Notes = new List<UINotifier>(); // Keep a list of the opened Notifiers
+        private static readonly ConcurrentDictionary<short, UINotifier> Notes = new ConcurrentDictionary<short, UINotifier>(); // Keep a list of the opened Notifiers
 
         private NoteLocation noteLocation;                              // Note position
         private short ID;                    // Note ID
@@ -93,11 +117,10 @@ namespace Sunny.UI
             InApplication = insideMe;
 
             InitializeComponent();
-
-            foreach (var nt in Notes)                                   // Use the latest available ID from the note list
-                if (nt.ID > ID)
-                    ID = nt.ID;
-            ID++;                                                       // Set the Note ID
+            if (Notes.Count == 0)
+                ID = 1;
+            else
+                ID = (short)(Notes.Keys.Max() + 1);                                                       // Set the Note ID
 
             if (insideMe != null && !inAppNoteExists())                 // Register the drag and resize events
             {
@@ -121,7 +144,7 @@ namespace Sunny.UI
         //-------------------------------------------------------------------------------------------------------------------------------
         private void inApp_LocationChanged(object sender, EventArgs e)
         {
-            foreach (var note in Notes)
+            foreach (var note in Notes.Values)
             {
                 if (note.InApplication != null)
                 {
@@ -165,30 +188,30 @@ namespace Sunny.UI
             {
                 case UINotifierType.ERROR:
                     icon.Symbol = 61527;
-                    icon.SymbolColor = UIStyles.GetStyleColor(UIStyle.Red).ButtonFillColor;
-                    LeaveColor = UIStyles.GetStyleColor(UIStyle.Red).ButtonFillColor;
-                    HoverColor = UIStyles.GetStyleColor(UIStyle.Red).ButtonFillHoverColor;
+                    icon.SymbolColor = UIStyles.Red.ButtonFillColor;
+                    LeaveColor = UIStyles.Red.ButtonFillColor;
+                    HoverColor = UIStyles.Red.ButtonFillHoverColor;
                     break;
 
                 case UINotifierType.INFO:
                     icon.Symbol = 61530;
-                    icon.SymbolColor = UIStyles.GetStyleColor(UIStyle.Blue).ButtonFillColor;
-                    LeaveColor = UIStyles.GetStyleColor(UIStyle.Blue).ButtonFillColor;
-                    HoverColor = UIStyles.GetStyleColor(UIStyle.Blue).ButtonFillHoverColor;
+                    icon.SymbolColor = UIStyles.Blue.ButtonFillColor;
+                    LeaveColor = UIStyles.Blue.ButtonFillColor;
+                    HoverColor = UIStyles.Blue.ButtonFillHoverColor;
                     break;
 
                 case UINotifierType.WARNING:
                     icon.Symbol = 61553;
-                    icon.SymbolColor = UIStyles.GetStyleColor(UIStyle.Orange).ButtonFillColor;
-                    LeaveColor = UIStyles.GetStyleColor(UIStyle.Orange).ButtonFillColor;
-                    HoverColor = UIStyles.GetStyleColor(UIStyle.Orange).ButtonFillHoverColor;
+                    icon.SymbolColor = UIStyles.Orange.ButtonFillColor;
+                    LeaveColor = UIStyles.Orange.ButtonFillColor;
+                    HoverColor = UIStyles.Orange.ButtonFillHoverColor;
                     break;
 
                 case UINotifierType.OK:
                     icon.Symbol = 61528;
-                    icon.SymbolColor = UIStyles.GetStyleColor(UIStyle.Green).ButtonFillColor;
-                    LeaveColor = UIStyles.GetStyleColor(UIStyle.Green).ButtonFillColor;
-                    HoverColor = UIStyles.GetStyleColor(UIStyle.Green).ButtonFillHoverColor;
+                    icon.SymbolColor = UIStyles.Green.ButtonFillColor;
+                    LeaveColor = UIStyles.Green.ButtonFillColor;
+                    HoverColor = UIStyles.Green.ButtonFillHoverColor;
                     break;
             }
 
@@ -362,6 +385,7 @@ namespace Sunny.UI
         //-------------------------------------------------------------------------------------------------------------------------------
         private void onMenuClick(object sender, EventArgs e)
         {
+            closeAllToolStripMenuItem.Font = menu.Font.DPIScaleFont();
             menu.Show(buttonMenu, new Point(0, buttonMenu.Height));
         }
 
@@ -390,7 +414,7 @@ namespace Sunny.UI
         //-------------------------------------------------------------------------------------------------------------------------------
         private void closeMe()
         {
-            Notes.Remove(this);
+            Notes.TryRemove(this.ID, out _);
             Close();
 
             if (Notes.Count == 0)
@@ -402,11 +426,12 @@ namespace Sunny.UI
         //-------------------------------------------------------------------------------------------------------------------------------
         private bool inAppNoteExists()
         {
-            foreach (var note in Notes)
+            foreach (var note in Notes.Values)
             {
                 if (note.InApplication != null)
                     return true;
             }
+
             return false;
         }
 
@@ -415,12 +440,10 @@ namespace Sunny.UI
         //-------------------------------------------------------------------------------------------------------------------------------
         private bool isLocationAlreadyUsed(NoteLocation location, UINotifier note)
         {
-            foreach (var p in Notes)
-                if (p.Left == location.X &&
-                    p.Top == location.Y)
+            foreach (var p in Notes.Values)
+                if (p.Left == location.X && p.Top == location.Y)
                 {
-                    if (note.InApplication != null &&
-                        p.ID == note.ID)
+                    if (note.InApplication != null && p.ID == note.ID)
                         return false;
                     return true;
                 }
@@ -432,10 +455,12 @@ namespace Sunny.UI
         //-------------------------------------------------------------------------------------------------------------------------------
         public static void CloseAll()
         {
-            for (int i = Notes.Count - 1; i >= 0; i--)
+            foreach (var note in Notes.Values)
             {
-                Notes[i].closeMe();
+                note.closeMe();
             }
+
+            Notes.Clear();
         }
 
         //-------------------------------------------------------------------------------------------------------------------------------
@@ -465,7 +490,7 @@ namespace Sunny.UI
         // Show the note: it is the startup of the creation process of the note
         //-------------------------------------------------------------------------------------------------------------------------------
         public static short Show(string desc, UINotifierType type = UINotifierType.INFO, string title = "Notifier",
-                                 bool isDialog = false, int timeout = 0, Form inApp = null)
+                                 bool isDialog = false, int timeout = 0, Form inApp = null, EventHandler clickevent = null)
         {
             if (NotifierAlreadyPresent(desc, type, title, isDialog, out var updated_note_id, out var updated_note_occurence))
             {
@@ -479,6 +504,9 @@ namespace Sunny.UI
                                             isDialog,
                                             timeout,
                                             inApp);
+                if (clickevent != null)
+                    not.ItemClick = clickevent;
+                not.SetDPIScale();
                 not.Show();                                                         // Show the note
 
                 if (not.Timeout >= 500)                                          // Start auto close timer (if any)
@@ -491,7 +519,7 @@ namespace Sunny.UI
                     timer.RunWorkerAsync(not);                                      // Timer (temporary notes)
                 }
 
-                Notes.Add(not);                                                     // Add to our collection of Notifiers
+                Notes.TryAdd(not.ID, not);                                                     // Add to our collection of Notifiers
                 updated_note_id = not.ID;
             }
 
@@ -508,7 +536,7 @@ namespace Sunny.UI
             updated_note_id = 0;
             updated_note_occurence = 0;
 
-            foreach (var note in Notes)
+            foreach (var note in Notes.Values)
             {
                 short occurence = 0;
                 string filteredTitle = note.Title;
@@ -547,7 +575,7 @@ namespace Sunny.UI
         //-------------------------------------------------------------------------------------------------------------------------------
         public static void Update(short ID, string desc, UINotifierType noteType, string title)
         {
-            foreach (var note in Notes)
+            foreach (var note in Notes.Values)
             {
                 if (note.Tag != null &&                                     // Get the node
                     note.Tag.Equals("__Notifier|" + ID.ToString("X4")))
@@ -614,6 +642,7 @@ namespace Sunny.UI
             }
 
             UINotifier note = new UINotifier(content, type, title, true);      // Instantiate the UINotifier form
+            note.SetDPIScale();
             note.backDialogStyle = backDialogStyle;
 
             switch (note.backDialogStyle)
@@ -661,7 +690,7 @@ namespace Sunny.UI
                     break;
             }
 
-            Notes.Add(note);                                                    // Add to our collection of Notifiers
+            Notes.TryAdd(note.ID, note);                                                    // Add to our collection of Notifiers
             note.ShowInTaskbar = false;
             note.ShowDialog();
 
@@ -727,6 +756,17 @@ namespace Sunny.UI
         {
             closeAllToolStripMenuItem.Text = UILocalize.CloseAll;
         }
+
+        private void noteContent_Click(object sender, EventArgs e)
+        {
+            if (ItemClick != null)
+            {
+                ItemClick.Invoke(this, e);
+                closeMe();
+            }
+        }
+
+        public event EventHandler ItemClick;
     }   // Close Class
 
     /// <summary>

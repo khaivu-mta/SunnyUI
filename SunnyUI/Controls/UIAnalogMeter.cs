@@ -1,6 +1,6 @@
 /******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -40,6 +40,8 @@ namespace Sunny.UI
     /// Class for the analog meter control
     /// </summary>
     [ToolboxItem(true)]
+    [DefaultEvent("ValueChanged")]
+    [DefaultProperty("Value")]
     public class UIAnalogMeter : UIControl
     {
         #region Enumerator
@@ -186,6 +188,8 @@ namespace Sunny.UI
             }
         }
 
+        public event EventHandler ValueChanged;
+
         [
             Category("Behavior"),
             Description("Value of the data"),
@@ -203,8 +207,12 @@ namespace Sunny.UI
                 if (val < minValue)
                     val = minValue;
 
-                currValue = val;
-                Invalidate();
+                if (currValue != val)
+                {
+                    currValue = val;
+                    Invalidate();
+                    ValueChanged?.Invoke(this, EventArgs.Empty);
+                }
             }
         }
 
@@ -311,6 +319,10 @@ namespace Sunny.UI
 
         #region Events delegates
 
+        /// <summary>
+        /// 重载控件尺寸变更
+        /// </summary>
+        /// <param name="e">参数</param>
         protected override void OnSizeChanged(EventArgs e)
         {
             base.OnSizeChanged(e);
@@ -320,10 +332,10 @@ namespace Sunny.UI
             Invalidate();
         }
 
-        protected override void OnPaintBackground(PaintEventArgs e)
-        {
-        }
-
+        /// <summary>
+        /// 重载绘图
+        /// </summary>
+        /// <param name="e">绘图参数</param>
         protected override void OnPaint(PaintEventArgs e)
         {
             if (Width <= 0 || Height <= 0) return;

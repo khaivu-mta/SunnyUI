@@ -35,6 +35,9 @@ namespace Sunny.UI.Demo
             series.AddData(-1.1);
             series.AddData(-1.1);
             series.AddData(-1.1);
+
+            //数据显示小数位数
+            series.DecimalPlaces = 1;
             option.Series.Add(series);
 
             series = new UIBarSeries();
@@ -51,25 +54,30 @@ namespace Sunny.UI.Demo
 
             option.XAxis.Data.Add("D1");
             option.XAxis.Data.Add("D2");
-            option.XAxis.Data.Add("D3");
+            option.XAxis.Data.Add("D223");
             option.XAxis.Data.Add("D4");
             option.XAxis.Data.Add("D5");
             option.XAxis.Data.Add("D6");
-            option.XAxis.Data.Add("D7");
+            option.XAxis.Data.Add("D7333");
             option.XAxis.Data.Add("D8");
 
             option.ToolTip.Visible = true;
             option.YAxis.Scale = true;
 
             option.XAxis.Name = "日期";
+            option.XAxis.AxisLabel.Angle = 60;//(0° ~ 90°)
+
             option.YAxis.Name = "数值";
-            option.YAxis.AxisLabel.DecimalCount = 1;
-            option.YAxis.AxisLabel.AutoFormat = false;
+
+            //坐标轴显示小数位数
+            option.YAxis.AxisLabel.DecimalPlaces = 1;
 
             option.YAxisScaleLines.Add(new UIScaleLine() { Color = Color.Red, Name = "上限", Value = 12 });
             option.YAxisScaleLines.Add(new UIScaleLine() { Color = Color.Gold, Name = "下限", Value = -20 });
 
             option.ToolTip.AxisPointer.Type = UIAxisPointerType.Shadow;
+
+            option.ShowValue = true;
 
             BarChart.SetOption(option);
 

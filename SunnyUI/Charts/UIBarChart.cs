@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,12 +13,19 @@
  ******************************************************************************
  * 文件名称: UIBarChart.cs
  * 文件说明: 柱状图
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-06-06
  *
  * 2020-06-06: V2.2.5 增加文件说明
  * 2020-08-21: V2.2.7 可设置柱状图最小宽度
  * 2021-07-22: V3.0.5 增加更新数据的方法
+ * 2021-01-01: V3.0.9 增加柱子上显示数值
+ * 2022-03-08: V3.1.1 增加X轴文字倾斜
+ * 2022-05-27: V3.1.9 重写Y轴坐标显示
+ * 2022-07-29: V3.2.2 数据显示的小数位数重构调整至数据序列 Series.DecimalPlaces
+ * 2022-07-30: V3.2.2 坐标轴的小数位数重构调整至坐标轴标签 AxisLabel.DecimalPlaces
+ * 2022-08-10: V3.2.2 修复Y轴显示名称
+ * 2022-08-17: V3.2.3 增加数据可为Nan
 ******************************************************************************/
 
 using System;
@@ -27,22 +34,31 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
-using System.Linq;
 using System.Windows.Forms;
 
 namespace Sunny.UI
 {
+    /// <summary>
+    /// 柱状图
+    /// </summary>
     [ToolboxItem(true)]
     public class UIBarChart : UIChart
     {
-        protected bool NeedDraw;
+        private bool NeedDraw;
 
+        /// <summary>
+        /// 重载控件尺寸变更
+        /// </summary>
+        /// <param name="e">参数</param>
         protected override void OnSizeChanged(EventArgs e)
         {
             base.OnSizeChanged(e);
             CalcData();
         }
 
+        /// <summary>
+        /// 刷新显示
+        /// </summary>
         public override void Refresh()
         {
             base.Refresh();
@@ -54,6 +70,12 @@ namespace Sunny.UI
             CalcData();
         }
 
+        /// <summary>
+        /// 更新数据
+        /// </summary>
+        /// <param name="seriesName">序列名称</param>
+        /// <param name="index">序号</param>
+        /// <param name="value">值</param>
         public void Update(string seriesName, int index, double value)
         {
             var series = Option[seriesName];
@@ -63,81 +85,16 @@ namespace Sunny.UI
             }
         }
 
+        UILinearScale YScale = new UILinearScale();
+
         /// <summary>
-        /// 计算刻度
-        /// 起始值必须小于结束值
+        /// 计算数据用于显示
         /// </summary>
-        /// <param name="start">起始值</param>
-        /// <param name="end">结束值</param>
-        /// <param name="expect_num">期望刻度数量，实际数接近此数</param>
-        /// <param name="degree_start">刻度起始值，须乘以间隔使用</param>
-        /// <param name="degree_end">刻度结束值，须乘以间隔使用</param>
-        /// <param name="degree_gap">刻度间隔</param>
-        public void CalcDegreeScale(double start, double end, int expect_num,
-            out int degree_start, out int degree_end, out double degree_gap, out int decimalCount)
-        {
-            if (start >= end)
-            {
-                throw new Exception("起始值必须小于结束值");
-            }
-
-            double differ = end - start;
-            double differ_gap = differ / (expect_num - 1); //35, 4.6, 0.27
-
-            double exponent = Math.Log10(differ_gap) - 1; //0.54, -0.34, -1.57
-            int _exponent = (int)exponent; //0, 0=>-1, -1=>-2
-            if (exponent < 0 && Math.Abs(exponent) > 1e-8)
-            {
-                _exponent--;
-            }
-
-            int step = (int)(differ_gap / Math.Pow(10, _exponent)); //35, 46, 27
-            int[] fix_steps = new int[] { 10, 20, 25, 50, 100 };
-            int fix_step = 10; //25, 50, 25
-            for (int i = fix_steps.Length - 1; i >= 1; i--)
-            {
-                if (step > (fix_steps[i] + fix_steps[i - 1]) / 2)
-                {
-                    fix_step = fix_steps[i];
-                    break;
-                }
-            }
-
-            degree_gap = fix_step * Math.Pow(10, _exponent); //25, 5, 0.25
-
-            double start1 = start / degree_gap;
-            int start2 = (int)start1;
-            if (start1 < 0 && Math.Abs(start1 - start2) > 1e-8)
-            {
-                start2--;
-            }
-
-            degree_start = start2;
-
-            double end1 = end / degree_gap;
-            int end2 = (int)end1;
-            if (end1 >= 0 && Math.Abs(end1 - end2) > 1e-8)
-            {
-                end2++;
-            }
-
-            degree_end = end2;
-            _exponent = Math.Abs(_exponent);
-            if (fix_step.IsEven()) _exponent--;
-            if (_exponent < 0) _exponent = 0;
-            decimalCount = _exponent;
-        }
-
         protected override void CalcData()
         {
             Bars.Clear();
             NeedDraw = false;
             if (Option == null || Option.Series == null || Option.SeriesCount == 0) return;
-
-            DrawOrigin = new Point(Option.Grid.Left, Height - Option.Grid.Bottom);
-            DrawSize = new Size(Width - Option.Grid.Left - Option.Grid.Right,
-                Height - Option.Grid.Top - Option.Grid.Bottom);
-
             if (DrawSize.Width <= 0 || DrawSize.Height <= 0) return;
             if (Option.XAxis.Data.Count == 0) return;
 
@@ -150,15 +107,47 @@ namespace Sunny.UI
             {
                 if (series.Data.Count > 0)
                 {
-                    min = Math.Min(min, series.Data.Min());
-                    max = Math.Max(max, series.Data.Max());
+                    for (int i = 0; i < series.Data.Count; i++)
+                    {
+                        if (series.Data[i].IsNanOrInfinity()) continue;
+                        min = Math.Min(min, series.Data[i]);
+                        max = Math.Max(max, series.Data[i]);
+                    }
                 }
+            }
+
+            if (min > max)
+            {
+                min = 0;
+                max = 1;
             }
 
             if (min > 0 && max > 0 && !Option.YAxis.Scale) min = 0;
             if (min < 0 && max < 0 && !Option.YAxis.Scale) max = 0;
             if (!Option.YAxis.MaxAuto) max = Option.YAxis.Max;
             if (!Option.YAxis.MinAuto) min = Option.YAxis.Min;
+
+            if (Option.YAxis.MaxAuto && Option.YAxis.MinAuto)
+            {
+                if (min > 0) min = 0;
+                if (max < 0) max = 0;
+
+                if (min.IsZero() && !max.IsZero())
+                {
+                    max = max * 1.2;
+                }
+
+                if (max.IsZero() && !min.IsZero())
+                {
+                    min = min * 1.2;
+                }
+
+                if (!max.IsZero() && !min.IsZero())
+                {
+                    max = max * 1.2;
+                    min = min * 1.2;
+                }
+            }
 
             if ((max - min).IsZero())
             {
@@ -179,13 +168,16 @@ namespace Sunny.UI
                 }
             }
 
-            CalcDegreeScale(min, max, Option.YAxis.SplitNumber,
-                out int start, out int end, out double interval, out int decimalCount);
+            YScale.Max = max;
+            YScale.Min = min;
+            YScale.AxisChange();
 
-            YAxisStart = start;
-            YAxisEnd = end;
-            YAxisInterval = interval;
-            YAxisDecimalCount = decimalCount;
+            YAxisStart = YScale.Min;
+            YAxisEnd = YScale.Max;
+            YAxisInterval = YScale.Step;
+            double[] YLabels = YScale.CalcLabels();
+            float[] labels = YScale.CalcYPixels(YLabels, DrawOrigin.Y, DrawSize.Height);
+            YAxisDecimalCount = YScale.Format.Replace("F", "").ToInt();
 
             float x1 = DrawBarWidth / (Option.SeriesCount * 2 + Option.SeriesCount + 1);
             float x2 = x1 * 2;
@@ -205,61 +197,30 @@ namespace Sunny.UI
                     float ww = Math.Min(x2, series.MaxWidth);
                     xx -= ww / 2.0f;
 
-                    if (YAxisStart >= 0)
-                    {
-                        float h = Math.Abs((float)(DrawSize.Height * (series.Data[j] - start * interval) / ((end - start) * interval)));
+                    float YZeroPos = YScale.CalcYPixel(0, DrawOrigin.Y, DrawSize.Height);
+                    float VPos = YScale.CalcYPixel(series.Data[j], DrawOrigin.Y, DrawSize.Height);
 
-                        Bars[i].Add(new BarInfo()
-                        {
-                            Rect = new RectangleF(xx, DrawOrigin.Y - h, ww, h),
-                            Color = color
-                        });
-                    }
-                    else if (YAxisEnd <= 0)
+                    if (VPos <= YZeroPos)
                     {
-                        float h = Math.Abs((float)(DrawSize.Height * (end * interval - series.Data[j]) / ((end - start) * interval)));
                         Bars[i].Add(new BarInfo()
                         {
-                            Rect = new RectangleF(xx, Option.Grid.Top + 1, ww, h - 1),
-                            Color = color
+                            Rect = new RectangleF(xx, VPos, ww, (YZeroPos - VPos)),
+                            Value = series.Data[j],
+                            Color = color,
+                            Top = true,
+                            Series = series,
                         });
                     }
                     else
                     {
-                        float lowH = 0;
-                        float highH = 0;
-                        float DrawBarHeight = DrawSize.Height * 1.0f / (YAxisEnd - YAxisStart);
-                        float lowV = 0;
-                        float highV = 0;
-                        for (int k = YAxisStart; k <= YAxisEnd; k++)
+                        Bars[i].Add(new BarInfo()
                         {
-                            if (k < 0) lowH += DrawBarHeight;
-                            if (k > 0) highH += DrawBarHeight;
-                            if (k < 0) lowV += (float)YAxisInterval;
-                            if (k > 0) highV += (float)YAxisInterval;
-                        }
-
-                        // lowH.ConsoleWriteLine();
-                        // highH.ConsoleWriteLine();
-
-                        if (series.Data[j] >= 0)
-                        {
-                            float h = Math.Abs((float)(highH * series.Data[j] / highV));
-                            Bars[i].Add(new BarInfo()
-                            {
-                                Rect = new RectangleF(xx, DrawOrigin.Y - lowH - h, ww, h),
-                                Color = color
-                            });
-                        }
-                        else
-                        {
-                            float h = Math.Abs((float)(lowH * series.Data[j] / lowV));
-                            Bars[i].Add(new BarInfo()
-                            {
-                                Rect = new RectangleF(xx, DrawOrigin.Y - lowH + 1, ww, h - 1),
-                                Color = color
-                            });
-                        }
+                            Rect = new RectangleF(xx, YZeroPos, ww, (VPos - YZeroPos)),
+                            Value = series.Data[j],
+                            Color = color,
+                            Top = false,
+                            Series = series,
+                        });
                     }
 
                     barX += DrawBarWidth;
@@ -274,7 +235,7 @@ namespace Sunny.UI
                     foreach (var series in Option.Series)
                     {
                         str += '\n';
-                        str += series.Name + " : " + series.Data[i].ToString(Option.ToolTip.ValueFormat);
+                        str += series.Name + " : " + series.Data[i].ToString("F" + series.DecimalPlaces);
                     }
 
                     Bars[0][i].Tips = str;
@@ -282,18 +243,20 @@ namespace Sunny.UI
             }
         }
 
-        protected int selectIndex = -1;
-        protected Point DrawOrigin;
-        protected Size DrawSize;
-        protected float DrawBarWidth;
-        protected int YAxisStart;
-        protected int YAxisEnd;
-        protected double YAxisInterval;
-        protected int YAxisDecimalCount;
-        protected readonly ConcurrentDictionary<int, List<BarInfo>> Bars = new ConcurrentDictionary<int, List<BarInfo>>();
+        private Point DrawOrigin => new Point(Option.Grid.Left, Height - Option.Grid.Bottom);
+        private Size DrawSize => new Size(Width - Option.Grid.Left - Option.Grid.Right, Height - Option.Grid.Top - Option.Grid.Bottom);
+        private Rectangle DrawRect => new Rectangle(Option.Grid.Left, Option.Grid.Top, DrawSize.Width, DrawSize.Height);
+
+        private int selectIndex = -1;
+        private float DrawBarWidth;
+        private double YAxisStart;
+        private double YAxisEnd;
+        private double YAxisInterval;
+        private int YAxisDecimalCount;
+        private readonly ConcurrentDictionary<int, List<BarInfo>> Bars = new ConcurrentDictionary<int, List<BarInfo>>();
 
         [DefaultValue(-1), Browsable(false)]
-        protected int SelectIndex
+        private int SelectIndex
         {
             get => selectIndex;
             set
@@ -308,6 +271,10 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 重载鼠标移动事件
+        /// </summary>
+        /// <param name="e">鼠标参数</param>
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
@@ -352,6 +319,9 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 图表参数
+        /// </summary>
         [Browsable(false), DefaultValue(null)]
         public UIBarOption Option
         {
@@ -360,13 +330,11 @@ namespace Sunny.UI
                 UIOption option = BaseOption ?? EmptyOption;
                 return (UIBarOption)option;
             }
-
-            // set
-            // {
-            //     SetOption(value);
-            // }
         }
 
+        /// <summary>
+        /// 默认创建空的图表参数
+        /// </summary>
         protected override void CreateEmptyOption()
         {
             if (emptyOption != null) return;
@@ -414,20 +382,30 @@ namespace Sunny.UI
             emptyOption = option;
         }
 
+        /// <summary>
+        /// 绘制图表参数
+        /// </summary>
+        /// <param name="g">绘制图面</param>
         protected override void DrawOption(Graphics g)
         {
             if (Option == null) return;
             if (!NeedDraw) return;
 
             if (Option.ToolTip != null && Option.ToolTip.AxisPointer.Type == UIAxisPointerType.Shadow) DrawToolTip(g);
+
+            DrawSeries(g, Option.Series);
             DrawAxis(g);
             DrawTitle(g, Option.Title);
-            DrawSeries(g, Option.Series);
             if (Option.ToolTip != null && Option.ToolTip.AxisPointer.Type == UIAxisPointerType.Line) DrawToolTip(g);
+
             DrawLegend(g, Option.Legend);
             DrawAxisScales(g);
         }
 
+        /// <summary>
+        /// 绘制工具提示
+        /// </summary>
+        /// <param name="g">绘制图面</param>
         protected virtual void DrawToolTip(Graphics g)
         {
             if (selectIndex < 0) return;
@@ -444,47 +422,28 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 绘制坐标轴
+        /// </summary>
+        /// <param name="g">绘制图面</param>
         protected virtual void DrawAxis(Graphics g)
         {
+            g.FillRectangle(FillColor, Option.Grid.Left, 1, Width - Option.Grid.Left - Option.Grid.Right, Option.Grid.Top);
+            g.FillRectangle(FillColor, Option.Grid.Left, Height - Option.Grid.Bottom, Width - Option.Grid.Left - Option.Grid.Right, Option.Grid.Bottom - 1);
+
             if (YAxisStart >= 0) g.DrawLine(ForeColor, DrawOrigin, new Point(DrawOrigin.X + DrawSize.Width, DrawOrigin.Y));
             if (YAxisEnd <= 0) g.DrawLine(ForeColor, new Point(DrawOrigin.X, Option.Grid.Top), new Point(DrawOrigin.X + DrawSize.Width, Option.Grid.Top));
 
             g.DrawLine(ForeColor, DrawOrigin, new Point(DrawOrigin.X, DrawOrigin.Y - DrawSize.Height));
+            g.DrawLine(ForeColor, DrawOrigin, new Point(Width - Option.Grid.Right, DrawOrigin.Y));
 
             if (Option.XAxis.AxisTick.Show)
             {
-                float start;
-
-                if (Option.XAxis.AxisTick.AlignWithLabel)
+                float start = DrawOrigin.X + DrawBarWidth / 2.0f;
+                for (int i = 0; i < Option.XAxis.Data.Count; i++)
                 {
-                    start = DrawOrigin.X + DrawBarWidth / 2.0f;
-                    for (int i = 0; i < Option.XAxis.Data.Count; i++)
-                    {
-                        g.DrawLine(ForeColor, start, DrawOrigin.Y, start, DrawOrigin.Y + Option.XAxis.AxisTick.Length);
-                        start += DrawBarWidth;
-                    }
-                }
-                else
-                {
-                    bool haveZero = false;
-                    for (int i = YAxisStart; i <= YAxisEnd; i++)
-                    {
-                        if (i == 0)
-                        {
-                            haveZero = true;
-                            break;
-                        }
-                    }
-
-                    if (!haveZero)
-                    {
-                        start = DrawOrigin.X;
-                        for (int i = 0; i <= Option.XAxis.Data.Count; i++)
-                        {
-                            g.DrawLine(ForeColor, start, DrawOrigin.Y, start, DrawOrigin.Y + Option.XAxis.AxisTick.Length);
-                            start += DrawBarWidth;
-                        }
-                    }
+                    g.DrawLine(ForeColor, start, DrawOrigin.Y, start, DrawOrigin.Y + Option.XAxis.AxisTick.Length);
+                    start += DrawBarWidth;
                 }
             }
 
@@ -493,71 +452,64 @@ namespace Sunny.UI
                 float start = DrawOrigin.X + DrawBarWidth / 2.0f;
                 foreach (var data in Option.XAxis.Data)
                 {
-                    SizeF sf = g.MeasureString(data, SubFont);
-                    g.DrawString(data, SubFont, ForeColor, start - sf.Width / 2.0f, DrawOrigin.Y + Option.XAxis.AxisTick.Length);
-                    start += DrawBarWidth;
+                    SizeF sf = g.MeasureString(data, TempFont);
+                    int angle = (Option.XAxis.AxisLabel.Angle + 36000) % 360;
+                    if (angle > 0 && angle <= 90)
+                        g.DrawString(data, TempFont, ForeColor, new PointF(start, DrawOrigin.Y + Option.XAxis.AxisTick.Length),
+                            new StringFormat() { Alignment = StringAlignment.Far }, (3600 - Option.XAxis.AxisLabel.Angle) % 360);
+                    else
+                        g.DrawString(data, TempFont, ForeColor, start - sf.Width / 2.0f, DrawOrigin.Y + Option.XAxis.AxisTick.Length); start += DrawBarWidth;
                 }
 
-                SizeF sfname = g.MeasureString(Option.XAxis.Name, SubFont);
-                g.DrawString(Option.XAxis.Name, SubFont, ForeColor, DrawOrigin.X + (DrawSize.Width - sfname.Width) / 2.0f, DrawOrigin.Y + Option.XAxis.AxisTick.Length + sfname.Height);
+                if (Option.XAxis.Name.IsValid())
+                {
+                    SizeF sfname = g.MeasureString(Option.XAxis.Name, TempFont);
+                    g.DrawString(Option.XAxis.Name, TempFont, ForeColor, DrawOrigin.X + (DrawSize.Width - sfname.Width) / 2.0f, DrawOrigin.Y + Option.XAxis.AxisTick.Length + sfname.Height);
+                }
             }
 
-            if (Option.YAxis.AxisTick.Show)
+            double[] YLabels = YScale.CalcLabels();
+            float[] labels = YScale.CalcYPixels(YLabels, DrawOrigin.Y, DrawSize.Height);
+            float wmax = 0;
+            for (int i = 0; i < labels.Length; i++)
             {
-                float start = DrawOrigin.Y;
-                float DrawBarHeight = DrawSize.Height * 1.0f / (YAxisEnd - YAxisStart);
-                for (int i = YAxisStart; i <= YAxisEnd; i++)
+                if (labels[i] > DrawOrigin.Y) continue;
+                if (labels[i] < Option.Grid.Top) continue;
+                if (Option.YAxis.AxisTick.Show)
                 {
-                    g.DrawLine(ForeColor, DrawOrigin.X, start, DrawOrigin.X - Option.YAxis.AxisTick.Length, start);
+                    g.DrawLine(ForeColor, DrawOrigin.X, labels[i], DrawOrigin.X - Option.YAxis.AxisTick.Length, labels[i]);
 
-                    if (i != 0)
+                    if (YLabels[i].IsNanOrInfinity()) continue;
+                    if (!YLabels[i].EqualsDouble(0))
                     {
                         using (Pen pn = new Pen(ForeColor))
                         {
                             pn.DashStyle = DashStyle.Dash;
                             pn.DashPattern = new float[] { 3, 3 };
-                            g.DrawLine(pn, DrawOrigin.X, start, Width - Option.Grid.Right, start);
+                            g.DrawLine(pn, DrawOrigin.X, labels[i], Width - Option.Grid.Right, labels[i]);
                         }
                     }
                     else
                     {
-                        g.DrawLine(ForeColor, DrawOrigin.X, start, Width - Option.Grid.Right, start);
-
-                        float lineStart = DrawOrigin.X;
-                        for (int j = 0; j <= Option.XAxis.Data.Count; j++)
-                        {
-                            g.DrawLine(ForeColor, lineStart, start, lineStart, start + Option.XAxis.AxisTick.Length);
-                            lineStart += DrawBarWidth;
-                        }
+                        g.DrawLine(ForeColor, DrawOrigin.X, labels[i], Width - Option.Grid.Right, labels[i]);
                     }
+                }
 
-                    start -= DrawBarHeight;
+                if (Option.YAxis.AxisLabel.Show)
+                {
+                    string label = YLabels[i].ToString(Option.YAxis.AxisLabel.DecimalPlaces >= 0 ? "F" + Option.YAxis.AxisLabel.DecimalPlaces : YScale.Format);
+                    SizeF sf = g.MeasureString(label, TempFont);
+                    wmax = Math.Max(wmax, sf.Width);
+                    g.DrawString(label, TempFont, ForeColor, DrawOrigin.X - Option.YAxis.AxisTick.Length - sf.Width, labels[i] - sf.Height / 2.0f);
                 }
             }
 
-            if (Option.YAxis.AxisLabel.Show)
+            if (Option.YAxis.AxisLabel.Show && Option.YAxis.Name.IsValid())
             {
-                float start = DrawOrigin.Y;
-                float DrawBarHeight = DrawSize.Height * 1.0f / (YAxisEnd - YAxisStart);
-                int idx = 0;
-                float wmax = 0;
-
-                if (Option.YAxis.AxisLabel.AutoFormat)
-                    Option.YAxis.AxisLabel.DecimalCount = YAxisDecimalCount;
-
-                for (int i = YAxisStart; i <= YAxisEnd; i++)
-                {
-                    string label = Option.YAxis.AxisLabel.GetLabel(i * YAxisInterval, idx);
-                    SizeF sf = g.MeasureString(label, SubFont);
-                    wmax = Math.Max(wmax, sf.Width);
-                    g.DrawString(label, SubFont, ForeColor, DrawOrigin.X - Option.YAxis.AxisTick.Length - sf.Width, start - sf.Height / 2.0f);
-                    start -= DrawBarHeight;
-                }
-
-                SizeF sfname = g.MeasureString(Option.YAxis.Name, SubFont);
+                SizeF sfname = g.MeasureString(Option.YAxis.Name, TempFont);
                 int x = (int)(DrawOrigin.X - Option.YAxis.AxisTick.Length - wmax - sfname.Height);
                 int y = (int)(Option.Grid.Top + (DrawSize.Height - sfname.Width) / 2);
-                g.DrawString(Option.YAxis.Name, SubFont, ForeColor, new Point(x, y),
+                g.DrawString(Option.YAxis.Name, TempFont, ForeColor, new Point(x, y),
                     new StringFormat() { Alignment = StringAlignment.Center }, 270);
             }
         }
@@ -568,25 +520,28 @@ namespace Sunny.UI
             {
                 double ymin = YAxisStart * YAxisInterval;
                 double ymax = YAxisEnd * YAxisInterval;
-                float pos = (float)((line.Value - ymin) * (Height - Option.Grid.Top - Option.Grid.Bottom) / (ymax - ymin));
-                pos = (Height - Option.Grid.Bottom - pos);
+                float pos = YScale.CalcYPixel(line.Value, DrawOrigin.Y, DrawSize.Height);
                 if (pos <= Option.Grid.Top || pos >= Height - Option.Grid.Bottom) continue;
                 using (Pen pn = new Pen(line.Color, line.Size))
                 {
                     g.DrawLine(pn, DrawOrigin.X, pos, Width - Option.Grid.Right, pos);
                 }
 
-                SizeF sf = g.MeasureString(line.Name, SubFont);
-
+                SizeF sf = g.MeasureString(line.Name, TempFont);
                 if (line.Left == UILeftAlignment.Left)
-                    g.DrawString(line.Name, SubFont, line.Color, DrawOrigin.X + 4, pos - 2 - sf.Height);
+                    g.DrawString(line.Name, TempFont, line.Color, DrawOrigin.X + 4, pos - 2 - sf.Height);
                 if (line.Left == UILeftAlignment.Center)
-                    g.DrawString(line.Name, SubFont, line.Color, DrawOrigin.X + (Width - Option.Grid.Left - Option.Grid.Right - sf.Width) / 2, pos - 2 - sf.Height);
+                    g.DrawString(line.Name, TempFont, line.Color, DrawOrigin.X + (Width - Option.Grid.Left - Option.Grid.Right - sf.Width) / 2, pos - 2 - sf.Height);
                 if (line.Left == UILeftAlignment.Right)
-                    g.DrawString(line.Name, SubFont, line.Color, Width - sf.Width - 4 - Option.Grid.Right, pos - 2 - sf.Height);
+                    g.DrawString(line.Name, TempFont, line.Color, Width - sf.Width - 4 - Option.Grid.Right, pos - 2 - sf.Height);
             }
         }
 
+        /// <summary>
+        /// 绘制序列
+        /// </summary>
+        /// <param name="g">绘制图面</param>
+        /// <param name="series">序列</param>
         protected virtual void DrawSeries(Graphics g, List<UIBarSeries> series)
         {
             if (series == null || series.Count == 0) return;
@@ -597,16 +552,38 @@ namespace Sunny.UI
                 foreach (var info in bars)
                 {
                     g.FillRectangle(info.Color, info.Rect);
+
+                    if (Option.ShowValue)
+                    {
+                        string value = info.Value.ToString("F" + info.Series.DecimalPlaces);
+                        SizeF sf = g.MeasureString(value, TempFont);
+                        if (info.Top)
+                        {
+                            float top = info.Rect.Top - sf.Height;
+                            if (top > Option.Grid.Top)
+                            {
+                                g.DrawString(value, TempFont, info.Color, info.Rect.Center().X - sf.Width / 2, top);
+                            }
+                        }
+                        else
+                        {
+                            if (info.Rect.Bottom + sf.Height + Option.Grid.Bottom < Height)
+                            {
+                                g.DrawString(value, TempFont, info.Color, info.Rect.Center().X - sf.Width / 2, info.Rect.Bottom);
+                            }
+                        }
+                    }
                 }
             }
 
             for (int i = 0; i < Option.XAxis.Data.Count; i++)
             {
-                Bars[0][i].Size = g.MeasureString(Bars[0][i].Tips, SubFont);
+                Bars[0][i].Size = g.MeasureString(Bars[0][i].Tips, TempFont);
             }
         }
 
-        protected class BarInfo
+
+        private class BarInfo
         {
             public RectangleF Rect { get; set; }
 
@@ -615,6 +592,12 @@ namespace Sunny.UI
             public SizeF Size { get; set; }
 
             public Color Color { get; set; }
+
+            public double Value { get; set; }
+
+            public bool Top { get; set; }
+
+            public UIBarSeries Series { get; set; }
         }
     }
 }

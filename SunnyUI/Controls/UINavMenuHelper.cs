@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,21 +13,22 @@
  ******************************************************************************
  * 文件名称: UINavMenuHelper.cs
  * 文件说明: 导航菜单帮助类
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
+ * 2022-04-14: V3.1.3 重构扩展函数
 ******************************************************************************/
-
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 
 namespace Sunny.UI
 {
-    public class NavMenuHelper
+    internal class NavMenuHelper
     {
         public NavMenuItem this[TreeNode node]
         {
@@ -65,6 +66,11 @@ namespace Sunny.UI
             return this[node] == null ? 0 : Items[node].SymbolSize;
         }
 
+        public Point GetSymbolOffset(TreeNode node)
+        {
+            return this[node] == null ? new Point(0, 0) : Items[node].SymbolOffset;
+        }
+
         public int GetPageIndex(TreeNode node)
         {
             return this[node] == null ? -1 : Items[node].PageIndex;
@@ -80,7 +86,20 @@ namespace Sunny.UI
             if (node == null) return;
 
             CreateIfNotExist(node);
+            Items[node].TipsCustom = false;
             Items[node].TipsText = tips;
+            node.TreeView.Invalidate();
+        }
+
+        public void SetTipsText(TreeNode node, string tips, Color tipsBackColor, Color tipsForeColor)
+        {
+            if (node == null) return;
+
+            CreateIfNotExist(node);
+            Items[node].TipsCustom = true;
+            Items[node].TipsText = tips;
+            Items[node].TipsBackColor = tipsBackColor;
+            Items[node].TipsForeColor = tipsForeColor;
             node.TreeView.Invalidate();
         }
 
@@ -107,6 +126,17 @@ namespace Sunny.UI
             CreateIfNotExist(node);
             Items[node].Symbol = symbol;
             Items[node].SymbolSize = symbolSize;
+            node.TreeView.Invalidate();
+        }
+
+        public void SetSymbol(TreeNode node, int symbol, Point symbolOffset, int symbolSize = 32)
+        {
+            if (node == null) return;
+
+            CreateIfNotExist(node);
+            Items[node].Symbol = symbol;
+            Items[node].SymbolSize = symbolSize;
+            Items[node].SymbolOffset = symbolOffset;
             node.TreeView.Invalidate();
         }
 
@@ -151,6 +181,19 @@ namespace Sunny.UI
 
             return null;
         }
+
+        public TreeNode GetTreeNode(Guid guid)
+        {
+            foreach (var pair in Items)
+            {
+                if (pair.Value.PageGuid == guid)
+                {
+                    return pair.Key;
+                }
+            }
+
+            return null;
+        }
     }
 
     public class UITabControlHelper
@@ -176,6 +219,18 @@ namespace Sunny.UI
                 TabPage page = tabControl.TabPages[index];
                 return PageItems.ContainsKey(page) ? PageItems[page] : null;
             }
+        }
+
+        public void SetTipsText(int pageIndex, string tipsText)
+        {
+            TabPage tabPage = CreateTabIfNotExists(pageIndex);
+            tabControl.SetTipsText(tabPage, tipsText);
+        }
+
+        public void SetTipsText(Guid pageGuid, string tipsText)
+        {
+            TabPage tabPage = CreateTabIfNotExists(pageGuid);
+            tabControl.SetTipsText(tabPage, tipsText);
         }
 
         public UIPage AddPage(int pageIndex, UIPage page)
@@ -287,38 +342,122 @@ namespace Sunny.UI
 
         private TabPage CreateTabIfNotExists(int pageIndex)
         {
-            return CreateTabIfNotExists(new NavMenuItem(pageIndex));
+            return CreateTabIfNotExists(new NavMenuItem("", pageIndex));
         }
 
         private TabPage CreateTabIfNotExists(Guid guid)
         {
-            return CreateTabIfNotExists(new NavMenuItem(guid));
+            return CreateTabIfNotExists(new NavMenuItem("", guid));
         }
 
-        public void SelectPage(int pageIndex)
+        public bool SelectPage(int pageIndex)
         {
-            if (pageIndex < 0) return;
+            if (pageIndex < 0)
+            {
+                return false;
+            }
+
             foreach (var item in PageItems)
             {
                 if (item.Value.PageIndex == pageIndex && item.Key != null)
                 {
                     if (tabControl.TabPages.Contains(item.Key))
+                    {
                         tabControl.SelectTab(item.Key);
+                        return true;
+                    }
                 }
             }
+
+            return false;
         }
 
-        public void SelectPage(Guid guid)
+        public bool SelectPage(Guid guid)
         {
-            if (guid == Guid.Empty) return;
+            if (guid == Guid.Empty)
+            {
+                return false;
+            }
+
             foreach (var item in PageItems)
             {
                 if (item.Value.PageGuid == guid && item.Key != null)
                 {
                     if (tabControl.TabPages.Contains(item.Key))
+                    {
                         tabControl.SelectTab(item.Key);
+                        return true;
+                    }
                 }
             }
+
+            return false;
+        }
+
+        public UIPage GetPage(int pageIndex)
+        {
+            if (pageIndex < 0) return null;
+            foreach (var item in PageItems)
+            {
+                if (item.Value.PageIndex == pageIndex && item.Key != null)
+                {
+                    var tabPage = item.Key;
+                    var pages = tabPage.GetControls<UIPage>();
+                    for (int i = 0; i < pages.Count; i++)
+                    {
+                        if (pages[i].PageIndex == pageIndex)
+                            return pages[i];
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        public T GetPage<T>() where T : UIPage
+        {
+            List<T> result = GetPages<T>();
+            return result.Count > 0 ? result[0] : null;
+        }
+
+        public List<T> GetPages<T>() where T : UIPage
+        {
+            List<T> result = new List<T>();
+            foreach (var item in PageItems)
+            {
+                if (item.Key != null)
+                {
+                    var tabPage = item.Key;
+                    var pages = tabPage.GetControls<UIPage>();
+                    for (int i = 0; i < pages.Count; i++)
+                    {
+                        if (pages[i] is T pg)
+                            result.Add(pg);
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        public UIPage GetPage(Guid guid)
+        {
+            if (guid == Guid.Empty) return null;
+            foreach (var item in PageItems)
+            {
+                if (item.Value.PageGuid == guid && item.Key != null)
+                {
+                    var tabPage = item.Key;
+                    var pages = tabPage.GetControls<UIPage>();
+                    for (int i = 0; i < pages.Count; i++)
+                    {
+                        if (pages[i].PageGuid == guid)
+                            return pages[i];
+                    }
+                }
+            }
+
+            return null;
         }
 
         public bool RemovePage(int pageIndex)
@@ -364,15 +503,30 @@ namespace Sunny.UI
 
         public int SelectedImageIndex { get; set; } = -1;
 
+        /// <summary>
+        /// 字体图标
+        /// </summary>
         public int Symbol { get; set; }
 
+        /// <summary>
+        /// 字体图标大小
+        /// </summary>
         public int SymbolSize { get; set; } = 24;
 
+        /// <summary>
+        /// 字体图标的偏移位置
+        /// </summary>
         public Point SymbolOffset { get; set; } = new Point(0, 0);
 
         public int PageIndex { get; set; }
 
         public string TipsText { get; set; }
+
+        public bool TipsCustom { get; set; }
+
+        public Color TipsBackColor { get; set; }
+
+        public Color TipsForeColor { get; set; }
 
         public bool Enabled { get; set; } = true;
 
@@ -380,7 +534,7 @@ namespace Sunny.UI
 
         public Guid PageGuid { get; set; } = Guid.Empty;
 
-        public bool AlwaysOpen { get; set; } = false;
+        public bool AlwaysOpen { get; set; }
 
 
         public NavMenuItem()
@@ -403,14 +557,10 @@ namespace Sunny.UI
             Text = text;
         }
 
-        public NavMenuItem(int pageIndex)
-        {
-            PageIndex = pageIndex;
-        }
-
-        public NavMenuItem(Guid guid)
+        public NavMenuItem(string text, Guid guid)
         {
             PageGuid = guid;
+            Text = text;
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,10 +13,11 @@
  ******************************************************************************
  * 文件名称: UILedLabel.cs
  * 文件说明: LED标签
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2021-04-11
  *
  * 2021-04-11: V3.0.2 增加文件说明
+ * 2022-03-19: V3.1.1 重构主题配色
 ******************************************************************************/
 
 using System.Collections;
@@ -35,9 +36,13 @@ namespace Sunny.UI
         {
             SetStyleFlags(true, false);
             ShowText = ShowRect = ShowFill = false;
-            foreColor = UIColor.Blue;
+            foreColor = UIStyles.Blue.LedLabelForeColor;
         }
 
+        /// <summary>
+        /// 重载绘图
+        /// </summary>
+        /// <param name="e">绘图参数</param>
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
@@ -176,11 +181,14 @@ namespace Sunny.UI
             set => SetForeColor(value);
         }
 
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="uiColor">主题样式</param>
         public override void SetStyleColor(UIBaseStyle uiColor)
         {
             base.SetStyleColor(uiColor);
-            foreColor = uiColor.RectColor;
-            Invalidate();
+            foreColor = uiColor.LedLabelForeColor;
         }
     }
 }

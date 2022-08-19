@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Windows.Forms;
 
-namespace Sunny.UI.Demo.Forms
+namespace Sunny.UI.Demo
 {
     public partial class FEditor : UIPage
     {
@@ -20,6 +21,7 @@ namespace Sunny.UI.Demo.Forms
             person.Birthday = new DateTime(2002, 1, 1);
 
             FEdit frm = new FEdit();
+            frm.Render();
             frm.Person = person;
             frm.ShowDialog();
             if (frm.IsOK)
@@ -33,10 +35,11 @@ namespace Sunny.UI.Demo.Forms
         private void btnAdd_Click(object sender, EventArgs e)
         {
             FEdit frm = new FEdit();
-            frm.ShowDialog();
+            frm.Render();
+            frm.ShowDialogWithMask();
             if (frm.IsOK)
             {
-                this.ShowSuccessDialog(frm.Person.ToString());
+                ShowSuccessDialog(frm.Person.ToString());
             }
 
             frm.Dispose();
@@ -53,6 +56,23 @@ namespace Sunny.UI.Demo.Forms
             infoList.Add(info3);
 
             string[] sex = new[] { "男", "女" };
+            ComboCheckedListBoxItem[] checkedItems = new ComboCheckedListBoxItem[4]
+            {
+                new ComboCheckedListBoxItem("AAA",false),
+                       new ComboCheckedListBoxItem("BBB",false),
+                              new ComboCheckedListBoxItem("CCC",true),
+                                     new ComboCheckedListBoxItem("DDD",false)
+            };
+
+            TreeNode[] nodes = new TreeNode[3];
+            nodes[0] = new TreeNode("AA");
+            nodes[1] = new TreeNode("BB");
+            nodes[2] = new TreeNode("CC");
+            nodes[0].Nodes.Add("AA11");
+            nodes[0].Nodes.Add("AA22");
+            nodes[0].Nodes.Add("AA33");
+            nodes[1].Nodes.Add("BB11");
+            nodes[1].Nodes.Add("BB22");
 
             UIEditOption option = new UIEditOption();
             option.AutoLabelWidth = true;
@@ -62,9 +82,12 @@ namespace Sunny.UI.Demo.Forms
             option.AddDate("Birthday", "生日", DateTime.Now);
             option.AddCombobox("Sex", "性别", sex, 1, true, true);
             option.AddCombobox("Info", "关联", infoList, "Name", "Id", "2");
-            option.AddSwitch("Switch", "选择", false);
+            option.AddSwitch("Switch", "选择", false, "打开", "关闭");
+            option.AddComboTreeView("ComboTree", "选择", nodes, nodes[1].Nodes[1]);
+            option.AddComboCheckedListBox("checkedList", "选择", checkedItems, "CCC");
 
             UIEditForm frm = new UIEditForm(option);
+            frm.Render();
             frm.CheckedData += Frm_CheckedData;
             frm.ShowDialog();
 
@@ -76,6 +99,13 @@ namespace Sunny.UI.Demo.Forms
                 Console.WriteLine("性别: " + sex[(int)frm["Sex"]]);
                 Console.WriteLine("关联: " + frm["Info"]);
                 Console.WriteLine("选择: " + frm["Switch"]);
+                Console.WriteLine("选择: " + frm["ComboTree"]);
+
+                var outCheckedItems = (ComboCheckedListBoxItem[])frm["checkedList"];
+                foreach (var item in outCheckedItems)
+                {
+                    Console.WriteLine(item.Text, item.Checked);
+                }
             }
 
             frm.Dispose();

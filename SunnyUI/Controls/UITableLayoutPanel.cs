@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,7 +13,7 @@
  ******************************************************************************
  * 文件名称: UITableLayoutPanel.cs
  * 文件说明: 动态布局面板
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2021-07-18
  *
  * 2021-07-18: V3.0.5 增加文件说明
@@ -25,11 +25,23 @@ using System.Windows.Forms;
 
 namespace Sunny.UI
 {
-    public class UITableLayoutPanel : TableLayoutPanel, IStyleInterface
+    public sealed class UITableLayoutPanel : TableLayoutPanel, IStyleInterface
     {
         public UITableLayoutPanel()
         {
             Version = UIGlobal.Version;
+        }
+
+        [Browsable(false)]
+        public bool IsScaled { get; private set; }
+
+        public void SetDPIScale()
+        {
+            if (!IsScaled)
+            {
+                this.SetDPIScaleFont();
+                IsScaled = true;
+            }
         }
 
         protected override void OnControlAdded(ControlEventArgs e)
@@ -54,7 +66,7 @@ namespace Sunny.UI
             get; set;
         }
 
-        protected UIStyle _style = UIStyle.Blue;
+        private UIStyle _style = UIStyle.Blue;
 
         /// <summary>
         /// 主题样式

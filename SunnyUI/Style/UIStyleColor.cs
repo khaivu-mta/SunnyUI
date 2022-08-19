@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,17 +13,19 @@
  ******************************************************************************
  * 文件名称: UIStyleColor.cs
  * 文件说明: 控件样式定义类
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
  * 2020-04-25: V2.2.4 更新主题配置类
+ * 2022-03-19: V3.1.1 重构主题配色
 ******************************************************************************/
 
 using System.Drawing;
 
 namespace Sunny.UI
 {
+#pragma warning disable CS1591 // 缺少对公共可见类型或成员的 XML 注释
     public class UIBaseStyle
     {
         public virtual UIStyle Name { get; protected set; }
@@ -33,87 +35,375 @@ namespace Sunny.UI
         public virtual Color SecondaryColor { get; protected set; }
         public virtual Color PlainColor { get; protected set; }
 
-        public virtual Color RectColor { get; protected set; }
-        public virtual Color RectHoverColor { get; protected set; }
-        public virtual Color RectPressColor { get; protected set; }
-        public virtual Color RectSelectedColor { get; protected set; }
+        public virtual Color FillDisableColor { get; protected set; }
+        public virtual Color RectDisableColor { get; protected set; }
+        public virtual Color ForeDisableColor { get; protected set; }
 
+        public virtual Color RectColor { get; protected set; }
+
+        //Button
         public virtual Color ButtonFillColor { get; protected set; }
         public virtual Color ButtonFillHoverColor { get; protected set; }
         public virtual Color ButtonFillPressColor { get; protected set; }
         public virtual Color ButtonFillSelectedColor { get; protected set; }
+        public virtual Color ButtonFillColor2 { get; protected set; }
+        public virtual Color ButtonFillLightColor { get; protected set; }
+        public virtual Color ButtonForeLightColor { get; protected set; }
 
         public virtual Color ButtonForeColor { get; protected set; }
         public virtual Color ButtonForeHoverColor { get; protected set; }
         public virtual Color ButtonForePressColor { get; protected set; }
         public virtual Color ButtonForeSelectedColor { get; protected set; }
 
-        public virtual Color FillDisableColor => Color.FromArgb(244, 244, 244);
-        public virtual Color RectDisableColor => Color.FromArgb(173, 178, 181);
-        public virtual Color ForeDisableColor => Color.FromArgb(109, 109, 103);
+        public virtual Color ButtonRectColor { get; protected set; }
+        public virtual Color ButtonRectHoverColor { get; protected set; }
+        public virtual Color ButtonRectPressColor { get; protected set; }
+        public virtual Color ButtonRectSelectedColor { get; protected set; }
 
-        public virtual Color LabelForeColor => UIFontColor.Primary;
+        //Battery
+        public virtual Color BatteryFillColor { get; protected set; }
 
-        public virtual Color AvatarFillColor => Color.Silver;
-        public virtual Color AvatarForeColor => PrimaryColor;
+        //Avatar
+        public virtual Color AvatarFillColor { get; protected set; }
+        public virtual Color AvatarForeColor { get; protected set; }
 
-        public virtual Color CheckBoxColor => PrimaryColor;
-        public virtual Color CheckBoxForeColor => LabelForeColor;
-        public virtual Color PanelForeColor => LabelForeColor;
+        //ImageButton
+        public virtual Color ImageButtonForeColor { get; protected set; }
 
-        public virtual Color DropDownControlColor => PanelForeColor;
+        //Breadcrumb
+        public virtual Color BreadcrumbUnSelectedColor { get; protected set; }
 
-        public virtual Color TitleColor { get; protected set; }
-        public virtual Color TitleForeColor { get; protected set; }
+        //CheckBox
+        public virtual Color CheckBoxColor { get; protected set; }
+        public virtual Color CheckBoxForeColor { get; protected set; }
 
-        public virtual Color MenuSelectedColor { get; protected set; } = UIColor.Blue;
+        //Logo
+        public virtual Color LogoForeColor { get; protected set; }
+        public virtual Color LogoFillColor { get; protected set; }
 
-        public virtual Color GridSelectedColor { get; protected set; } = Color.FromArgb(155, 200, 255);
+        //Line
+        public virtual Color LineForeColor { get; protected set; }
+        public virtual Color LineFillColor { get; protected set; }
+        public virtual Color LineRectColor { get; protected set; }
 
-        public virtual Color GridSelectedForeColor => UIFontColor.Primary;
-        public virtual Color GridStripeEvenColor => Color.White;
-        public virtual Color GridStripeOddColor => PlainColor;
+        //TrackBar
+        public virtual Color TrackBarFillColor { get; protected set; }
+        public virtual Color TrackBarForeColor { get; protected set; }
+        public virtual Color TrackBarRectColor { get; protected set; }
+        public virtual Color TrackDisableColor { get; protected set; }
 
-        public virtual Color GridLineColor => Color.FromArgb(233, 236, 244);
+        //Switch
+        public virtual Color SwitchActiveColor { get; protected set; }
+        public virtual Color SwitchInActiveColor { get; protected set; }
+        public virtual Color SwitchFillColor { get; protected set; }
+        public virtual Color SwitchRectDisableColor { get; protected set; }
 
-        public virtual Color ListItemSelectBackColor => PrimaryColor;
-        public virtual Color ListItemSelectForeColor => PlainColor;
+        //Label
+        public virtual Color LabelForeColor { get; protected set; }
 
-        public virtual Color LineForeColor => UIFontColor.Primary;
+        //LabelRotate
+        public virtual Color LabelRotateFrameColor { get; protected set; }
+        public virtual Color LabelRotateForeColor { get; protected set; }
 
-        public virtual Color ContextMenuColor => PlainColor;
+        //ColorWheel
+        public virtual Color ColorWheelFrameColor { get; protected set; }
+        public virtual Color ColorWheelBackColor { get; protected set; }
 
-        public virtual Color ProgressIndicatorColor => PrimaryColor;
+        //ContextMenu
+        public virtual Color ContextMenuColor { get; protected set; }
+        public virtual Color ContextMenuSelectedColor { get; protected set; }
+        public virtual Color ContextMenuForeColor { get; protected set; }
 
-        public virtual Color ProcessBarFillColor => PlainColor;
+        //ScrollBar
+        public virtual Color ScrollBarFillColor { get; protected set; }
+        public virtual Color ScrollBarForeColor { get; protected set; }
+        public virtual Color ScrollBarFillHoverColor { get; protected set; }
+        public virtual Color ScrollBarFillPressColor { get; protected set; }
 
-        public virtual Color ProcessBarForeColor => PrimaryColor;
+        //ProcessBar
+        public virtual Color ProcessBarFillColor { get; protected set; }
+        public virtual Color ProcessBarForeColor { get; protected set; }
+        public virtual Color ProcessBackColor { get; protected set; }
 
-        public virtual Color ScrollBarForeColor => PrimaryColor;
+        //SmoothLabel
+        public virtual Color SmoothLabelForeColor { get; protected set; }
+        public virtual Color SmoothLabelRectColor { get; protected set; }
 
-        public virtual Color SwitchActiveColor => PrimaryColor;
+        //ScrollingText
+        public virtual Color ScrollingTextFillColor { get; protected set; }
+        public virtual Color ScrollingTextForeColor { get; protected set; }
 
-        public virtual Color SwitchInActiveColor => Color.Silver;
+        //LedLabel
+        public virtual Color LedLabelForeColor { get; protected set; }
 
-        public virtual Color SwitchFillColor => Color.White;
+        //UIMarkLabel
+        public virtual Color MarkLabelForeColor { get; protected set; }
 
-        public virtual Color TrackBarFillColor => PlainColor;
+        //Page
+        public virtual Color PageBackColor { get; protected set; }
+        public virtual Color PageRectColor { get; protected set; }
+        public virtual Color PageForeColor { get; protected set; }
+        public virtual Color PageTitleFillColor { get; protected set; }
+        public virtual Color PageTitleForeColor { get; protected set; }
 
-        public virtual Color TrackBarForeColor => PrimaryColor;
+        //Form
+        public virtual Color FormTitleColor { get; protected set; }
+        public virtual Color FormTitleForeColor { get; protected set; }
+        public virtual Color FormForeColor { get; protected set; }
+        public virtual Color FormRectColor { get; protected set; }
+        public virtual Color FormControlBoxForeColor { get; protected set; }
+        public virtual Color FormControlBoxFillHoverColor { get; protected set; }
+        public virtual Color FormControlBoxCloseFillHoverColor { get; protected set; }
+        public virtual Color FormBackColor { get; protected set; }
 
-        public virtual Color TrackBarRectColor => PrimaryColor;
+        //ProgressIndicator
+        public virtual Color ProgressIndicatorColor { get; protected set; }
 
-        public virtual Color TrackDisableColor => Color.Silver;
+        //NavBar
+        public virtual Color NavBarMenuSelectedColor { get; protected set; }
 
-        public virtual Color PageTitleFillColor => Color.FromArgb(76, 76, 76);
+        //NavMenu
+        public virtual Color NavMenuMenuSelectedColor { get; protected set; }
 
-        public virtual Color PageTitleForeColor => Color.White;
+        //TabControl
+        public virtual Color TabControlTabSelectedColor { get; protected set; }
+        public virtual Color TabControlBackColor { get; protected set; }
 
-        public virtual Color TreeViewSelectedColor => PrimaryColor;
+        //Panel
+        public virtual Color PanelForeColor { get; protected set; }
+        public virtual Color PanelRectColor { get; protected set; }
+        public virtual Color PanelFillColor { get; protected set; }
+        public virtual Color PanelFillColor2 { get; protected set; }
+        public virtual Color PanelTitleColor { get; protected set; }
+        public virtual Color PanelTitleForeColor { get; protected set; }
 
-        public virtual Color TreeViewHoverColor => GridSelectedColor;
+        //DropDownControl
+        public virtual Color DropDownControlColor { get; protected set; }
+        public virtual Color DropDownPanelFillColor { get; protected set; }
+        public virtual Color DropDownPanelForeColor { get; protected set; }
 
-        public virtual bool BuiltIn => true;
+        //ListBox
+        public virtual Color ListItemSelectBackColor { get; protected set; }
+        public virtual Color ListItemSelectForeColor { get; protected set; }
+        public virtual Color ListItemHoverColor { get; protected set; }
+        public virtual Color ListBarFillColor { get; protected set; }
+        public virtual Color ListBarForeColor { get; protected set; }
+        public virtual Color ListBackColor { get; protected set; }
+        public virtual Color ListForeColor { get; protected set; }
+
+        //TreeView
+        public virtual Color TreeViewSelectedColor { get; protected set; }
+        public virtual Color TreeViewHoverColor { get; protected set; }
+        public virtual Color TreeViewBarFillColor { get; protected set; }
+        public virtual Color TreeViewBarForeColor { get; protected set; }
+        public virtual Color TreeViewForeColor { get; protected set; }
+        public virtual Color TreeViewBackColor { get; protected set; }
+        public virtual Color TreeViewLineColor { get; protected set; }
+
+        //TextBox
+        public virtual Color EditorBackColor { get; protected set; }
+
+        //DataGridView
+        public virtual Color GridSelectedColor { get; protected set; }
+        public virtual Color GridSelectedForeColor { get; protected set; }
+        public virtual Color GridStripeEvenColor { get; protected set; }
+        public virtual Color GridStripeOddColor { get; protected set; }
+        public virtual Color GridLineColor { get; protected set; }
+        public virtual Color GridTitleColor { get; protected set; }
+        public virtual Color GridTitleForeColor { get; protected set; }
+        public virtual Color GridForeColor { get; protected set; }
+        public virtual Color GridBarFillColor { get; protected set; }
+        public virtual Color GridBarForeColor { get; protected set; }
+
+        //DataGridViewFooter
+        public virtual Color DataGridViewFooterForeColor { get; protected set; }
+
+        //Pagination
+        public virtual Color PaginationForeColor { get; protected set; }
+
+        //FlowLayoutPanel
+        public virtual Color FlowLayoutPanelBarFillColor { get; protected set; }
+        public virtual Color FlowLayoutPanelBarForeColor { get; protected set; }
+
+        //SplitContainer
+        public virtual Color SplitContainerArrowColor { get; protected set; }
+
+        protected Color ForeColor { get; set; }
+
+        public UIBaseStyle DropDownStyle { get; protected set; }
+
+        public virtual UIBaseStyle Init(Color color, UIStyle style, Color reverseColor, Color foreColor)
+        {
+            Name = style;
+
+            FillDisableColor = Color.FromArgb(244, 244, 244);
+            RectDisableColor = Color.FromArgb(173, 178, 181);
+            ForeDisableColor = Color.FromArgb(109, 109, 103);
+            ForeColor = foreColor;
+
+            PrimaryColor = color;
+            RectColor = color;
+            Color[] colors = Color.White.GradientColors(PrimaryColor, 16);
+            Color[] colors1 = PrimaryColor.GradientColors(Color.Black, 16);
+
+            PlainColor = colors[1];
+            SecondaryColor = colors[5];
+            RegularColor = colors[10];
+
+            SplitContainerArrowColor = PrimaryColor;
+
+            GridSelectedColor = colors[3];
+            GridSelectedForeColor = foreColor;
+            GridStripeEvenColor = colors[0];
+            GridStripeOddColor = PlainColor;
+            GridLineColor = colors[13];
+            GridTitleColor = PrimaryColor;
+            GridTitleForeColor = reverseColor;
+            GridForeColor = foreColor;
+            GridBarFillColor = PlainColor;
+            GridBarForeColor = PrimaryColor;
+
+            FormTitleColor = PrimaryColor;
+            FormTitleForeColor = reverseColor;
+            FormForeColor = foreColor;
+            FormRectColor = PrimaryColor;
+            FormControlBoxFillHoverColor = colors[12];
+            FormControlBoxCloseFillHoverColor = UIColor.Red;
+            FormBackColor = PlainColor;
+            FormControlBoxForeColor = Color.White;
+
+            PanelForeColor = foreColor;
+            PanelRectColor = PrimaryColor;
+            PanelFillColor = PlainColor;
+            PanelFillColor2 = PlainColor;
+            PanelTitleColor = PrimaryColor;
+            PanelTitleForeColor = reverseColor;
+
+            ButtonFillColor = PrimaryColor;
+            ButtonFillHoverColor = colors[12];
+            ButtonFillPressColor = colors1[3];
+            ButtonFillSelectedColor = colors1[3];
+            ButtonFillColor2 = ButtonFillColor;
+            ButtonFillLightColor = PlainColor;
+            ButtonForeLightColor = PrimaryColor;
+
+            ButtonForeColor = reverseColor;
+            ButtonForeHoverColor = reverseColor;
+            ButtonForePressColor = reverseColor;
+            ButtonForeSelectedColor = reverseColor;
+
+            ButtonRectColor = PrimaryColor;
+            ButtonRectHoverColor = colors[12];
+            ButtonRectSelectedColor = colors1[3];
+            ButtonRectPressColor = colors1[3];
+
+            BatteryFillColor = PlainColor;
+
+            BreadcrumbUnSelectedColor = colors[6];
+
+            AvatarFillColor = Color.Silver;
+            AvatarForeColor = PrimaryColor;
+
+            ImageButtonForeColor = foreColor;
+
+            CheckBoxColor = PrimaryColor;
+            CheckBoxForeColor = foreColor;
+
+            LogoForeColor = foreColor;
+            LogoFillColor = PrimaryColor;
+
+            LineForeColor = foreColor;
+            LineFillColor = PlainColor;
+            LineRectColor = PrimaryColor;
+
+            TrackBarFillColor = PlainColor;
+            TrackBarForeColor = PrimaryColor;
+            TrackBarRectColor = PrimaryColor;
+            TrackDisableColor = Color.Silver;
+
+            SwitchActiveColor = PrimaryColor;
+            SwitchInActiveColor = Color.Gray;
+            SwitchFillColor = Color.White;
+            SwitchRectDisableColor = RectDisableColor;
+
+            LabelForeColor = foreColor;
+
+            LabelRotateFrameColor = ButtonRectColor;
+            LabelRotateForeColor = foreColor;
+
+            ColorWheelFrameColor = ButtonRectColor;
+            ColorWheelBackColor = PlainColor;
+
+            ContextMenuColor = PlainColor;
+            ContextMenuSelectedColor = PrimaryColor;
+            ContextMenuForeColor = foreColor;
+
+            ScrollBarFillColor = PlainColor;
+            ScrollBarForeColor = PrimaryColor;
+            ScrollBarFillHoverColor = ButtonFillHoverColor;
+            ScrollBarFillPressColor = ButtonFillPressColor;
+
+            ProcessBarFillColor = PlainColor;
+            ProcessBarForeColor = PrimaryColor;
+            ProcessBackColor = colors[6];
+
+            SmoothLabelForeColor = ButtonForeColor;
+            SmoothLabelRectColor = ButtonRectColor;
+
+            ScrollingTextFillColor = PlainColor;
+            ScrollingTextForeColor = PrimaryColor;
+
+            LedLabelForeColor = PrimaryColor;
+            MarkLabelForeColor = PrimaryColor;
+
+            PageBackColor = PlainColor;
+            PageRectColor = PrimaryColor;
+            PageForeColor = foreColor;
+            PageTitleFillColor = Color.FromArgb(76, 76, 76);
+            PageTitleForeColor = Color.White;
+
+            ProgressIndicatorColor = PrimaryColor;
+
+            NavBarMenuSelectedColor = PrimaryColor;
+
+            TabControlTabSelectedColor = PrimaryColor;
+            TabControlBackColor = PlainColor;
+
+            DropDownControlColor = foreColor;
+            DropDownPanelFillColor = PlainColor;
+            DropDownPanelForeColor = foreColor;
+
+            ListItemSelectBackColor = PrimaryColor;
+            ListItemSelectForeColor = PlainColor;
+            ListItemHoverColor = colors[3];
+            ListBarFillColor = PlainColor;
+            ListBarForeColor = PrimaryColor;
+            ListBackColor = Color.White;
+            ListForeColor = foreColor;
+
+            TreeViewSelectedColor = PrimaryColor;
+            TreeViewHoverColor = colors[3];
+            TreeViewBarFillColor = PlainColor;
+            TreeViewBarForeColor = PrimaryColor;
+            TreeViewForeColor = foreColor;
+            TreeViewBackColor = Color.White;
+            TreeViewLineColor = foreColor;
+
+            EditorBackColor = UIColor.White;
+
+            NavMenuMenuSelectedColor = PrimaryColor;
+
+            DataGridViewFooterForeColor = foreColor;
+
+            PaginationForeColor = PrimaryColor;
+
+            FlowLayoutPanelBarFillColor = PlainColor;
+            FlowLayoutPanelBarForeColor = PrimaryColor;
+
+            DropDownStyle = this;
+
+            return this;
+        }
 
         public virtual void LoadFromFile()
         {
@@ -124,53 +414,14 @@ namespace Sunny.UI
             return Name.DisplayText();
         }
 
-        protected virtual void Init(Color color, UIStyle style, Color foreColor)
-        {
-            Name = style;
-
-            MenuSelectedColor = TitleColor = RectColor = PrimaryColor = color;
-            Color[] colors = GDIEx.GradientColors(Color.White, PrimaryColor, 16);
-            Color[] colors1 = GDIEx.GradientColors(PrimaryColor, Color.Black, 16);
-            PlainColor = colors[1];
-            SecondaryColor = colors[5];
-            RegularColor = colors[10];
-
-            ButtonFillColor = PrimaryColor;
-            RectHoverColor = ButtonFillHoverColor = colors[12];
-            RectSelectedColor = RectPressColor = ButtonFillSelectedColor = ButtonFillPressColor = colors1[3];
-            GridSelectedColor = colors[3];
-
-            ButtonForeColor = ButtonForeHoverColor = ButtonForePressColor = ButtonForeSelectedColor = TitleForeColor = foreColor;
-        }
-
-        protected virtual void InitPlain(Color color, UIStyle style, Color foreColor)
-        {
-            Name = style;
-            MenuSelectedColor = RectColor = RectHoverColor = TitleColor = ButtonForeColor = ButtonFillHoverColor = PrimaryColor = color;
-            Color[] colors = GDIEx.GradientColors(Color.White, PrimaryColor, 16);
-            Color[] colors1 = GDIEx.GradientColors(PrimaryColor, Color.Black, 16);
-            ButtonFillColor = PlainColor = colors[1];
-            SecondaryColor = colors[5];
-            RegularColor = colors[10];
-            ButtonFillSelectedColor = RectPressColor = RectSelectedColor = ButtonFillPressColor = colors1[3];
-            GridSelectedColor = colors[3];
-            ButtonForeHoverColor = ButtonForePressColor = ButtonForeSelectedColor = TitleForeColor = foreColor;
-        }
+        public virtual bool BuiltIn => true;
     }
 
     public class UIPurpleStyle : UIBaseStyle
     {
         public UIPurpleStyle()
         {
-            Init(UIColor.Purple, UIStyle.Purple, Color.White);
-        }
-    }
-
-    public class UILightPurpleStyle : UIBaseStyle
-    {
-        public UILightPurpleStyle()
-        {
-            InitPlain(UIColor.Purple, UIStyle.LightPurple, Color.White);
+            base.Init(UIColor.Purple, UIStyle.Purple, Color.White, UIFontColor.Primary);
         }
     }
 
@@ -178,12 +429,12 @@ namespace Sunny.UI
     {
         public UIColorfulStyle()
         {
-            Init(Color.FromArgb(0, 190, 172), UIStyle.Colorful, Color.White);
+            base.Init(Color.FromArgb(0, 190, 172), UIStyle.Colorful, Color.White, UIFontColor.Primary);
         }
 
         public void Init(Color styleColor, Color foreColor)
         {
-            Init(styleColor, UIStyle.Colorful, foreColor);
+            Init(styleColor, UIStyle.Colorful, foreColor, UIFontColor.Primary);
         }
     }
 
@@ -192,425 +443,279 @@ namespace Sunny.UI
         public override UIStyle Name => UIStyle.Custom;
     }
 
-    public class UIOffice2010BlueStyle : UIBaseStyle
-    {
-        public override UIStyle Name => UIStyle.Office2010Blue;
-        public override Color PrimaryColor => Color.FromArgb(120, 148, 182);
-        public override Color RegularColor => Color.FromArgb(120, 148, 182);
-        public override Color SecondaryColor => Color.FromArgb(120, 148, 182);
-        public override Color PlainColor => Color.FromArgb(207, 221, 238);
-        public override Color ButtonFillColor => Color.FromArgb(217, 230, 243);
-        public override Color ButtonFillHoverColor => Color.FromArgb(249, 226, 137);
-        public override Color ButtonFillPressColor => Color.FromArgb(255, 228, 137);
-        public override Color ButtonForeColor => Color.FromArgb(30, 57, 91);
-        public override Color ButtonForeHoverColor => Color.FromArgb(30, 57, 91);
-        public override Color ButtonForePressColor => Color.FromArgb(30, 57, 91);
-        public override Color RectColor => Color.FromArgb(180, 192, 211);
-        public override Color RectHoverColor => Color.FromArgb(238, 201, 88);
-        public override Color RectPressColor => Color.FromArgb(194, 118, 43);
-        public override Color TitleColor => Color.FromArgb(191, 210, 233);
-        public override Color TitleForeColor => Color.FromArgb(30, 57, 91);
-        public override Color RectSelectedColor => RectPressColor;
-        public override Color ButtonForeSelectedColor => ButtonForePressColor;
-        public override Color ButtonFillSelectedColor => ButtonFillPressColor;
-    }
-
-    public class UIOffice2010SilverStyle : UIBaseStyle
-    {
-        public override UIStyle Name => UIStyle.Office2010Silver;
-        public override Color PrimaryColor => Color.FromArgb(139, 144, 151);
-        public override Color RegularColor => Color.FromArgb(120, 148, 182);
-        public override Color SecondaryColor => Color.FromArgb(120, 148, 182);
-        public override Color PlainColor => Color.FromArgb(224, 228, 233);
-        public override Color ButtonFillColor => Color.FromArgb(247, 248, 249);
-        public override Color ButtonFillHoverColor => Color.FromArgb(249, 226, 137);
-        public override Color ButtonFillPressColor => Color.FromArgb(255, 228, 137);
-        public override Color ButtonForeColor => Color.FromArgb(46, 46, 46);
-        public override Color ButtonForeHoverColor => Color.FromArgb(46, 46, 46);
-        public override Color ButtonForePressColor => Color.FromArgb(46, 46, 46);
-        public override Color RectSelectedColor => RectPressColor;
-        public override Color ButtonForeSelectedColor => ButtonForePressColor;
-        public override Color ButtonFillSelectedColor => ButtonFillPressColor;
-        public override Color RectColor => Color.FromArgb(139, 144, 151);
-        public override Color RectHoverColor => Color.FromArgb(238, 201, 88);
-        public override Color RectPressColor => Color.FromArgb(194, 118, 43);
-        public override Color TitleColor => Color.Silver;
-        public override Color TitleForeColor => Color.FromArgb(46, 46, 46);
-    }
-
-    public class UIOffice2010BlackStyle : UIBaseStyle
-    {
-        public override UIStyle Name => UIStyle.Office2010Black;
-        public override Color PrimaryColor => Color.FromArgb(49, 49, 49);
-        public override Color RegularColor => Color.FromArgb(120, 148, 182);
-        public override Color SecondaryColor => Color.FromArgb(120, 148, 182);
-        public override Color PlainColor => Color.FromArgb(211, 211, 211);
-        public override Color ButtonFillColor => Color.FromArgb(211, 211, 211);
-        public override Color ButtonFillHoverColor => Color.FromArgb(249, 226, 137);
-        public override Color ButtonFillPressColor => Color.FromArgb(255, 228, 137);
-        public override Color ButtonForeColor => Color.Black;
-        public override Color ButtonForeHoverColor => Color.FromArgb(70, 70, 70);
-        public override Color ButtonForePressColor => Color.FromArgb(70, 70, 70);
-        public override Color RectSelectedColor => RectPressColor;
-        public override Color ButtonForeSelectedColor => ButtonForePressColor;
-        public override Color ButtonFillSelectedColor => ButtonFillPressColor;
-        public override Color RectColor => Color.FromArgb(145, 145, 145);
-        public override Color RectHoverColor => Color.FromArgb(238, 201, 88);
-        public override Color RectPressColor => Color.FromArgb(194, 118, 43);
-        public override Color AvatarFillColor => Color.FromArgb(148, 148, 148);
-        public override Color TitleColor => Color.FromArgb(118, 118, 118);
-        public override Color TitleForeColor => Color.Black;
-    }
-
     public class UIBlueStyle : UIBaseStyle
     {
-        public override UIStyle Name => UIStyle.Blue;
-        public override Color PrimaryColor => UIColor.Blue;
-        public override Color RegularColor => Color.FromArgb(120, 148, 182);
-        public override Color SecondaryColor => Color.FromArgb(120, 148, 182);
-        public override Color PlainColor => UIColor.LightBlue;
-        public override Color ButtonFillColor => UIColor.Blue;
-        public override Color ButtonFillHoverColor => Color.FromArgb(111, 168, 255);
-        public override Color ButtonFillPressColor => Color.FromArgb(74, 131, 229);
-        public override Color ButtonForeColor => Color.White;
-        public override Color ButtonForeHoverColor => Color.White;
-        public override Color ButtonForePressColor => Color.White;
-        public override Color RectSelectedColor => RectPressColor;
-        public override Color ButtonForeSelectedColor => ButtonForePressColor;
-        public override Color ButtonFillSelectedColor => ButtonFillPressColor;
-        public override Color RectColor => UIColor.Blue;
-        public override Color RectHoverColor => Color.FromArgb(111, 168, 255);
-        public override Color RectPressColor => Color.FromArgb(74, 131, 229);
-        public override Color TitleColor => UIColor.Blue;
-        public override Color TitleForeColor => Color.White;
-    }
-
-    public class UILightBlueStyle : UIBaseStyle
-    {
-        public override UIStyle Name => UIStyle.LightBlue;
-        public override Color PrimaryColor => UIColor.Blue;
-        public override Color RegularColor => Color.FromArgb(120, 148, 182);
-        public override Color SecondaryColor => Color.FromArgb(120, 148, 182);
-        public override Color PlainColor => UIColor.LightBlue;
-        public override Color ButtonFillColor => UIColor.LightBlue;
-        public override Color ButtonFillHoverColor => UIColor.Blue;
-        public override Color ButtonFillPressColor => Color.FromArgb(74, 131, 229);
-        public override Color ButtonForeColor => UIColor.Blue;
-        public override Color ButtonForeHoverColor => Color.White;
-        public override Color ButtonForePressColor => Color.White;
-        public override Color RectSelectedColor => RectPressColor;
-        public override Color ButtonForeSelectedColor => ButtonForePressColor;
-        public override Color ButtonFillSelectedColor => ButtonFillPressColor;
-        public override Color RectColor => UIColor.Blue;
-        public override Color RectHoverColor => UIColor.Blue;
-        public override Color RectPressColor => Color.FromArgb(74, 131, 229);
-        public override Color TitleColor => UIColor.Blue;
-        public override Color TitleForeColor => Color.White;
+        public UIBlueStyle()
+        {
+            base.Init(UIColor.Blue, UIStyle.Blue, Color.White, UIFontColor.Primary);
+        }
     }
 
     public class UIGreenStyle : UIBaseStyle
     {
-        public override UIStyle Name => UIStyle.Green;
-        public override Color PrimaryColor => UIColor.Green;
-        public override Color RegularColor => Color.FromArgb(120, 148, 182);
-        public override Color SecondaryColor => Color.FromArgb(120, 148, 182);
-        public override Color PlainColor => UIColor.LightGreen;
-        public override Color ButtonFillColor => UIColor.Green;
-        public override Color ButtonFillHoverColor => Color.FromArgb(136, 202, 81);
-        public override Color ButtonFillPressColor => Color.FromArgb(100, 168, 35);
-        public override Color ButtonForeColor => Color.White;
-        public override Color ButtonForeHoverColor => Color.White;
-        public override Color ButtonForePressColor => Color.White;
-        public override Color RectSelectedColor => RectPressColor;
-        public override Color ButtonForeSelectedColor => ButtonForePressColor;
-        public override Color ButtonFillSelectedColor => ButtonFillPressColor;
-        public override Color RectColor => UIColor.Green;
-        public override Color RectHoverColor => Color.FromArgb(136, 202, 81);
-        public override Color RectPressColor => Color.FromArgb(100, 168, 35);
-        public override Color TitleColor => UIColor.Green;
-        public override Color TitleForeColor => Color.White;
-        public override Color MenuSelectedColor => UIColor.Green;
-        public override Color GridSelectedColor => Color.FromArgb(173, 227, 123);
-    }
-
-    public class UILightGreenStyle : UIBaseStyle
-    {
-        public override UIStyle Name => UIStyle.LightGreen;
-        public override Color PrimaryColor => UIColor.Green;
-        public override Color RegularColor => Color.FromArgb(120, 148, 182);
-        public override Color SecondaryColor => Color.FromArgb(120, 148, 182);
-        public override Color PlainColor => UIColor.LightGreen;
-        public override Color ButtonFillColor => UIColor.LightGreen;
-        public override Color ButtonFillHoverColor => UIColor.Green;
-        public override Color ButtonFillPressColor => Color.FromArgb(100, 168, 35);
-        public override Color ButtonForeColor => UIColor.Green;
-        public override Color ButtonForeHoverColor => Color.White;
-        public override Color ButtonForePressColor => Color.White;
-        public override Color RectSelectedColor => RectPressColor;
-        public override Color ButtonForeSelectedColor => ButtonForePressColor;
-        public override Color ButtonFillSelectedColor => ButtonFillPressColor;
-        public override Color RectColor => UIColor.Green;
-        public override Color RectHoverColor => UIColor.Green;
-        public override Color RectPressColor => Color.FromArgb(100, 168, 35);
-        public override Color TitleColor => UIColor.Green;
-        public override Color TitleForeColor => Color.White;
-        public override Color MenuSelectedColor => UIColor.Green;
-        public override Color GridSelectedColor => Color.FromArgb(173, 227, 123);
+        public UIGreenStyle()
+        {
+            base.Init(UIColor.Green, UIStyle.Green, Color.White, UIFontColor.Primary);
+        }
     }
 
     public class UIRedStyle : UIBaseStyle
     {
-        public override UIStyle Name => UIStyle.Red;
-        public override Color PrimaryColor => UIColor.Red;
-        public override Color RegularColor => Color.FromArgb(120, 148, 182);
-        public override Color SecondaryColor => Color.FromArgb(120, 148, 182);
-        public override Color PlainColor => UIColor.LightRed;
-        public override Color ButtonFillColor => UIColor.Red;
-        public override Color ButtonFillHoverColor => Color.FromArgb(232, 127, 128);
-        public override Color ButtonFillPressColor => Color.FromArgb(202, 87, 89);
-        public override Color ButtonForeColor => Color.White;
-        public override Color ButtonForeHoverColor => Color.White;
-        public override Color ButtonForePressColor => Color.White;
-        public override Color RectSelectedColor => RectPressColor;
-        public override Color ButtonForeSelectedColor => ButtonForePressColor;
-        public override Color ButtonFillSelectedColor => ButtonFillPressColor;
-        public override Color RectColor => UIColor.Red;
-        public override Color RectHoverColor => Color.FromArgb(232, 127, 128);
-        public override Color RectPressColor => Color.FromArgb(202, 87, 89);
-        public override Color TitleColor => UIColor.Red;
-        public override Color TitleForeColor => Color.White;
-        public override Color MenuSelectedColor => UIColor.Red;
-        public override Color GridSelectedColor => Color.FromArgb(241, 160, 160);
-    }
-
-    public class UILightRedStyle : UIBaseStyle
-    {
-        public override UIStyle Name => UIStyle.LightRed;
-        public override Color PrimaryColor => UIColor.Red;
-        public override Color RegularColor => Color.FromArgb(120, 148, 182);
-        public override Color SecondaryColor => Color.FromArgb(120, 148, 182);
-        public override Color PlainColor => UIColor.LightRed;
-        public override Color ButtonFillColor => UIColor.LightRed;
-        public override Color ButtonFillHoverColor => UIColor.Red;
-        public override Color ButtonFillPressColor => Color.FromArgb(202, 87, 89);
-        public override Color ButtonForeColor => UIColor.Red;
-        public override Color ButtonForeHoverColor => Color.White;
-        public override Color ButtonForePressColor => Color.White;
-        public override Color RectSelectedColor => RectPressColor;
-        public override Color ButtonForeSelectedColor => ButtonForePressColor;
-        public override Color ButtonFillSelectedColor => ButtonFillPressColor;
-        public override Color RectColor => UIColor.Red;
-        public override Color RectHoverColor => UIColor.Red;
-        public override Color RectPressColor => Color.FromArgb(202, 87, 89);
-        public override Color TitleColor => UIColor.Red;
-        public override Color TitleForeColor => Color.White;
-        public override Color MenuSelectedColor => UIColor.Red;
-        public override Color GridSelectedColor => Color.FromArgb(241, 160, 160);
+        public UIRedStyle()
+        {
+            base.Init(UIColor.Red, UIStyle.Red, Color.White, UIFontColor.Primary);
+        }
     }
 
     public class UIOrangeStyle : UIBaseStyle
     {
-        public override UIStyle Name => UIStyle.Orange;
-        public override Color PrimaryColor => UIColor.Orange;
-        public override Color RegularColor => Color.FromArgb(120, 148, 182);
-        public override Color SecondaryColor => Color.FromArgb(120, 148, 182);
-        public override Color PlainColor => UIColor.LightOrange;
-        public override Color ButtonFillColor => UIColor.Orange;
-        public override Color ButtonFillHoverColor => Color.FromArgb(223, 174, 86);
-        public override Color ButtonFillPressColor => Color.FromArgb(192, 137, 43);
-        public override Color ButtonForeColor => Color.White;
-        public override Color ButtonForeHoverColor => Color.White;
-        public override Color ButtonForePressColor => Color.White;
-        public override Color RectSelectedColor => RectPressColor;
-        public override Color ButtonForeSelectedColor => ButtonForePressColor;
-        public override Color ButtonFillSelectedColor => ButtonFillPressColor;
-        public override Color RectColor => UIColor.Orange;
-        public override Color RectHoverColor => Color.FromArgb(223, 174, 86);
-        public override Color RectPressColor => Color.FromArgb(192, 137, 43);
-        public override Color TitleColor => UIColor.Orange;
-        public override Color TitleForeColor => Color.White;
-        public override Color MenuSelectedColor => UIColor.Orange;
-        public override Color GridSelectedColor => Color.FromArgb(238, 207, 151);
-    }
-
-    public class UILightOrangeStyle : UIBaseStyle
-    {
-        public override UIStyle Name => UIStyle.LightOrange;
-        public override Color PrimaryColor => UIColor.Orange;
-        public override Color RegularColor => Color.FromArgb(120, 148, 182);
-        public override Color SecondaryColor => Color.FromArgb(120, 148, 182);
-        public override Color PlainColor => UIColor.LightOrange;
-        public override Color ButtonFillColor => UIColor.LightOrange;
-        public override Color ButtonFillHoverColor => UIColor.Orange;
-        public override Color ButtonFillPressColor => Color.FromArgb(192, 137, 43);
-        public override Color ButtonForeColor => UIColor.Orange;
-        public override Color ButtonForeHoverColor => Color.White;
-        public override Color RectSelectedColor => RectPressColor;
-        public override Color ButtonForeSelectedColor => ButtonForePressColor;
-        public override Color ButtonFillSelectedColor => ButtonFillPressColor;
-        public override Color ButtonForePressColor => Color.White;
-        public override Color RectColor => UIColor.Orange;
-        public override Color RectHoverColor => UIColor.Orange;
-        public override Color RectPressColor => Color.FromArgb(192, 137, 43);
-        public override Color TitleColor => UIColor.Orange;
-        public override Color TitleForeColor => Color.White;
-        public override Color MenuSelectedColor => UIColor.Orange;
-        public override Color GridSelectedColor => Color.FromArgb(238, 207, 151);
+        public UIOrangeStyle()
+        {
+            base.Init(UIColor.Orange, UIStyle.Orange, Color.White, UIFontColor.Primary);
+        }
     }
 
     public class UIGrayStyle : UIBaseStyle
     {
-        public override UIStyle Name => UIStyle.Gray;
-        public override Color PrimaryColor => UIColor.Gray;
-        public override Color RegularColor => Color.FromArgb(120, 148, 182);
-        public override Color SecondaryColor => Color.FromArgb(120, 148, 182);
-        public override Color PlainColor => UIColor.LightGray;
-        public override Color ButtonFillColor => UIColor.Gray;
-        public override Color ButtonFillHoverColor => Color.FromArgb(158, 160, 165);
-        public override Color ButtonFillPressColor => Color.FromArgb(121, 123, 129);
-        public override Color ButtonForeColor => Color.White;
-        public override Color ButtonForeHoverColor => Color.White;
-        public override Color ButtonForePressColor => Color.White;
-        public override Color RectSelectedColor => RectPressColor;
-        public override Color ButtonForeSelectedColor => ButtonForePressColor;
-        public override Color ButtonFillSelectedColor => ButtonFillPressColor;
-        public override Color RectColor => UIColor.Gray;
-        public override Color RectHoverColor => Color.FromArgb(158, 160, 165);
-        public override Color RectPressColor => Color.FromArgb(121, 123, 129);
-        public override Color TitleColor => UIColor.Gray;
-        public override Color TitleForeColor => Color.White;
-        public override Color GridSelectedColor => Color.Silver;
-    }
-
-    public class UILightGrayStyle : UIBaseStyle
-    {
-        public override UIStyle Name => UIStyle.LightGray;
-        public override Color PrimaryColor => UIColor.Gray;
-        public override Color RegularColor => Color.FromArgb(120, 148, 182);
-        public override Color SecondaryColor => Color.FromArgb(120, 148, 182);
-        public override Color PlainColor => UIColor.LightGray;
-        public override Color ButtonFillColor => UIColor.LightGray;
-        public override Color ButtonFillHoverColor => UIColor.Gray;
-        public override Color ButtonFillPressColor => Color.FromArgb(121, 123, 129);
-        public override Color ButtonForeColor => UIColor.Gray;
-        public override Color ButtonForeHoverColor => Color.White;
-        public override Color ButtonForePressColor => Color.White;
-        public override Color RectSelectedColor => RectPressColor;
-        public override Color ButtonForeSelectedColor => ButtonForePressColor;
-        public override Color ButtonFillSelectedColor => ButtonFillPressColor;
-        public override Color RectColor => UIColor.Gray;
-        public override Color RectHoverColor => UIColor.Gray;
-        public override Color RectPressColor => Color.FromArgb(121, 123, 129);
-        public override Color TitleColor => UIColor.Gray;
-        public override Color TitleForeColor => Color.White;
-        public override Color GridSelectedColor => Color.Silver;
-    }
-
-    public class UIWhiteStyle : UIBaseStyle
-    {
-        public override UIStyle Name => UIStyle.White;
-        public override Color PrimaryColor => Color.FromArgb(216, 219, 227);
-        public override Color RegularColor => Color.FromArgb(120, 148, 182);
-        public override Color SecondaryColor => Color.FromArgb(120, 148, 182);
-        public override Color PlainColor => Color.White;
-        public override Color ButtonFillColor => Color.White;
-        public override Color ButtonFillHoverColor => UIColor.LightBlue;
-        public override Color ButtonFillPressColor => UIColor.LightBlue;
-        public override Color ButtonForeColor => Color.FromArgb(0x60, 0x62, 0x66);
-        public override Color ButtonForeHoverColor => UIColor.Blue;
-        public override Color ButtonForePressColor => Color.FromArgb(74, 131, 229);
-        public override Color RectSelectedColor => RectPressColor;
-        public override Color ButtonForeSelectedColor => ButtonForePressColor;
-        public override Color ButtonFillSelectedColor => ButtonFillPressColor;
-        public override Color RectColor => Color.FromArgb(216, 219, 227);
-        public override Color RectHoverColor => Color.FromArgb(197, 222, 255);
-        public override Color RectPressColor => Color.FromArgb(74, 131, 229);
-        public override Color AvatarFillColor => Color.FromArgb(130, 130, 130);
-        public override Color TitleColor => Color.FromArgb(216, 219, 227);
-        public override Color TitleForeColor => Color.FromArgb(0x60, 0x62, 0x66);
+        public UIGrayStyle()
+        {
+            base.Init(UIColor.Gray, UIStyle.Gray, Color.White, UIFontColor.Primary);
+        }
     }
 
     public class UIDarkBlueStyle : UIBaseStyle
     {
-        public override UIStyle Name => UIStyle.DarkBlue;
-        public override Color PrimaryColor => UIColor.DarkBlue;
-        public override Color RegularColor => Color.FromArgb(120, 148, 182);
-        public override Color SecondaryColor => Color.FromArgb(120, 148, 182);
-        public override Color PlainColor => UIColor.LightGray;
-        public override Color ButtonFillColor => UIColor.DarkBlue;
-        public override Color ButtonFillHoverColor => Color.FromArgb(190, 230, 253);
-        public override Color ButtonFillPressColor => Color.FromArgb(169, 217, 242);
-        public override Color ButtonForeColor => Color.FromArgb(130, 130, 130);
-        public override Color ButtonForeHoverColor => Color.FromArgb(130, 130, 130);
-        public override Color ButtonForePressColor => Color.FromArgb(130, 130, 130);
-        public override Color RectSelectedColor => RectPressColor;
-        public override Color ButtonForeSelectedColor => ButtonForePressColor;
-        public override Color ButtonFillSelectedColor => ButtonFillPressColor;
-        public override Color RectColor => Color.FromArgb(130, 130, 130);
-        public override Color RectHoverColor => Color.FromArgb(130, 130, 130);
-        public override Color RectPressColor => Color.FromArgb(130, 130, 130);
-        public override Color TitleColor => Color.FromArgb(130, 130, 130);
-        public override Color TitleForeColor => Color.White;
+        public UIDarkBlueStyle()
+        {
+            base.Init(UIColor.Blue, UIStyle.DarkBlue, Color.White, UIFontColor.White);
+
+            PrimaryColor = UIColor.DarkBlue;
+            RectColor = Color.FromArgb(18, 58, 92);
+            PlainColor = UIColor.DarkBlue;
+            Color ForeColor = Color.White;
+
+            Color[] colors = Color.White.GradientColors(PrimaryColor, 16);
+            Color[] colors1 = PrimaryColor.GradientColors(Color.Black, 16);
+
+            FormTitleColor = colors1[2];
+            FormTitleForeColor = ForeColor;
+            FormForeColor = ForeColor;
+            FormRectColor = RectColor;
+            FormControlBoxFillHoverColor = colors[12];
+            FormControlBoxCloseFillHoverColor = UIColor.Red;
+            FormBackColor = PrimaryColor;
+            FormControlBoxForeColor = ForeColor;
+
+            ButtonFillLightColor = UIStyles.Blue.PlainColor;
+            ButtonForeLightColor = UIStyles.Blue.PrimaryColor;
+
+            PageBackColor = PlainColor;
+            PageRectColor = PrimaryColor;
+            PageForeColor = ForeColor;
+            PageTitleFillColor = Color.FromArgb(76, 76, 76);
+            PageTitleForeColor = ForeColor;
+
+            AvatarFillColor = Color.Silver;
+            AvatarForeColor = PrimaryColor;
+
+            LabelForeColor = ForeColor;
+
+            LineForeColor = ForeColor;
+            LineFillColor = PlainColor;
+            LineRectColor = ForeColor;
+
+            CheckBoxForeColor = ForeColor;
+
+            ContextMenuColor = Color.FromArgb(18, 58, 92);
+            ContextMenuSelectedColor = Color.FromArgb(80, 160, 255);
+            ContextMenuForeColor = ForeColor;
+
+            PanelForeColor = ForeColor;
+            PanelRectColor = RectColor;
+            PanelFillColor = PlainColor;
+            PanelFillColor2 = PlainColor;
+            PanelTitleColor = FormTitleColor;
+            PanelTitleForeColor = ForeColor;
+
+            TrackBarFillColor = PlainColor;
+            TrackBarForeColor = UIColor.Blue;
+            TrackBarRectColor = UIColor.Blue;
+            TrackDisableColor = Color.Silver;
+
+            BreadcrumbUnSelectedColor = Color.Silver;
+
+            ImageButtonForeColor = ForeColor;
+
+            BatteryFillColor = PrimaryColor;
+
+            DataGridViewFooterForeColor = ForeColor;
+
+            GridSelectedColor = colors[13];
+            GridSelectedForeColor = ForeColor;
+            GridStripeEvenColor = PlainColor;
+            GridStripeOddColor = PlainColor;
+            GridLineColor = RectColor;
+            GridTitleColor = Color.FromArgb(16, 45, 92);
+            GridTitleForeColor = ForeColor;
+            GridForeColor = ForeColor;
+            GridBarFillColor = PlainColor;
+            GridBarForeColor = ForeColor;
+
+            TreeViewSelectedColor = PrimaryColor;
+            TreeViewHoverColor = colors[13];
+            TreeViewBarFillColor = PlainColor;
+            TreeViewBarForeColor = ForeColor;
+            TreeViewForeColor = ForeColor;
+            TreeViewBackColor = PlainColor;
+            TreeViewLineColor = ForeColor;
+
+            PaginationForeColor = ForeColor;
+
+            FlowLayoutPanelBarFillColor = PlainColor;
+            FlowLayoutPanelBarForeColor = ForeColor;
+
+            ListItemSelectBackColor = UIColor.Blue;
+            ListItemSelectForeColor = ForeColor;
+            ListItemHoverColor = colors[13];
+            ListBarFillColor = PlainColor;
+            ListBarForeColor = ForeColor;
+            ListBackColor = PlainColor;
+            ListForeColor = ForeColor;
+
+            ScrollBarFillColor = PlainColor;
+            ScrollBarForeColor = ForeColor;
+
+            ScrollingTextFillColor = PlainColor;
+            ScrollingTextForeColor = ForeColor;
+
+            LogoForeColor = UIFontColor.Primary;
+
+            DropDownControlColor = ForeColor;
+            DropDownPanelFillColor = UIColor.LightBlue;
+            DropDownPanelForeColor = UIFontColor.Primary;
+
+            DropDownStyle = UIStyles.Blue;
+
+            SplitContainerArrowColor = UIColor.Blue;
+        }
     }
 
     public class UIBlackStyle : UIBaseStyle
     {
-        public override UIStyle Name => UIStyle.Black;
-        public override Color PrimaryColor => Color.FromArgb(24, 24, 24);
-        public override Color RegularColor => Color.FromArgb(120, 148, 182);
-        public override Color SecondaryColor => Color.FromArgb(120, 148, 182);
-        public override Color PlainColor => Color.FromArgb(24, 24, 24);
-        public override Color ButtonFillColor => UIColor.DarkBlue;
-        public override Color ButtonFillHoverColor => UIColor.RegularBlue;
-        public override Color ButtonFillPressColor => UIColor.LightBlue;
-        public override Color ButtonForeColor => Color.White;
-        public override Color ButtonForeHoverColor => Color.FromArgb(130, 130, 130);
-        public override Color ButtonForePressColor => Color.FromArgb(130, 130, 130);
-        public override Color RectSelectedColor => RectPressColor;
-        public override Color ButtonForeSelectedColor => ButtonForePressColor;
-        public override Color ButtonFillSelectedColor => ButtonFillPressColor;
-        public override Color RectColor => Color.FromArgb(130, 130, 130);
-        public override Color RectHoverColor => Color.FromArgb(130, 130, 130);
-        public override Color RectPressColor => Color.FromArgb(130, 130, 130);
-        public override Color LabelForeColor => UIFontColor.Plain;
-        public override Color DropDownControlColor => UIFontColor.Primary;
-        public override Color CheckBoxColor => UIColor.Blue;
+        public UIBlackStyle()
+        {
+            base.Init(UIColor.Blue, UIStyle.Black, Color.White, UIFontColor.Primary);
 
-        public override Color TitleColor => Color.FromArgb(130, 130, 130);
-        public override Color TitleForeColor => Color.White;
-        public override Color LineForeColor => UIFontColor.Plain;
-        public override Color ContextMenuColor => UIColor.RegularGray;
+            PrimaryColor = Color.FromArgb(24, 24, 24);
+            RectColor = Color.FromArgb(18, 58, 92);
+            PlainColor = Color.FromArgb(24, 24, 24);
+            Color ForeColor = Color.White;
 
-        public override Color GridStripeOddColor => UIColor.RegularGray;
-        public override Color GridSelectedColor => UIFontColor.Plain;
+            Color[] colors = Color.White.GradientColors(PrimaryColor, 16);
+            Color[] colors1 = PrimaryColor.GradientColors(Color.Black, 16);
 
-        public override Color GridSelectedForeColor => UIColor.White;
+            FormTitleColor = colors1[2];
+            FormTitleForeColor = ForeColor;
+            FormForeColor = ForeColor;
+            FormRectColor = RectColor;
+            FormControlBoxFillHoverColor = colors[12];
+            FormControlBoxCloseFillHoverColor = UIColor.Red;
+            FormBackColor = PrimaryColor;
+            FormControlBoxForeColor = ForeColor;
 
-        public override Color ListItemSelectBackColor => UIColor.Blue;
-        public override Color ListItemSelectForeColor => UIColor.LightBlue;
+            ButtonFillLightColor = UIStyles.Blue.PlainColor;
+            ButtonForeLightColor = UIStyles.Blue.PrimaryColor;
 
-        public override Color ProgressIndicatorColor => UIColor.Blue;
+            PageBackColor = PlainColor;
+            PageRectColor = PrimaryColor;
+            PageForeColor = ForeColor;
+            PageTitleFillColor = Color.FromArgb(76, 76, 76);
+            PageTitleForeColor = ForeColor;
 
-        public override Color ProcessBarFillColor => PlainColor;
+            AvatarFillColor = Color.Silver;
+            AvatarForeColor = PrimaryColor;
 
-        public override Color ProcessBarForeColor => UIColor.RegularGray;
+            LabelForeColor = ForeColor;
 
-        public override Color ScrollBarForeColor => UIColor.RegularGray;
+            LineForeColor = ForeColor;
+            LineFillColor = PlainColor;
+            LineRectColor = ForeColor;
 
-        public override Color SwitchActiveColor => UIColor.DarkBlue;
+            CheckBoxForeColor = ForeColor;
 
-        public override Color SwitchInActiveColor => UIFontColor.Plain;
+            ContextMenuColor = Color.FromArgb(18, 58, 92);
+            ContextMenuSelectedColor = Color.FromArgb(80, 160, 255);
+            ContextMenuForeColor = ForeColor;
 
-        public override Color SwitchFillColor => Color.White;
+            PanelForeColor = ForeColor;
+            PanelRectColor = RectColor;
+            PanelFillColor = PlainColor;
+            PanelFillColor2 = PlainColor;
+            PanelTitleColor = FormTitleColor;
+            PanelTitleForeColor = ForeColor;
 
-        public override Color TrackBarForeColor => UIColor.Blue;
+            TrackBarFillColor = PlainColor;
+            TrackBarForeColor = UIColor.Blue;
+            TrackBarRectColor = UIColor.Blue;
+            TrackDisableColor = Color.Silver;
 
-        public override Color TrackBarRectColor => UIColor.Blue;
+            BreadcrumbUnSelectedColor = Color.Silver;
 
-        public override Color TrackDisableColor => Color.Silver;
+            ImageButtonForeColor = ForeColor;
 
-        public override Color TreeViewSelectedColor => UIFontColor.Secondary;
+            BatteryFillColor = PrimaryColor;
 
-        public override Color TreeViewHoverColor => UIFontColor.Plain;
+            DataGridViewFooterForeColor = ForeColor;
+
+            GridSelectedColor = colors[13];
+            GridSelectedForeColor = ForeColor;
+            GridStripeEvenColor = PlainColor;
+            GridStripeOddColor = PlainColor;
+            GridLineColor = RectColor;
+            GridTitleColor = Color.FromArgb(16, 45, 92);
+            GridTitleForeColor = ForeColor;
+            GridForeColor = ForeColor;
+            GridBarFillColor = PlainColor;
+            GridBarForeColor = ForeColor;
+
+            TreeViewSelectedColor = PrimaryColor;
+            TreeViewHoverColor = colors[13];
+            TreeViewBarFillColor = PlainColor;
+            TreeViewBarForeColor = ForeColor;
+            TreeViewForeColor = ForeColor;
+            TreeViewBackColor = PlainColor;
+            TreeViewLineColor = ForeColor;
+
+            PaginationForeColor = ForeColor;
+
+            FlowLayoutPanelBarFillColor = PlainColor;
+            FlowLayoutPanelBarForeColor = ForeColor;
+
+            ListItemSelectBackColor = UIColor.Blue;
+            ListItemSelectForeColor = ForeColor;
+            ListItemHoverColor = colors[13];
+            ListBarFillColor = PlainColor;
+            ListBarForeColor = ForeColor;
+            ListBackColor = PlainColor;
+            ListForeColor = ForeColor;
+
+            ScrollBarFillColor = PlainColor;
+            ScrollBarForeColor = ForeColor;
+
+            ScrollingTextFillColor = PlainColor;
+            ScrollingTextForeColor = ForeColor;
+
+            LogoForeColor = UIFontColor.Primary;
+
+            DropDownControlColor = ForeColor;
+            DropDownPanelFillColor = UIColor.LightBlue;
+            DropDownPanelForeColor = UIFontColor.Primary;
+
+            DropDownStyle = UIStyles.Blue;
+
+            SplitContainerArrowColor = UIColor.Blue;
+        }
     }
+
+#pragma warning restore CS1591 // 缺少对公共可见类型或成员的 XML 注释
 }

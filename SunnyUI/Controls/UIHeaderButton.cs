@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,13 +13,17 @@
  ******************************************************************************
  * 文件名称: UIHeaderButton.cs
  * 文件说明: 顶部图标按钮
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2021-02-10
  *
  * 2021-02-10: V3.0.1 增加文件说明
  * 2021-03-27: V3.0.2 增加字体图标背景时鼠标移上背景色
  * 2021-06-01: V3.0.4 增加图片与文字的位置
  * 2021-06-22: V3.0.4 增加ShowSelected，是否显示选中状态
+ * 2021-09-21: V3.0.7 增加Disabled颜色
+ * 2021-12-07: V3.0.9 更改图片自动刷新
+ * 2022-01-02: V3.0.9 增加角标
+ * 2022-03-19: V3.1.1 重构主题配色
 ******************************************************************************/
 
 using System;
@@ -48,13 +52,113 @@ namespace Sunny.UI
             RectSides = ToolStripStatusLabelBorderSides.None;
             Padding = new Padding(0, 8, 0, 3);
 
-            foreHoverColor = UIStyles.GetStyleColor(UIStyle.Blue).ButtonForeHoverColor;
-            forePressColor = UIStyles.GetStyleColor(UIStyle.Blue).ButtonForePressColor;
-            foreSelectedColor = UIStyles.GetStyleColor(UIStyle.Blue).ButtonForeSelectedColor;
-            fillHoverColor = UIStyles.GetStyleColor(UIStyle.Blue).ButtonFillHoverColor;
-            fillPressColor = UIStyles.GetStyleColor(UIStyle.Blue).ButtonFillPressColor;
-            fillSelectedColor = UIStyles.GetStyleColor(UIStyle.Blue).ButtonFillSelectedColor;
             SetStyle(ControlStyles.StandardDoubleClick, UseDoubleClick);
+
+            foreHoverColor = UIStyles.Blue.ButtonForeHoverColor;
+            forePressColor = UIStyles.Blue.ButtonForePressColor;
+            foreSelectedColor = UIStyles.Blue.ButtonForeSelectedColor;
+
+            fillHoverColor = UIStyles.Blue.ButtonFillHoverColor;
+            fillPressColor = UIStyles.Blue.ButtonFillPressColor;
+            fillSelectedColor = UIStyles.Blue.ButtonFillSelectedColor;
+
+            fillDisableColor = fillColor;
+            foreDisableColor = foreColor;
+            rectDisableColor = UIStyles.Blue.RectDisableColor;
+        }
+
+        /// <summary>
+        /// 设置控件缩放比例
+        /// </summary>
+        /// <param name="scale">缩放比例</param>
+        public override void SetZoomScale(float scale)
+        {
+            base.SetZoomScale(scale);
+            circleSize = UIZoomScale.Calc(baseCircleSize, scale);
+        }
+
+        private bool showTips = false;
+
+        [Description("是否显示角标"), Category("SunnyUI")]
+        [DefaultValue(false)]
+        public bool ShowTips
+        {
+            get
+            {
+                return showTips;
+            }
+            set
+            {
+                if (showTips != value)
+                {
+                    showTips = value;
+                    Invalidate();
+                }
+            }
+        }
+
+        private string tipsText = "";
+
+        [Description("角标文字"), Category("SunnyUI")]
+        [DefaultValue("")]
+        public string TipsText
+        {
+            get { return tipsText; }
+            set
+            {
+                if (tipsText != value)
+                {
+                    tipsText = value;
+                    if (ShowTips)
+                    {
+                        Invalidate();
+                    }
+                }
+            }
+        }
+
+        private Color tipsColor = Color.Red;
+
+        [Description("角标背景颜色"), Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "Red")]
+        public Color TipsColor
+        {
+            get => tipsColor;
+            set
+            {
+                tipsColor = value;
+                Invalidate();
+            }
+        }
+
+        private Color tipsForeColor = Color.White;
+
+        [DefaultValue(typeof(Color), "White"), Category("SunnyUI"), Description("角标文字颜色")]
+        public Color TipsForeColor
+        {
+            get => tipsForeColor;
+            set
+            {
+                tipsForeColor = value;
+                Invalidate();
+            }
+        }
+
+        private Font tipsFont = UIFontColor.SubFont();
+
+        [Description("角标文字字体"), Category("SunnyUI")]
+        [DefaultValue(typeof(Font), "微软雅黑, 9pt")]
+        public Font TipsFont
+        {
+            get { return tipsFont; }
+            set
+            {
+                if (!tipsFont.Equals(value))
+                {
+                    tipsFont = value;
+                    Invalidate();
+                }
+            }
         }
 
         private bool isClick;
@@ -70,6 +174,10 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 点击事件
+        /// </summary>
+        /// <param name="e">参数</param>
         protected override void OnClick(EventArgs e)
         {
             Focus();
@@ -98,6 +206,9 @@ namespace Sunny.UI
 
         private int _symbolSize = 48;
 
+        /// <summary>
+        /// 字体图标大小
+        /// </summary>
         [DefaultValue(48)]
         [Description("字体图标大小"), Category("SunnyUI")]
         public int SymbolSize
@@ -117,6 +228,9 @@ namespace Sunny.UI
 
         private Color symbolColor = Color.White;
 
+        /// <summary>
+        /// 字体图标颜色
+        /// </summary>
         [DefaultValue(typeof(Color), "White")]
         [Description("字体图标颜色"), Category("SunnyUI")]
         public Color SymbolColor
@@ -129,9 +243,14 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="uiColor">主题样式</param>
         public override void SetStyleColor(UIBaseStyle uiColor)
         {
             base.SetStyleColor(uiColor);
+
             fillHoverColor = uiColor.ButtonFillHoverColor;
             foreHoverColor = uiColor.ButtonForeHoverColor;
 
@@ -141,7 +260,17 @@ namespace Sunny.UI
             fillSelectedColor = uiColor.ButtonFillSelectedColor;
             foreSelectedColor = uiColor.ButtonForeSelectedColor;
 
-            Invalidate();
+            rectDisableColor = uiColor.RectDisableColor;
+            fillDisableColor = fillColor;
+            foreDisableColor = foreColor;
+        }
+
+        [Description("不可用颜色"), Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "173, 178, 181")]
+        public Color CircleDisabledColor
+        {
+            get => rectDisableColor;
+            set => SetRectDisableColor(value);
         }
 
         /// <summary>
@@ -155,6 +284,14 @@ namespace Sunny.UI
             set => SetFillColor(value);
         }
 
+        [Description("填充颜色"), Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "80, 160, 255")]
+        public Color FillDisableColor
+        {
+            get => fillDisableColor;
+            set => SetFillDisableColor(value);
+        }
+
         /// <summary>
         /// 字体颜色
         /// </summary>
@@ -166,15 +303,7 @@ namespace Sunny.UI
             set => SetForeColor(value);
         }
 
-        [DefaultValue(typeof(Color), "244, 244, 244"), Category("SunnyUI")]
-        [Description("不可用时填充颜色")]
-        public Color FillDisableColor
-        {
-            get => fillDisableColor;
-            set => SetFillDisableColor(value);
-        }
-
-        [DefaultValue(typeof(Color), "109, 109, 103"), Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "White"), Category("SunnyUI")]
         [Description("不可用时字体颜色")]
         public Color ForeDisableColor
         {
@@ -182,15 +311,15 @@ namespace Sunny.UI
             set => SetForeDisableColor(value);
         }
 
-        [DefaultValue(typeof(Color), "111, 168, 255"), Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "115, 179, 255"), Category("SunnyUI")]
         [Description("鼠标移上时填充颜色")]
         public Color FillHoverColor
         {
             get => fillHoverColor;
-            set => SetFillHoveColor(value);
+            set => SetFillHoverColor(value);
         }
 
-        [DefaultValue(typeof(Color), "74, 131, 229"), Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "64, 128, 204"), Category("SunnyUI")]
         [Description("鼠标按下时填充颜色")]
         public Color FillPressColor
         {
@@ -203,7 +332,7 @@ namespace Sunny.UI
         public Color ForeHoverColor
         {
             get => foreHoverColor;
-            set => SetForeHoveColor(value);
+            set => SetForeHoverColor(value);
         }
 
         [DefaultValue(typeof(Color), "White"), Category("SunnyUI")]
@@ -214,7 +343,7 @@ namespace Sunny.UI
             set => SetForePressColor(value);
         }
 
-        [DefaultValue(typeof(Color), "74, 131, 229"), Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "64, 128, 204"), Category("SunnyUI")]
         [Description("选中时填充颜色")]
         public Color FillSelectedColor
         {
@@ -230,14 +359,30 @@ namespace Sunny.UI
             set => SetForeSelectedColor(value);
         }
 
+        private Image image;
+
         [DefaultValue(null)]
         [Description("图片"), Category("SunnyUI")]
-        public Image Image { get; set; }
+        public Image Image
+        {
+            get => image;
+            set
+            {
+                if (image != value)
+                {
+                    image = value;
+                    Invalidate();
+                }
+            }
+        }
 
         private int _symbol = FontAwesomeIcons.fa_check;
 
+        /// <summary>
+        /// 字体图标
+        /// </summary>
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
-        [Editor(typeof(UIImagePropertyEditor), typeof(UITypeEditor))]
+        [Editor("Sunny.UI.UIImagePropertyEditor, " + AssemblyRefEx.SystemDesign, typeof(UITypeEditor))]
         [DefaultValue(61452)]
         [Description("字体图标"), Category("SunnyUI")]
         public int Symbol
@@ -266,6 +411,9 @@ namespace Sunny.UI
 
         private Point symbolOffset = new Point(0, 0);
 
+        /// <summary>
+        /// 字体图标的偏移位置
+        /// </summary>
         [DefaultValue(typeof(Point), "0, 0")]
         [Description("字体图标的偏移位置"), Category("SunnyUI")]
         public Point SymbolOffset
@@ -317,6 +465,7 @@ namespace Sunny.UI
         }
 
         private int circleSize = 50;
+        private int baseCircleSize = 50;
 
         [DefaultValue(50)]
         [Description("字体图标背景大小"), Category("SunnyUI")]
@@ -325,11 +474,16 @@ namespace Sunny.UI
             get => circleSize;
             set
             {
-                circleSize = value;
+                baseCircleSize = circleSize = value;
                 Invalidate();
             }
         }
 
+        /// <summary>
+        /// 绘制填充颜色
+        /// </summary>
+        /// <param name="g">绘图图面</param>
+        /// <param name="path">绘图路径</param>
         protected override void OnPaintFill(Graphics g, GraphicsPath path)
         {
             if (!selected)
@@ -376,6 +530,10 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 重载鼠标按下事件
+        /// </summary>
+        /// <param name="e">鼠标参数</param>
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
@@ -383,6 +541,10 @@ namespace Sunny.UI
             Invalidate();
         }
 
+        /// <summary>
+        /// 重载鼠标抬起事件
+        /// </summary>
+        /// <param name="e">鼠标参数</param>
         protected override void OnMouseUp(MouseEventArgs e)
         {
             base.OnMouseUp(e);
@@ -390,6 +552,10 @@ namespace Sunny.UI
             Invalidate();
         }
 
+        /// <summary>
+        /// 重载鼠标离开事件
+        /// </summary>
+        /// <param name="e">鼠标参数</param>
         protected override void OnMouseLeave(EventArgs e)
         {
             base.OnMouseLeave(e);
@@ -398,6 +564,10 @@ namespace Sunny.UI
             Invalidate();
         }
 
+        /// <summary>
+        /// 重载鼠标进入事件
+        /// </summary>
+        /// <param name="e">鼠标参数</param>
         protected override void OnMouseEnter(EventArgs e)
         {
             base.OnMouseEnter(e);
@@ -433,6 +603,10 @@ namespace Sunny.UI
             base.OnKeyUp(e);
         }
 
+        /// <summary>
+        /// 重载绘图
+        /// </summary>
+        /// <param name="e">绘图参数</param>
         protected override void OnPaint(PaintEventArgs e)
         {
             //重绘父类
@@ -457,6 +631,7 @@ namespace Sunny.UI
                         if (Symbol > 0 && Image == null)
                         {
                             Color bcColor = CircleColor;
+                            if (!Enabled) bcColor = CircleDisabledColor;
                             if (ShowCircleHoverColor && IsHover)
                             {
                                 bcColor = CircleHoverColor;
@@ -484,6 +659,7 @@ namespace Sunny.UI
                         if (Symbol > 0 && Image == null)
                         {
                             Color bcColor = CircleColor;
+                            if (!Enabled) bcColor = CircleDisabledColor;
                             if (ShowCircleHoverColor && IsHover)
                             {
                                 bcColor = CircleHoverColor;
@@ -515,6 +691,7 @@ namespace Sunny.UI
                         if (Symbol > 0 && Image == null)
                         {
                             Color bcColor = CircleColor;
+                            if (!Enabled) bcColor = CircleDisabledColor;
                             if (ShowCircleHoverColor && IsHover)
                             {
                                 bcColor = CircleHoverColor;
@@ -542,6 +719,7 @@ namespace Sunny.UI
                         if (Symbol > 0 && Image == null)
                         {
                             Color bcColor = CircleColor;
+                            if (!Enabled) bcColor = CircleDisabledColor;
                             if (ShowCircleHoverColor && IsHover)
                             {
                                 bcColor = CircleHoverColor;
@@ -564,6 +742,33 @@ namespace Sunny.UI
                         #endregion
                     }
                     break;
+            }
+
+            if (Enabled && ShowTips && !string.IsNullOrEmpty(TipsText))
+            {
+                e.Graphics.SetHighQuality();
+                sf = e.Graphics.MeasureString(TipsText, TempFont);
+                float sfMax = Math.Max(sf.Width, sf.Height);
+                float x = Width - 1 - 2 - sfMax;
+                float y = 1 + 1;
+                e.Graphics.FillEllipse(TipsColor, x, y, sfMax, sfMax);
+                e.Graphics.DrawString(TipsText, TempFont, TipsForeColor, x + sfMax / 2.0f - sf.Width / 2.0f, y + sfMax / 2.0f - sf.Height / 2.0f);
+            }
+        }
+
+        Font tmpFont;
+
+        private Font TempFont
+        {
+            get
+            {
+                if (tmpFont == null || !tmpFont.Size.EqualsFloat(TipsFont.DPIScaleFontSize()))
+                {
+                    tmpFont?.Dispose();
+                    tmpFont = TipsFont.DPIScaleFont();
+                }
+
+                return tmpFont;
             }
         }
 

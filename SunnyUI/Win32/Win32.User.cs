@@ -4,10 +4,10 @@ using System.Text;
 using HANDLE = System.IntPtr;
 using HDC = System.IntPtr;
 using HWND = System.IntPtr;
-#pragma warning disable CS0618 // 类型或成员已过时
 
 namespace Sunny.UI.Win32
 {
+#pragma warning disable CS1591 // 缺少对公共可见类型或成员的 XML 注释
     public struct CBTACTIVATESTRUCT
     {
         public int fMouse;
@@ -635,7 +635,7 @@ namespace Sunny.UI.Win32
         [DllImport("user32")] public static extern int CreatePopupMenu();
         //[DllImport("user32")] public static extern int CreateWindowEx(int dwExStyle, string lpClassName, string lpWindowName, int dwStyle, int x, int y, int nWidth, int nHeight, HWND hwndParent, HANDLE hMenu, HANDLE hInstance, IntPtr lpParam);
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-        public static extern IntPtr CreateWindowEx(int dwExStyle, string lpszClassName, string lpszWindowName, int style, int x, int y, int width, int height, IntPtr hWndParent, IntPtr hMenu, IntPtr hInst, [MarshalAs(UnmanagedType.AsAny)] object pvParam);
+        public static extern IntPtr CreateWindowEx(int dwExStyle, string lpszClassName, string lpszWindowName, int style, int x, int y, int width, int height, IntPtr hWndParent, IntPtr hMenu, IntPtr hInst, object pvParam);
         [DllImport("user32")] public static extern int DdeAbandonTransaction(int idInst, HANDLE hConv, int idTransaction);
         [DllImport("user32")] public static extern int DdeAccessData(HANDLE hData, ref int pcbDataSize);
         [DllImport("user32")] public static extern int DdeAddData(HANDLE hData, Byte pSrc, int cb, int cbOff);
@@ -2537,4 +2537,6 @@ namespace Sunny.UI.Win32
         public const string SZDDESYS_TOPIC = "System";
         public const string SZDDE_ITEM_ITEMLIST = "TopicItemList";
     }
+
+#pragma warning restore CS1591 // 缺少对公共可见类型或成员的 XML 注释
 }

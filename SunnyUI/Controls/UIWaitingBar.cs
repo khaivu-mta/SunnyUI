@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,10 +13,11 @@
  ******************************************************************************
  * 文件名称: UIWaitingBar.cs
  * 文件说明: 等待滚动条控件
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-07-20
  *
  * 2020-07-20: V2.2.6 新增等待滚动条控件
+ * 2022-03-19: V3.1.1 重构主题配色
 ******************************************************************************/
 
 using System;
@@ -29,7 +30,7 @@ namespace Sunny.UI
     [ToolboxItem(true)]
     public sealed class UIWaitingBar : UIControl
     {
-        private readonly Timer timer = new Timer();
+        private readonly Timer timer;
 
         public UIWaitingBar()
         {
@@ -38,19 +39,36 @@ namespace Sunny.UI
             Size = new Size(300, 29);
             ShowText = false;
 
-            fillColor = UIColor.LightBlue;
-            foreColor = UIColor.Blue;
+            timer = new Timer();
             timer.Interval = 200;
             timer.Tick += Timer_Tick;
             timer.Start();
+
+            fillColor = UIStyles.Blue.ProcessBarFillColor;
+            foreColor = UIStyles.Blue.ProcessBarForeColor;
         }
 
-        ~UIWaitingBar()
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            timer?.Stop();
+            timer?.Dispose();
+        }
+
+        public void Start()
+        {
+            timer.Start();
+        }
+
+        public void Stop()
         {
             timer.Stop();
-            timer.Dispose();
         }
 
+        /// <summary>
+        /// 重载绘图
+        /// </summary>
+        /// <param name="e">绘图参数</param>
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
@@ -125,12 +143,15 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="uiColor">主题样式</param>
         public override void SetStyleColor(UIBaseStyle uiColor)
         {
             base.SetStyleColor(uiColor);
             fillColor = uiColor.ProcessBarFillColor;
             foreColor = uiColor.ProcessBarForeColor;
-            Invalidate();
         }
     }
 }

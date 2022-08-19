@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,10 +13,11 @@
  ******************************************************************************
  * 文件名称: UILogo.cs
  * 文件说明: SunnyUI LOGO
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
+ * 2022-03-19: V3.1.1 重构主题配色
 ******************************************************************************/
 
 using System.ComponentModel;
@@ -41,9 +42,14 @@ namespace Sunny.UI
 
             MinimumSize = MaximumSize = new Size(300, 80);
 
-            ForeColor = UIFontColor.Primary;
+            foreColor = UIFontColor.Primary;
+            fillColor = UIColor.Blue;
         }
 
+        /// <summary>
+        /// 重载绘图
+        /// </summary>
+        /// <param name="e">绘图参数</param>
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
@@ -117,12 +123,15 @@ namespace Sunny.UI
             this.SaveToImage(fileName, ImageFormat.Png);
         }
 
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="uiColor">主题样式</param>
         public override void SetStyleColor(UIBaseStyle uiColor)
         {
             base.SetStyleColor(uiColor);
-            foreColor = UIFontColor.Primary;
-            fillColor = uiColor.MenuSelectedColor;
-            Invalidate();
+            foreColor = uiColor.LogoForeColor;
+            fillColor = uiColor.LogoFillColor;
         }
 
         /// <summary>

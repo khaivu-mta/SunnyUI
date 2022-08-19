@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,7 +13,7 @@
  ******************************************************************************
  * 文件名称: UIChart.cs
  * 文件说明: 图表基类
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-06-06
  *
  * 2020-06-06: V2.2.5 增加文件说明
@@ -39,6 +39,9 @@ namespace Sunny.UI
             Width = 400;
             Height = 300;
 
+            SubFont = UIFontColor.SubFont();
+            LegendFont = UIFontColor.SubFont();
+
             tip.Parent = this;
             tip.Height = 32;
             tip.Width = 200;
@@ -46,7 +49,7 @@ namespace Sunny.UI
             tip.Top = 1;
             tip.StyleCustomMode = true;
             tip.Style = UIStyle.Custom;
-            tip.Font = UIFontColor.SubFont;
+            tip.Font = UIFontColor.SubFont();
             tip.RadiusSides = UICornerRadiusSides.None;
             tip.Visible = false;
 
@@ -55,6 +58,21 @@ namespace Sunny.UI
             tip.ForeColor = UIChartStyles.Plain.ForeColor;
             tip.Visible = false;
             tip.MouseEnter += Tip_MouseEnter;
+            tip.VisibleChanged += Tip_VisibleChanged;
+        }
+
+        private void Tip_VisibleChanged(object sender, EventArgs e)
+        {
+            tip.IsScaled = true;
+            float size = SubFont != null ? SubFont.Size : UIFontColor.SubFontSize;
+            tip.Font = this.Font.DPIScaleFont(size);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            tmpFont?.Dispose();
+            tmpLegendFont?.Dispose();
         }
 
         private void Tip_MouseEnter(object sender, EventArgs e)
@@ -91,7 +109,7 @@ namespace Sunny.UI
         /// </summary>
         [Description("字体颜色")]
         [Category("SunnyUI")]
-        [DefaultValue(typeof(Color), "White")]
+        [DefaultValue(typeof(Color), "54, 54, 54")]
         public override Color ForeColor
         {
             get => foreColor;
@@ -114,13 +132,18 @@ namespace Sunny.UI
         /// </summary>
         [Description("填充颜色")]
         [Category("SunnyUI")]
-        [DefaultValue(typeof(Color), "235, 243, 255")]
+        [DefaultValue(typeof(Color), "244, 244, 244")]
         public Color FillColor
         {
             get => fillColor;
             set => SetFillColor(value);
         }
 
+        /// <summary>
+        /// 绘制填充颜色
+        /// </summary>
+        /// <param name="g">绘图图面</param>
+        /// <param name="path">绘图路径</param>
         protected override void OnPaintFill(Graphics g, GraphicsPath path)
         {
             g.FillPath(fillColor, path);
@@ -166,15 +189,50 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 重载绘图
+        /// </summary>
+        /// <param name="e">绘图参数</param>
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
-            if (tip != null && !tip.Font.Equals(legendFont))
-            {
-                tip.Font = legendFont;
-            }
-
             DrawOption(e.Graphics);
+        }
+
+        Font tmpFont;
+
+        protected Font TempFont
+        {
+            get
+            {
+                float size = SubFont != null ? SubFont.Size : UIFontColor.SubFontSize;
+
+                if (tmpFont == null || !tmpFont.Size.EqualsFloat(size / UIDPIScale.DPIScale()))
+                {
+                    tmpFont?.Dispose();
+                    tmpFont = this.Font.DPIScaleFont(size);
+                }
+
+                return tmpFont;
+            }
+        }
+
+        Font tmpLegendFont;
+
+        protected Font TempLegendFont
+        {
+            get
+            {
+                float size = LegendFont != null ? LegendFont.Size : UIFontColor.SubFontSize;
+
+                if (tmpLegendFont == null || !tmpLegendFont.Size.EqualsFloat(size / UIDPIScale.DPIScale()))
+                {
+                    tmpLegendFont?.Dispose();
+                    tmpLegendFont = this.Font.DPIScaleFont(size);
+                }
+
+                return tmpLegendFont;
+            }
         }
 
         protected virtual void DrawOption(Graphics g)
@@ -187,6 +245,10 @@ namespace Sunny.UI
 
         protected UIChartStyle ChartStyle => UIChartStyles.GetChartStyle(ChartStyleType);
 
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="uiColor">主题样式</param>
         public override void SetStyleColor(UIBaseStyle uiColor)
         {
             base.SetStyleColor(uiColor);
@@ -197,33 +259,11 @@ namespace Sunny.UI
         [DefaultValue(8)]
         public int TextInterval { get; set; } = 8;
 
-        private Font subFont = UIFontColor.SubFont;
+        [Browsable(true)]
+        public Font SubFont { get; set; }
 
-        [DefaultValue(typeof(Font), "微软雅黑, 9pt")]
-        public Font SubFont
-        {
-            get => subFont;
-            set
-            {
-                subFont = value;
-                Invalidate();
-            }
-        }
-
-        private Font legendFont = UIFontColor.SubFont;
-
-        [DefaultValue(typeof(Font), "微软雅黑, 9pt")]
-        public Font LegendFont
-        {
-            get => legendFont;
-            set
-            {
-                legendFont = value;
-                if (tip != null) tip.Font = subFont;
-                Invalidate();
-            }
-        }
-
+        [Browsable(true)]
+        public Font LegendFont { get; set; }
         protected void DrawTitle(Graphics g, UITitle title)
         {
             if (title == null) return;
@@ -246,7 +286,7 @@ namespace Sunny.UI
 
             g.DrawString(title.Text, Font, ChartStyle.ForeColor, left, top);
 
-            SizeF sfs = g.MeasureString(title.SubText, SubFont);
+            SizeF sfs = g.MeasureString(title.SubText, TempFont);
             switch (title.Left)
             {
                 case UILeftAlignment.Left: left = TextInterval; break;
@@ -260,7 +300,7 @@ namespace Sunny.UI
                 case UITopAlignment.Bottom: top = top - sf.Height; break;
             }
 
-            g.DrawString(title.SubText, SubFont, ChartStyle.ForeColor, left, top);
+            g.DrawString(title.SubText, TempFont, ChartStyle.ForeColor, left, top);
         }
 
         protected void DrawLegend(Graphics g, UILegend legend)
@@ -274,7 +314,7 @@ namespace Sunny.UI
 
             foreach (var data in legend.Data)
             {
-                SizeF sf = g.MeasureString(data, LegendFont);
+                SizeF sf = g.MeasureString(data, TempLegendFont);
                 totalHeight += sf.Height;
                 totalWidth += sf.Width;
                 totalWidth += 20;
@@ -313,7 +353,7 @@ namespace Sunny.UI
             for (int i = 0; i < legend.DataCount; i++)
             {
                 var data = legend.Data[i];
-                SizeF sf = g.MeasureString(data, LegendFont);
+                SizeF sf = g.MeasureString(data, TempLegendFont);
                 Color color = ChartStyle.GetColor(i);
 
                 if (legend.Colors.Count > 0 && i >= 0 && i < legend.Colors.Count)
@@ -322,7 +362,7 @@ namespace Sunny.UI
                 if (legend.Orient == UIOrient.Horizontal)
                 {
                     g.FillRoundRectangle(color, (int)startLeft, (int)top + 1, 18, (int)oneHeight - 2, 5);
-                    g.DrawString(data, LegendFont, color, startLeft + 20, top);
+                    g.DrawString(data, TempLegendFont, color, startLeft + 20, top);
                     startLeft += 22;
                     startLeft += sf.Width;
                 }
@@ -330,7 +370,7 @@ namespace Sunny.UI
                 if (legend.Orient == UIOrient.Vertical)
                 {
                     g.FillRoundRectangle(color, (int)left, (int)startTop + 1, 18, (int)oneHeight - 2, 5);
-                    g.DrawString(data, LegendFont, color, left + 20, startTop);
+                    g.DrawString(data, TempLegendFont, color, left + 20, startTop);
                     startTop += oneHeight;
                 }
             }

@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,13 +13,14 @@
  ******************************************************************************
  * 文件名称: UIImageListBox.cs
  * 文件说明: 图片列表框
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
  * 2020-04-25: V2.2.4 更新主题配置类
  * 2020-05-21: V2.2.5 增加鼠标滑过高亮
  * 2021-08-07: V3.0.5 从文件载入图片，并且解除占用
+ * 2022-03-19: V3.1.1 重构主题配色
 ******************************************************************************/
 
 using System;
@@ -33,17 +34,15 @@ using System.Windows.Forms;
 namespace Sunny.UI
 {
     [DefaultEvent("ItemClick")]
-    public sealed partial class UIImageListBox : UIPanel,IToolTip
+    public sealed partial class UIImageListBox : UIPanel, IToolTip
     {
         private readonly ImageListBox listbox = new ImageListBox();
         private readonly UIScrollBar bar = new UIScrollBar();
 
         public UIImageListBox()
         {
-            InitializeComponent();
             SetStyleFlags(true, false);
             ShowText = false;
-
             Padding = new Padding(2);
 
             bar.ValueChanged += Bar_ValueChanged;
@@ -68,11 +67,15 @@ namespace Sunny.UI
             listbox.MouseMove += Listbox_MouseMove;
         }
 
-
+        /// <summary>
+        /// 需要额外设置ToolTip的控件
+        /// </summary>
+        /// <returns>控件</returns>
         public Control ExToolTipControl()
         {
             return listbox;
         }
+
         public int IndexFromPoint(Point p)
         {
             return listbox.IndexFromPoint(p);
@@ -89,11 +92,6 @@ namespace Sunny.UI
             if (listbox != null)
             {
                 listbox.BackColor = color;
-            }
-
-            if (bar != null)
-            {
-                bar.FillColor = color;
             }
         }
 
@@ -116,12 +114,21 @@ namespace Sunny.UI
         public new event MouseEventHandler MouseUp;
         public new event MouseEventHandler MouseMove;
 
+        /// <summary>
+        /// 重载字体变更
+        /// </summary>
+        /// <param name="e">参数</param>
         protected override void OnFontChanged(EventArgs e)
         {
             base.OnFontChanged(e);
+            listbox.IsScaled = true;
             listbox.Font = Font;
         }
 
+        /// <summary>
+        /// 重载控件尺寸变更
+        /// </summary>
+        /// <param name="e">参数</param>
         protected override void OnSizeChanged(EventArgs e)
         {
             base.OnSizeChanged(e);
@@ -136,7 +143,7 @@ namespace Sunny.UI
             {
                 listbox.SetScrollInfo();
                 LastCount = Items.Count;
-                ItemsCountChange?.Invoke(this, null);
+                ItemsCountChange?.Invoke(this, EventArgs.Empty);
             }
         }
 
@@ -200,26 +207,31 @@ namespace Sunny.UI
             set => listbox.ShowDescription = value;
         }
 
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="uiColor">主题样式</param>
         public override void SetStyleColor(UIBaseStyle uiColor)
         {
             base.SetStyleColor(uiColor);
             if (bar != null)
             {
-                bar.ForeColor = uiColor.PrimaryColor;
+                bar.ForeColor = uiColor.ListBarForeColor;
                 bar.HoverColor = uiColor.ButtonFillHoverColor;
                 bar.PressColor = uiColor.ButtonFillPressColor;
-                bar.FillColor = Color.White;
+                bar.FillColor = uiColor.ListBarFillColor;
             }
 
-            hoverColor = uiColor.TreeViewHoverColor;
+            hoverColor = uiColor.ListItemHoverColor;
             if (listbox != null)
             {
                 listbox.HoverColor = hoverColor;
                 listbox.SetStyleColor(uiColor);
-                listbox.BackColor = Color.White;
+                listbox.BackColor = uiColor.ListBackColor;
+                listbox.ForeColor = uiColor.ListForeColor;
             }
 
-            fillColor = Color.White;
+            fillColor = uiColor.ListBackColor;
         }
 
         private int LastCount;
@@ -242,11 +254,6 @@ namespace Sunny.UI
         {
             base.OnRadiusChanged(value);
             Padding = new Padding(Math.Max(2, value / 2));
-        }
-
-        protected override void OnPaintFill(Graphics g, GraphicsPath path)
-        {
-            g.Clear(Color.White);
         }
 
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
@@ -299,7 +306,7 @@ namespace Sunny.UI
             set => listbox.ItemSelectBackColor = value;
         }
 
-        [DefaultValue(typeof(Color), "White")]
+        [DefaultValue(typeof(Color), "243, 249, 255")]
         [Description("选中项字体颜色"), Category("SunnyUI")]
         public Color ItemSelectForeColor
         {
@@ -333,7 +340,7 @@ namespace Sunny.UI
 
         private Color hoverColor = Color.FromArgb(155, 200, 255);
 
-        [DefaultValue(typeof(Color), "155, 200, 255")]
+        [DefaultValue(typeof(Color), "220, 236, 255")]
         [Description("鼠标移上颜色"), Category("SunnyUI")]
         public Color HoverColor
         {
@@ -347,7 +354,7 @@ namespace Sunny.UI
         }
 
         [ToolboxItem(false)]
-        private sealed class ImageListBox : ListBox, IStyleInterface
+        private sealed class ImageListBox : ListBox
         {
             private UIScrollBar bar;
 
@@ -365,6 +372,18 @@ namespace Sunny.UI
                 {
                     bar = value;
                     SetScrollInfo();
+                }
+            }
+
+            [Browsable(false), DefaultValue(false)]
+            public bool IsScaled { get; set; }
+
+            public void SetDPIScale()
+            {
+                if (!IsScaled)
+                {
+                    this.SetDPIScaleFont();
+                    IsScaled = true;
                 }
             }
 
@@ -398,6 +417,10 @@ namespace Sunny.UI
                 SetScrollInfo();
             }
 
+            /// <summary>
+            /// 重载控件尺寸变更
+            /// </summary>
+            /// <param name="e">参数</param>
             protected override void OnSizeChanged(EventArgs e)
             {
                 if (Bar != null && Bar.Visible)
@@ -524,8 +547,12 @@ namespace Sunny.UI
 
             public void SetStyle(UIStyle style)
             {
-                UIBaseStyle uiColor = UIStyles.GetStyleColor(style);
-                if (!uiColor.IsCustom()) SetStyleColor(uiColor);
+                if (!style.IsCustom())
+                {
+                    SetStyleColor(style.Colors());
+                    Invalidate();
+                }
+
                 _style = style;
             }
 
@@ -533,7 +560,6 @@ namespace Sunny.UI
             {
                 ItemSelectBackColor = uiColor.ListItemSelectBackColor;
                 ItemSelectForeColor = uiColor.ListItemSelectForeColor;
-                Invalidate();
             }
 
             [Category("SunnyUI"), Description("The border color used to paint the control.")]
@@ -714,12 +740,20 @@ namespace Sunny.UI
                 }
             }
 
+            /// <summary>
+            /// 重载鼠标移动事件
+            /// </summary>
+            /// <param name="e">鼠标参数</param>
             protected override void OnMouseMove(MouseEventArgs e)
             {
                 base.OnMouseMove(e);
                 MouseIndex = IndexFromPoint(e.Location);
             }
 
+            /// <summary>
+            /// 重载鼠标离开事件
+            /// </summary>
+            /// <param name="e">鼠标参数</param>
             protected override void OnMouseLeave(EventArgs e)
             {
                 base.OnMouseLeave(e);
@@ -758,6 +792,9 @@ namespace Sunny.UI
                 return Description + ", " + ImagePath;
             }
 
+            /// <summary>
+            /// 析构函数
+            /// </summary>
             public void Dispose()
             {
                 Image?.Dispose();

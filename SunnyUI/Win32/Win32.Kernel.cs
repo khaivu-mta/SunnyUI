@@ -7,6 +7,7 @@ using HWND = System.IntPtr;
 
 namespace Sunny.UI.Win32
 {
+#pragma warning disable CS1591 // 缺少对公共可见类型或成员的 XML 注释
     public struct OVERLAPPED
     {
         public int Internal;
@@ -1209,20 +1210,20 @@ namespace Sunny.UI.Win32
         [DllImport("kernel32")] public static extern int WriteProfileSection(string lpAppName, string lpString);
         [DllImport("kernel32")] public static extern int WriteProfileString(string lpszSection, string lpszKeyName, string lpszString);
         [DllImport("kernel32")] public static extern int WriteTapemark(HANDLE hDevice, int dwTapemarkType, int dwTapemarkCount, int bimmediate);
-        [DllImport("kernel32")] public static extern int hread(HANDLE hFile, IntPtr lpBuffer, int lBytes);
-        [DllImport("kernel32")] public static extern int hwrite(HANDLE hFile, string lpBuffer, int lBytes);
-        [DllImport("kernel32")] public static extern int lclose(HANDLE hFile);
-        [DllImport("kernel32")] public static extern int lcreat(string lpPathName, int iAttribute);
-        [DllImport("kernel32")] public static extern int llseek(HANDLE hFile, int lOffset, int iOrigin);
-        [DllImport("kernel32")] public static extern int lopen(string lpPathName, int iReadWrite);
-        [DllImport("kernel32")] public static extern int lread(HANDLE hFile, IntPtr lpBuffer, int wBytes);
+        [DllImport("kernel32")] public static extern int _hread(HANDLE hFile, IntPtr lpBuffer, int lBytes);
+        [DllImport("kernel32")] public static extern int _hwrite(HANDLE hFile, string lpBuffer, int lBytes);
+        [DllImport("kernel32")] public static extern int _lclose(HANDLE hFile);
+        [DllImport("kernel32")] public static extern int _lcreat(string lpPathName, int iAttribute);
+        [DllImport("kernel32")] public static extern int _llseek(HANDLE hFile, int lOffset, int iOrigin);
+        [DllImport("kernel32")] public static extern int _lopen(string lpPathName, int iReadWrite);
+        [DllImport("kernel32")] public static extern int _lread(HANDLE hFile, IntPtr lpBuffer, int wBytes);
         [DllImport("kernel32")] public static extern int lstrcat(string lpString1, string lpString2);
         [DllImport("kernel32")] public static extern int lstrcmp(string lpString1, string lpString2);
         [DllImport("kernel32")] public static extern int lstrcmpi(string lpString1, string lpString2);
         [DllImport("kernel32")] public static extern int lstrcpy(string lpString1, string lpString2);
         [DllImport("kernel32")] public static extern int lstrcpyn(string lpString1, string lpString2, int iMaxLength);
         [DllImport("kernel32")] public static extern int lstrlen(string lpString);
-        [DllImport("kernel32")] public static extern int lwrite(HANDLE hFile, string lpBuffer, int wBytes);
+        [DllImport("kernel32")] public static extern int _lwrite(HANDLE hFile, string lpBuffer, int wBytes);
         [DllImport("kernel32")] public static extern short GetSystemDefaultLangID();
         [DllImport("kernel32")] public static extern short GetUserDefaultLangID();
         [DllImport("kernel32")] public static extern short GlobalAddAtom(string lpString);
@@ -2394,4 +2395,6 @@ namespace Sunny.UI.Win32
         public const string SE_TCB_NAME = "SeTcbPrivilege";
         public const string SE_UNSOLICITED_INPUT_NAME = "SeUnsolicitedInputPrivilege";
     }
+
+#pragma warning restore CS1591 // 缺少对公共可见类型或成员的 XML 注释
 }

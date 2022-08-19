@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,12 +13,13 @@
  ******************************************************************************
  * 文件名称: UIStatusForm.cs
  * 文件说明: 进度提示窗体
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-05-05
  *
  * 2020-05-05: V2.2.5 增加文件
 ******************************************************************************/
 
+using System;
 using System.ComponentModel;
 
 namespace Sunny.UI
@@ -32,14 +33,14 @@ namespace Sunny.UI
             Description = UILocalize.SystemProcessing;
         }
 
-        public UIStatusForm(int max, string desc, int decimalCount = 1)
+        public UIStatusForm(int max, string desc, int decimalPlaces = 1)
         {
             InitializeComponent();
-
+            Text = UILocalize.InfoTitle;
             Maximum = max;
             Description = desc;
             Value = 0;
-            DecimalCount = decimalCount;
+            DecimalPlaces = decimalPlaces;
         }
 
         [DefaultValue(100)]
@@ -99,10 +100,18 @@ namespace Sunny.UI
             set => labelDescription.Text = value;
         }
 
+        public int DecimalPlaces
+        {
+            get => processBar.DecimalPlaces;
+            set => processBar.DecimalPlaces = value;
+        }
+
+
+        [Obsolete("请用DecimalPlaces代替。")]
         public int DecimalCount
         {
-            get => processBar.DecimalCount;
-            set => processBar.DecimalCount = value;
+            get => processBar.DecimalPlaces;
+            set => processBar.DecimalPlaces = value;
         }
 
         private delegate void SetTextHandler(string text);

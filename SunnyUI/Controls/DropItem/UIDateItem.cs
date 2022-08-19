@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,7 +13,7 @@
  ******************************************************************************
  * 文件名称: UIDateItem.cs
  * 文件说明: 日期选择框弹出窗体
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
@@ -326,6 +326,16 @@ namespace Sunny.UI
             Translate();
         }
 
+        public override void SetDPIScale()
+        {
+            if (!IsScaled)
+            {
+                TopPanel.SetDPIScaleFont();
+            }
+
+            base.SetDPIScale();
+        }
+
         public void Translate()
         {
             months.Clear();
@@ -345,8 +355,11 @@ namespace Sunny.UI
 
         private void TopPanel_Click(object sender, EventArgs e)
         {
-            TabControl.SelectedTab = tabPage1;
-            activeDay = -1;
+            if (TabControl.SelectedIndex > 0)
+            {
+                TabControl.SelectedIndex--;
+                activeDay = -1;
+            }
         }
 
         private DateTime date;
@@ -538,12 +551,25 @@ namespace Sunny.UI
             }
         }
 
-        public override void SetRectColor(Color color)
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="uiColor">主题样式</param>
+        public override void SetStyleColor(UIBaseStyle uiColor)
         {
-            base.SetRectColor(color);
-            RectColor = color;
-            b1.ForeColor = b2.ForeColor = b3.ForeColor = b4.ForeColor = color;
-            TopPanel.RectColor = p1.RectColor = p2.RectColor = p3.RectColor = color;
+            base.SetStyleColor(uiColor);
+            b1.SetStyleColor(uiColor);
+            b2.SetStyleColor(uiColor);
+            b3.SetStyleColor(uiColor);
+            b4.SetStyleColor(uiColor);
+            fillColor = Color.White;
+            foreColor = uiColor.DropDownPanelForeColor;
+
+            b1.FillColor = b2.FillColor = b3.FillColor = b4.FillColor = TopPanel.FillColor;
+            RectColor = uiColor.RectColor;
+            b1.SymbolColor = b2.SymbolColor = b3.SymbolColor = b4.SymbolColor = uiColor.RectColor;
+            b1.ForeColor = b2.ForeColor = b3.ForeColor = b4.ForeColor = uiColor.RectColor;
+            TopPanel.RectColor = p1.RectColor = p2.RectColor = p3.RectColor = uiColor.RectColor;
         }
 
         private void p2_Paint(object sender, System.Windows.Forms.PaintEventArgs e)
@@ -582,7 +608,7 @@ namespace Sunny.UI
             {
                 date = new DateTime(Year, Month, 1);
                 DoValueChanged(this, Date);
-                CloseParent();
+                Close();
             }
             else
             {
@@ -657,7 +683,7 @@ namespace Sunny.UI
             {
                 date = new DateTime(Year, 1, 1);
                 DoValueChanged(this, Date);
-                CloseParent();
+                Close();
             }
             else
             {
@@ -711,7 +737,7 @@ namespace Sunny.UI
 
             if (ShowToday)
             {
-                using (Font SubFont = new Font("微软雅黑", 10.5f))
+                using (Font SubFont = new Font("微软雅黑", 10.5f / UIDPIScale.DPIScale()))
                 {
                     e.Graphics.FillRectangle(p3.FillColor, p3.Width - width * 4 + 1, p3.Height - height + 1, width * 4 - 2, height - 2);
                     e.Graphics.FillRoundRectangle(PrimaryColor, new Rectangle(p3.Width - width * 4 + 6, p3.Height - height + 3, 8, height - 10), 3);
@@ -730,6 +756,13 @@ namespace Sunny.UI
 
         private void p3_MouseMove(object sender, System.Windows.Forms.MouseEventArgs e)
         {
+            if (e.Location.Y <= 30)
+            {
+                activeDay = -1;
+                p3.Invalidate();
+                return;
+            }
+
             int width = p3.Width / 7;
             int height = (p3.Height - 30) / 6;
             int x = e.Location.X / width;
@@ -747,6 +780,7 @@ namespace Sunny.UI
 
         private void p3_MouseClick(object sender, System.Windows.Forms.MouseEventArgs e)
         {
+            if (e.Location.Y <= 30) return;
             int width = p3.Width / 7;
             int height = (p3.Height - 30) / 6;
             int x = e.Location.X / width;
@@ -761,7 +795,7 @@ namespace Sunny.UI
             }
 
             DoValueChanged(this, Date);
-            CloseParent();
+            Close();
         }
 
         public Color PrimaryColor { get; set; } = UIColor.Blue;

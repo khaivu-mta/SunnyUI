@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,10 +13,11 @@
  ******************************************************************************
  * 文件名称: UIAvatar.cs
  * 文件说明: 头像
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
+ * 2022-03-19: V3.1.1 重构主题配色
 ******************************************************************************/
 
 using System;
@@ -34,7 +35,7 @@ namespace Sunny.UI
     [DefaultEvent("Click")]
     [DefaultProperty("Symbol")]
     [ToolboxItem(true)]
-    public sealed class UIAvatar : UIControl, ISymbol
+    public sealed class UIAvatar : UIControl, ISymbol, IZoomScale
     {
         /// <summary>
         /// 头像图标类型
@@ -67,18 +68,23 @@ namespace Sunny.UI
             ShowText = false;
             ShowRect = false;
 
-            fillColor = UIStyles.GetStyleColor(UIStyle.Blue).AvatarFillColor;
-            foreColor = UIStyles.GetStyleColor(UIStyle.Blue).AvatarForeColor;
+            fillColor = UIStyles.Blue.AvatarFillColor;
+            foreColor = UIStyles.Blue.AvatarForeColor;
         }
 
         private int avatarSize = 60;
+        private int baseAvatorSize = 60;
 
+        /// <summary>
+        /// 头像大小
+        /// </summary>
         [DefaultValue(60), Description("头像大小"), Category("SunnyUI")]
         public int AvatarSize
         {
             get => avatarSize;
             set
             {
+                baseAvatorSize = value;
                 avatarSize = value;
                 Invalidate();
             }
@@ -113,9 +119,9 @@ namespace Sunny.UI
         public override void SetStyleColor(UIBaseStyle uiColor)
         {
             base.SetStyleColor(uiColor);
+
             fillColor = uiColor.AvatarFillColor;
             foreColor = uiColor.AvatarForeColor;
-            Invalidate();
         }
 
         private UIIcon icon = UIIcon.Symbol;
@@ -176,11 +182,12 @@ namespace Sunny.UI
         }
 
         private int symbolSize = 45;
+        private int baseSymbolSize = 45;
 
         /// <summary>
-        /// 图标大小
+        /// 字体图标大小
         /// </summary>
-        [DefaultValue(45), Description("图标大小"), Category("SunnyUI")]
+        [DefaultValue(45), Description("字体图标大小"), Category("SunnyUI")]
         public int SymbolSize
         {
             get => symbolSize;
@@ -190,6 +197,7 @@ namespace Sunny.UI
                 {
                     symbolSize = Math.Max(value, 16);
                     symbolSize = Math.Min(value, 128);
+                    baseSymbolSize = symbolSize;
                     Invalidate();
                 }
             }
@@ -198,11 +206,11 @@ namespace Sunny.UI
         private int symbol = 61447;
 
         /// <summary>
-        /// 图标字符
+        /// 字体图标
         /// </summary>
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
-        [Editor(typeof(UIImagePropertyEditor), typeof(UITypeEditor))]
-        [DefaultValue(61447), Description("图标"), Category("SunnyUI")]
+        [Editor("Sunny.UI.UIImagePropertyEditor, " + AssemblyRefEx.SystemDesign, typeof(UITypeEditor))]
+        [DefaultValue(61447), Description("字体图标"), Category("SunnyUI")]
         public int Symbol
         {
             get => symbol;
@@ -218,6 +226,9 @@ namespace Sunny.UI
 
         private Point symbolOffset = new Point(0, 0);
 
+        /// <summary>
+        /// 字体图标的偏移位置
+        /// </summary>
         [DefaultValue(typeof(Point), "0, 0")]
         [Description("字体图标的偏移位置"), Category("SunnyUI")]
         public Point SymbolOffset
@@ -232,6 +243,9 @@ namespace Sunny.UI
 
         private Point textOffset = new Point(0, 0);
 
+        /// <summary>
+        /// 文字的偏移位置
+        /// </summary>
         [DefaultValue(typeof(Point), "0, 0")]
         [Description("文字的偏移位置"), Category("SunnyUI")]
         public Point TextOffset
@@ -246,8 +260,11 @@ namespace Sunny.UI
 
         private Point imageOffset = new Point(0, 0);
 
+        /// <summary>
+        /// 图片的偏移位置
+        /// </summary>
         [DefaultValue(typeof(Point), "0, 0")]
-        [Description("文字的偏移位置"), Category("SunnyUI")]
+        [Description("图片的偏移位置"), Category("SunnyUI")]
         public Point ImageOffset
         {
             get => imageOffset;
@@ -259,10 +276,10 @@ namespace Sunny.UI
         }
 
         /// <summary>
-        /// OnPaintFill
+        /// 绘制填充颜色
         /// </summary>
-        /// <param name="g">g</param>
-        /// <param name="path">path</param>
+        /// <param name="g">绘图图面</param>
+        /// <param name="path">绘图路径</param>
         protected override void OnPaintFill(Graphics g, GraphicsPath path)
         {
             Rectangle rect = new Rectangle((Width - avatarSize) / 2, (Height - avatarSize) / 2, avatarSize, avatarSize);
@@ -279,18 +296,27 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 水平偏移
+        /// </summary>
         [Browsable(false), DefaultValue(0), Description("水平偏移"), Category("SunnyUI")]
         public int OffsetX { get; set; } = 0;
 
+        /// <summary>
+        /// 垂直偏移
+        /// </summary>
         [Browsable(false), DefaultValue(0), Description("垂直偏移"), Category("SunnyUI")]
         public int OffsetY { get; set; } = 0;
 
+        /// <summary>
+        /// 继续绘制
+        /// </summary>
         public event PaintEventHandler PaintAgain;
 
         /// <summary>
-        /// OnPaint
+        /// 重载绘图
         /// </summary>
-        /// <param name="e">e</param>
+        /// <param name="e">绘图参数</param>
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
@@ -349,6 +375,18 @@ namespace Sunny.UI
             }
 
             PaintAgain?.Invoke(this, e);
+        }
+
+        /// <summary>
+        /// 设置控件缩放比例
+        /// </summary>
+        /// <param name="scale">缩放比例</param>
+        public override void SetZoomScale(float scale)
+        {
+            base.SetZoomScale(scale);
+            avatarSize = UIZoomScale.Calc(baseAvatorSize, scale);
+            symbolSize = UIZoomScale.Calc(baseSymbolSize, scale);
+            Invalidate();
         }
     }
 }

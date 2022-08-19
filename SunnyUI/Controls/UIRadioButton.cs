@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,13 +13,14 @@
  ******************************************************************************
  * 文件名称: UIRadioButton.cs
  * 文件说明: 单选框
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
  * 2020-04-16: V2.2.1 增加ReadOnly属性
  * 2020-04-25: V2.2.4 更新主题配置类
  * 2021-04-26: V3.0.3 增加默认事件CheckedChanged
+ * 2022-03-19: V3.1.1 重构主题配色
 ******************************************************************************/
 
 using System;
@@ -48,14 +49,19 @@ namespace Sunny.UI
             Cursor = Cursors.Hand;
             ShowRect = false;
             Size = new Size(150, 29);
-            foreColor = UIStyles.GetStyleColor(UIStyle.Blue).CheckBoxForeColor;
-            fillColor = UIStyles.GetStyleColor(UIStyle.Blue).CheckBoxColor;
+
+            foreColor = UIStyles.Blue.CheckBoxForeColor;
+            fillColor = UIStyles.Blue.CheckBoxColor;
         }
 
+        /// <summary>
+        /// 重载绘图
+        /// </summary>
+        /// <param name="e">绘图参数</param>
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
-            if (AutoSize)
+            if (AutoSize && Dock == DockStyle.None)
             {
                 SizeF sf = Text.MeasureString(Font);
                 int w = (int)sf.Width + ImageSize + 3;
@@ -158,6 +164,11 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 绘制前景颜色
+        /// </summary>
+        /// <param name="g">绘图图面</param>
+        /// <param name="path">绘图路径</param>
         protected override void OnPaintFore(Graphics g, GraphicsPath path)
         {
             //设置按钮标题位置
@@ -170,6 +181,11 @@ namespace Sunny.UI
             g.DrawString(Text, Font, color, Size, Padding, ContentAlignment.MiddleLeft);
         }
 
+        /// <summary>
+        /// 绘制填充颜色
+        /// </summary>
+        /// <param name="g">绘图图面</param>
+        /// <param name="path">绘图路径</param>
         protected override void OnPaintFill(Graphics g, GraphicsPath path)
         {
             //图标
@@ -209,6 +225,10 @@ namespace Sunny.UI
             Invalidate();
         }
 
+        /// <summary>
+        /// 点击事件
+        /// </summary>
+        /// <param name="e">参数</param>
         protected override void OnClick(EventArgs e)
         {
             if (!ReadOnly)
@@ -219,12 +239,15 @@ namespace Sunny.UI
             base.OnClick(e);
         }
 
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="uiColor">主题样式</param>
         public override void SetStyleColor(UIBaseStyle uiColor)
         {
             base.SetStyleColor(uiColor);
             fillColor = uiColor.CheckBoxColor;
             foreColor = uiColor.CheckBoxForeColor;
-            Invalidate();
         }
 
         [DefaultValue(0)]

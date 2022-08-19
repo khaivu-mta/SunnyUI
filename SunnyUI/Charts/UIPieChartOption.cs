@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,7 +13,7 @@
  ******************************************************************************
  * 文件名称: UIPieChartOption.cs
  * 文件说明: 饼状图配置类
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-06-06
  *
  * 2020-06-06: V2.2.5 增加文件说明
@@ -37,6 +37,9 @@ namespace Sunny.UI
             Series.Add(series);
         }
 
+        /// <summary>
+        /// 析构函数
+        /// </summary>
         public void Dispose()
         {
             foreach (var series in Series)
@@ -61,6 +64,13 @@ namespace Sunny.UI
                 return null;
             }
         }
+
+        private int decimalPlaces = 0;
+        public int DecimalPlaces
+        {
+            get => decimalPlaces;
+            set => decimalPlaces = Math.Max(0, value);
+        }
     }
 
     public class UIDoughnutOption : UIOption, IDisposable
@@ -75,6 +85,9 @@ namespace Sunny.UI
             Series.Add(series);
         }
 
+        /// <summary>
+        /// 析构函数
+        /// </summary>
         public void Dispose()
         {
             foreach (var series in Series)
@@ -99,6 +112,13 @@ namespace Sunny.UI
                 return null;
             }
         }
+
+        private int decimalPlaces = 0;
+        public int DecimalPlaces
+        {
+            get => decimalPlaces;
+            set => decimalPlaces = Math.Max(0, value);
+        }
     }
 
     public class UIPieToolTip : UIChartToolTip
@@ -106,7 +126,6 @@ namespace Sunny.UI
         public UIPieToolTip()
         {
             Formatter = "{{a}}" + '\n' + "{{b}} : {{c}} ({{d}}%)";
-            ValueFormat = "F0";
             Visible = true;
         }
     }
@@ -147,6 +166,9 @@ namespace Sunny.UI
             Data.Add(new UIPieSeriesData(name, value, color));
         }
 
+        /// <summary>
+        /// 析构函数
+        /// </summary>
         public void Dispose()
         {
             Data.Clear();
@@ -199,6 +221,9 @@ namespace Sunny.UI
             Data.Add(new UIPieSeriesData(name, value, color));
         }
 
+        /// <summary>
+        /// 析构函数
+        /// </summary>
         public void Dispose()
         {
             Data.Clear();

@@ -50,19 +50,22 @@
             this.Aside.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(240)))), ((int)(((byte)(240)))));
             this.Aside.ItemHeight = 36;
             this.Aside.LineColor = System.Drawing.Color.Black;
-            this.Aside.Location = new System.Drawing.Point(2, 145);
-            this.Aside.MenuStyle = Sunny.UI.UIMenuStyle.Black;
+            this.Aside.Location = new System.Drawing.Point(2, 146);
+            this.Aside.MenuStyle = Sunny.UI.UIMenuStyle.Custom;
+            this.Aside.ScrollBarColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(240)))), ((int)(((byte)(240)))));
+            this.Aside.ScrollBarHoverColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(240)))), ((int)(((byte)(240)))));
+            this.Aside.ScrollBarPressColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(240)))), ((int)(((byte)(240)))));
             this.Aside.ShowOneNode = true;
             this.Aside.ShowSecondBackColor = true;
             this.Aside.ShowTips = true;
-            this.Aside.Size = new System.Drawing.Size(250, 573);
+            this.Aside.Size = new System.Drawing.Size(250, 572);
             this.Aside.Style = Sunny.UI.UIStyle.Custom;
             // 
             // Header
             // 
             this.Header.Controls.Add(this.uiAvatar);
             this.Header.Controls.Add(this.uiLogo1);
-            this.Header.Location = new System.Drawing.Point(2, 35);
+            this.Header.Location = new System.Drawing.Point(2, 36);
             treeNode1.ImageIndex = 1;
             treeNode1.Name = "节点0";
             treeNode1.Text = "控件";
@@ -97,6 +100,7 @@
             this.uiLogo1.Style = Sunny.UI.UIStyle.Custom;
             this.uiLogo1.TabIndex = 3;
             this.uiLogo1.Text = "uiLogo1";
+            this.uiLogo1.ZoomScaleRect = new System.Drawing.Rectangle(0, 0, 0, 0);
             // 
             // uiAvatar
             // 
@@ -108,15 +112,23 @@
             this.uiAvatar.Size = new System.Drawing.Size(66, 70);
             this.uiAvatar.TabIndex = 4;
             this.uiAvatar.Text = "uiAvatar1";
+            this.uiAvatar.ZoomScaleRect = new System.Drawing.Rectangle(0, 0, 0, 0);
+            // 
+            // StyleManager
+            // 
+            this.StyleManager.DPIScale = true;
             // 
             // uiContextMenuStrip1
             // 
+            this.uiContextMenuStrip1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(243)))), ((int)(((byte)(249)))), ((int)(((byte)(255)))));
             this.uiContextMenuStrip1.Font = new System.Drawing.Font("微软雅黑", 12F);
+            this.uiContextMenuStrip1.IsScaled = true;
             this.uiContextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.关于ToolStripMenuItem,
             this.关于ToolStripMenuItem1});
             this.uiContextMenuStrip1.Name = "uiContextMenuStrip1";
             this.uiContextMenuStrip1.Size = new System.Drawing.Size(113, 56);
+            this.uiContextMenuStrip1.ZoomScaleRect = new System.Drawing.Rectangle(0, 0, 0, 0);
             // 
             // 关于ToolStripMenuItem
             // 
@@ -141,13 +153,14 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MinimumSize = new System.Drawing.Size(1024, 720);
             this.Name = "FMain";
-            this.Padding = new System.Windows.Forms.Padding(2, 35, 2, 2);
+            this.Padding = new System.Windows.Forms.Padding(2, 36, 2, 2);
             this.ShowDragStretch = true;
-            this.ShowIcon = true;
             this.ShowRadius = false;
             this.ShowShadow = true;
             this.Text = "SunnyUI.Net";
+            this.ZoomScaleRect = new System.Drawing.Rectangle(15, 15, 1024, 720);
             this.Selecting += new Sunny.UI.UIMainFrame.OnSelecting(this.FMain_Selecting);
+            this.HotKeyEventHandler += new Sunny.UI.HotKeyEventHandler(this.FMain_HotKeyEventHandler);
             this.Controls.SetChildIndex(this.Header, 0);
             this.Controls.SetChildIndex(this.Aside, 0);
             this.Header.ResumeLayout(false);

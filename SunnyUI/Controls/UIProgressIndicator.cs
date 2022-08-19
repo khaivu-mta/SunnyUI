@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,11 +13,12 @@
  ******************************************************************************
  * 文件名称: UIProgressIndicator.cs
  * 文件说明: 进度指示器
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
  * 2020-04-25: V2.2.4 更新主题配置类
+ * 2022-03-19: V3.1.1 重构主题配色
 ******************************************************************************/
 
 using System;
@@ -31,13 +32,14 @@ namespace Sunny.UI
     [ToolboxItem(true)]
     public sealed class UIProgressIndicator : UIControl
     {
-        private readonly Timer timer = new Timer();
+        private readonly Timer timer;
 
         public UIProgressIndicator()
         {
             SetStyleFlags(true, false);
             Width = Height = 100;
 
+            timer = new Timer();
             timer.Interval = 200;
             timer.Tick += timer_Tick;
             timer.Start();
@@ -45,27 +47,46 @@ namespace Sunny.UI
             ShowText = false;
             ShowRect = false;
 
-            foreColor = UIColor.Blue;
+            foreColor = UIStyles.Blue.ProgressIndicatorColor;
         }
 
-        ~UIProgressIndicator()
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            timer?.Stop();
+            timer?.Dispose();
+        }
+
+        public void Start()
+        {
+            timer.Start();
+        }
+
+        public void Stop()
         {
             timer.Stop();
-            timer.Dispose();
         }
 
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="uiColor">主题样式</param>
         public override void SetStyleColor(UIBaseStyle uiColor)
         {
             base.SetStyleColor(uiColor);
             foreColor = uiColor.ProgressIndicatorColor;
             ClearImage();
-            Invalidate();
         }
 
         private int Index;
 
         private Image image;
 
+        /// <summary>
+        /// 绘制填充颜色
+        /// </summary>
+        /// <param name="g">绘图图面</param>
+        /// <param name="path">绘图路径</param>
         protected override void OnPaintFill(Graphics g, GraphicsPath path)
         {
             int circleSize = Math.Min(Width, Height).Div(6);
@@ -129,6 +150,10 @@ namespace Sunny.UI
             }
         }
 
+        /// <summary>
+        /// 重载控件尺寸变更
+        /// </summary>
+        /// <param name="e">参数</param>
         protected override void OnSizeChanged(EventArgs e)
         {
             base.OnSizeChanged(e);

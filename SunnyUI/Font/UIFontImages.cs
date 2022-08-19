@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2021 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -13,10 +13,11 @@
  ******************************************************************************
  * 文件名称: UIFontImages.cs
  * 文件说明: 字体图片属性窗体
- * 当前版本: V3.0
+ * 当前版本: V3.1
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
+ * 2022-01-28: V3.1.0 增加搜索框，搜索结果标红显示
 ******************************************************************************/
 
 using System;
@@ -31,7 +32,7 @@ namespace Sunny.UI
     /// <summary>
     /// 字体图标编辑器
     /// </summary>
-    public partial class UIFontImages : Form, ISymbol
+    internal partial class UIFontImages : Form, ISymbol
     {
         private readonly ConcurrentQueue<Label> FontAwesomeV4Labels = new ConcurrentQueue<Label>();
         private readonly ConcurrentQueue<Label> ElegantIconsLabels = new ConcurrentQueue<Label>();
@@ -220,15 +221,25 @@ namespace Sunny.UI
             toolTip.SetToolTip(lbl, symbol.ToString());
         }
 
-        public struct SymbolValue
+        public class SymbolValue
         {
+            /// <summary>
+            /// 字体图标
+            /// </summary>
             public int Symbol { get; set; }
 
             public UISymbolType SymbolType { get; set; }
 
+            public string Name { get; set; }
+
+            public bool IsRed { get; set; }
+
             public override string ToString()
             {
-                return Symbol.ToString();
+                if (Name.IsValid())
+                    return Name + Environment.NewLine + (((int)SymbolType) * 100000 + Symbol).ToString();
+                else
+                    return (((int)SymbolType) * 100000 + Symbol).ToString();
             }
         }
 
@@ -252,10 +263,31 @@ namespace Sunny.UI
             return lbl;
         }
 
+        private Label CreateLabel(string name, int icon, UISymbolType symbolType)
+        {
+            Label lbl = new Label
+            {
+                AutoSize = false,
+                Size = new Size(32, 32),
+                ForeColor = UIColor.Blue,
+                Image = FontImageHelper.CreateImage(icon + (int)symbolType * 100000, 28, UIFontColor.Primary),
+                ImageAlign = ContentAlignment.MiddleCenter,
+                TextAlign = ContentAlignment.MiddleLeft,
+                Margin = new Padding(2)
+            };
+
+            lbl.Click += lbl_DoubleClick;
+            lbl.MouseEnter += Lbl_MouseEnter;
+            lbl.MouseLeave += Lbl_MouseLeave;
+            lbl.Tag = new SymbolValue() { Name = name.Replace("fa_", ""), Symbol = icon, SymbolType = symbolType };
+            return lbl;
+        }
+
         private void Lbl_MouseLeave(object sender, EventArgs e)
         {
             Label lbl = (Label)sender;
             SymbolValue symbol = (SymbolValue)lbl.Tag;
+            if (symbol.IsRed) return;
             lbl.Image = FontImageHelper.CreateImage(symbol.Symbol + (int)symbol.SymbolType * 100000, 28, UIFontColor.Primary);
         }
 
@@ -263,15 +295,25 @@ namespace Sunny.UI
         {
             Label lbl = (Label)sender;
             SymbolValue symbol = (SymbolValue)lbl.Tag;
+            if (symbol.IsRed) return;
             lbl.Image = FontImageHelper.CreateImage(symbol.Symbol + (int)symbol.SymbolType * 100000, 28, UIColor.Blue);
         }
 
+        /// <summary>
+        /// 字体图标
+        /// </summary>
         public int Symbol { get; set; }
 
         public UISymbolType SymbolType { get; set; }
 
+        /// <summary>
+        /// 字体图标的偏移位置
+        /// </summary>
         public Point SymbolOffset { get; set; }
 
+        /// <summary>
+        /// 字体图标大小
+        /// </summary>
         public int SymbolSize { get; set; } = 28;
 
         private void lbl_DoubleClick(object sender, EventArgs e)
@@ -286,54 +328,120 @@ namespace Sunny.UI
             }
         }
 
+        private void LoadLabels(Type type, ConcurrentQueue<Label> labels, UISymbolType symbolType)
+        {
+            foreach (var fieldInfo in type.GetFields())
+            {
+                var obj = fieldInfo.GetRawConstantValue();
+                if (obj is int value)
+                {
+                    labels.Enqueue(CreateLabel(fieldInfo.Name, value, symbolType));
+                }
+            }
+        }
+
         private void bg_DoWork(object sender, DoWorkEventArgs e)
         {
-            var t = typeof(FontAwesomeIcons);
-            foreach (var fieldInfo in t.GetFields())
-            {
-                int value = fieldInfo.GetRawConstantValue().ToString().ToInt();
-                FontAwesomeV4Labels.Enqueue(CreateLabel(value, UISymbolType.FontAwesomeV4));
-            }
+            //public const int FontAwesomeV4Count = 786; 
+            LoadLabels(typeof(FontAwesomeIcons), FontAwesomeV4Labels, UISymbolType.FontAwesomeV4);
         }
 
         private void bg2_DoWork(object sender, DoWorkEventArgs e)
         {
-            var t = typeof(FontElegantIcons);
-            foreach (var fieldInfo in t.GetFields())
-            {
-                int value = fieldInfo.GetRawConstantValue().ToString().ToInt();
-                ElegantIconsLabels.Enqueue(CreateLabel(value, UISymbolType.FontAwesomeV4));
-            }
+            //public const int ElegantIconsCount = 360;
+            LoadLabels(typeof(FontElegantIcons), ElegantIconsLabels, UISymbolType.FontAwesomeV4);
         }
 
         private void bg3_DoWork(object sender, DoWorkEventArgs e)
         {
-            var t = typeof(FontAweSomeV5Brands);
-            foreach (var fieldInfo in t.GetFields())
-            {
-                int value = fieldInfo.GetRawConstantValue().ToString().ToInt();
-                FontAwesomeV5BrandsLabels.Enqueue(CreateLabel(value, UISymbolType.FontAwesomeV5Brands));
-            }
+            //public const int FontAwesomeV5BrandsCount = 457;
+            LoadLabels(typeof(FontAweSomeV5Brands), FontAwesomeV5BrandsLabels, UISymbolType.FontAwesomeV5Brands);
         }
 
         private void bg4_DoWork(object sender, DoWorkEventArgs e)
         {
-            var t = typeof(FontAweSomeV5Regular);
-            foreach (var fieldInfo in t.GetFields())
-            {
-                int value = fieldInfo.GetRawConstantValue().ToString().ToInt();
-                FontAwesomeV5RegularLabels.Enqueue(CreateLabel(value, UISymbolType.FontAwesomeV5Regular));
-            }
+            //public const int FontAwesomeV5RegularCount = 151;
+            LoadLabels(typeof(FontAweSomeV5Regular), FontAwesomeV5RegularLabels, UISymbolType.FontAwesomeV5Regular);
         }
 
         private void bg5_DoWork(object sender, DoWorkEventArgs e)
         {
-            var t = typeof(FontAweSomeV5Solid);
-            foreach (var fieldInfo in t.GetFields())
+            //public const int FontAwesomeV5SolidCount = 1001;
+            LoadLabels(typeof(FontAweSomeV5Solid), FontAwesomeV5SolidLabels, UISymbolType.FontAwesomeV5Solid);
+        }
+
+        int findCount = 0;
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            if (textBox1.Text.IsNullOrEmpty()) return;
+            findCount = 0;
+            foreach (var item in lpV5Brands.Controls)
             {
-                int value = fieldInfo.GetRawConstantValue().ToString().ToInt();
-                FontAwesomeV5SolidLabels.Enqueue(CreateLabel(value, UISymbolType.FontAwesomeV5Solid));
+                if (item is Label lbl)
+                {
+                    SetLabelFilter(lbl);
+                }
             }
+
+            foreach (var item in lpAwesome.Controls)
+            {
+                if (item is Label lbl)
+                {
+                    SetLabelFilter(lbl);
+                }
+            }
+
+            foreach (var item in lpElegant.Controls)
+            {
+                if (item is Label lbl)
+                {
+                    SetLabelFilter(lbl);
+                }
+            }
+
+            foreach (var item in lpV5Regular.Controls)
+            {
+                if (item is Label lbl)
+                {
+                    SetLabelFilter(lbl);
+                }
+            }
+
+            foreach (var item in lpV5Solid.Controls)
+            {
+                if (item is Label lbl)
+                {
+                    SetLabelFilter(lbl);
+                }
+            }
+
+            label1.Text = findCount + " results.";
+        }
+
+        private void SetLabelFilter(Label lbl)
+        {
+            SymbolValue symbol = (SymbolValue)lbl.Tag;
+            if (textBox1.Text.IsNullOrEmpty() || !symbol.Name.Contains(textBox1.Text))
+            {
+                if (symbol.IsRed)
+                    lbl.Image = FontImageHelper.CreateImage(symbol.Symbol + (int)symbol.SymbolType * 100000, 28, UIFontColor.Primary);
+
+                symbol.IsRed = false;
+            }
+            else
+            {
+                if (!symbol.IsRed)
+                    lbl.Image = FontImageHelper.CreateImage(symbol.Symbol + (int)symbol.SymbolType * 100000, 28, UIColor.Red);
+
+                symbol.IsRed = true;
+                findCount++;
+            }
+        }
+
+        private void UIFontImages_Shown(object sender, EventArgs e)
+        {
+            textBox1.Focus();
         }
     }
 
