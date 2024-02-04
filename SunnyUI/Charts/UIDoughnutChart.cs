@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -19,6 +19,7 @@
  * 2020-06-06: V2.2.5 增加文件说明
  * 2021-07-22: V3.0.5 增加更新数据的方法
  * 2022-07-29: V3.2.2 数据显示的小数位数重构调整至Option.DecimalPlaces
+ * 2023-05-14: V3.3.6 重构DrawString函数
 ******************************************************************************/
 
 using System;
@@ -81,13 +82,17 @@ namespace Sunny.UI
 
         public override void Refresh()
         {
-            base.Refresh();
-            if (Option != null)
-            {
-                SetOption(Option);
-            }
-
+            if (Option != null) SetOption(Option);
             CalcData();
+
+            if (InvokeRequired)
+            {
+                Invoke(new Action(base.Refresh));
+            }
+            else
+            {
+                base.Refresh();
+            }
         }
 
         /// <summary>
@@ -148,7 +153,7 @@ namespace Sunny.UI
 
                     Angle pieAngle = new Angle(start, angle, text);
                     GetSeriesRect(pie, ref pieAngle);
-                    Angles[pieIndex].TryAddOrUpdate(i, pieAngle);
+                    Angles[pieIndex].Upsert(i, pieAngle);
                     start += angle;
                 }
             }
@@ -157,7 +162,7 @@ namespace Sunny.UI
         private void DrawSeries(Graphics g, List<UIDoughnutSeries> series)
         {
             if (series == null || series.Count == 0) return;
-
+            using var TempFont = Font.DPIScaleFont(UIStyles.DefaultSubFontSize);
             for (int pieIndex = 0; pieIndex < series.Count; pieIndex++)
             {
                 var pie = series[pieIndex];
@@ -174,14 +179,13 @@ namespace Sunny.UI
                     else
                         g.FillFan(color, angle.Center, angle.Inner, angle.Outer, angle.Start - 90, angle.Sweep);
 
-                    Angles[pieIndex][azIndex].TextSize = g.MeasureString(Angles[pieIndex][azIndex].Text, TempFont);
+                    Angles[pieIndex][azIndex].TextSize = TextRenderer.MeasureText(Angles[pieIndex][azIndex].Text, TempFont);
 
                     if (pie.Label.Show && ActiveAzIndex == azIndex)
                     {
                         if (pie.Label.Position == UIPieSeriesLabelPosition.Center)
                         {
-                            SizeF sf = g.MeasureString(pie.Data[azIndex].Name, Font);
-                            g.DrawString(pie.Data[azIndex].Name, Font, color, angle.Center.X - sf.Width / 2.0f, angle.Center.Y - sf.Height / 2.0f);
+                            g.DrawString(pie.Data[azIndex].Name, Font, color, new Rectangle((int)angle.Center.X - Width, (int)angle.Center.Y - Height, Width * 2, Height * 2), ContentAlignment.MiddleCenter);
                         }
                     }
                 }
@@ -322,7 +326,7 @@ namespace Sunny.UI
 
             public string Text { get; set; }
 
-            public SizeF TextSize { get; set; }
+            public Size TextSize { get; set; }
         }
     }
 }

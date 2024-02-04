@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -18,6 +18,7 @@
  *
  * 2021-07-18: V3.0.5 增加文件说明
  * 2021-07-18: V3.0.5 更新了放在TableLayoutPanel里控件的自定义颜色问题
+ * 2023-11-12: V3.5.2 重构主题
 ******************************************************************************/
 
 using System.ComponentModel;
@@ -32,46 +33,29 @@ namespace Sunny.UI
             Version = UIGlobal.Version;
         }
 
-        [Browsable(false)]
-        public bool IsScaled { get; private set; }
+        private float DefaultFontSize = -1;
 
         public void SetDPIScale()
         {
-            if (!IsScaled)
-            {
-                this.SetDPIScaleFont();
-                IsScaled = true;
-            }
-        }
-
-        protected override void OnControlAdded(ControlEventArgs e)
-        {
-            base.OnControlAdded(e);
-
-            if (e.Control is IStyleInterface ctrl)
-            {
-                if (!ctrl.StyleCustomMode) ctrl.Style = Style;
-            }
-
-            UIStyleHelper.SetRawControlStyle(e, Style);
+            if (DesignMode) return;
+            if (!UIDPIScale.NeedSetDPIFont()) return;
+            if (DefaultFontSize < 0) DefaultFontSize = this.Font.Size;
+            this.SetDPIScaleFont(DefaultFontSize);
         }
 
         /// <summary>
         /// 自定义主题风格
         /// </summary>
-        [DefaultValue(false)]
+        [DefaultValue(false), Browsable(false)]
         [Description("获取或设置可以自定义主题风格"), Category("SunnyUI")]
-        public bool StyleCustomMode
-        {
-            get; set;
-        }
+        public bool StyleCustomMode { get; set; }
 
-        private UIStyle _style = UIStyle.Blue;
+        private UIStyle _style = UIStyle.Inherited;
 
         /// <summary>
         /// 主题样式
         /// </summary>
-        [DefaultValue(UIStyle.Blue), Description("主题样式"), Category("SunnyUI")]
+        [DefaultValue(UIStyle.Inherited), Description("主题样式"), Category("SunnyUI")]
         public UIStyle Style
         {
             get => _style;
@@ -88,12 +72,25 @@ namespace Sunny.UI
             get; set;
         }
 
-        public void SetStyle(UIStyle style)
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="style">主题样式</param>
+        private void SetStyle(UIStyle style)
         {
-            this.SuspendLayout();
-            UIStyleHelper.SetChildUIStyle(this, style);
-            _style = style;
-            this.ResumeLayout();
+            if (!style.IsCustom())
+            {
+                SetStyleColor(style.Colors());
+                Invalidate();
+            }
+
+            _style = style == UIStyle.Inherited ? UIStyle.Inherited : UIStyle.Custom;
+        }
+
+        public void SetInheritedStyle(UIStyle style)
+        {
+            SetStyle(style);
+            _style = UIStyle.Inherited;
         }
 
         public void SetStyleColor(UIBaseStyle uiColor)

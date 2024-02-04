@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -18,6 +18,7 @@
  *
  * 2020-01-01: V2.2.0 增加文件说明
  * 2022-08-11: V3.0.2 重写ItemSize，将宽、高调整为正常显示
+ * 2023-05-12: V3.3.6 重构DrawString函数
 ******************************************************************************/
 
 using System;
@@ -41,7 +42,7 @@ namespace Sunny.UI
 
             base.ItemSize = new Size(40, 200);
             DrawMode = TabDrawMode.OwnerDrawFixed;
-            Font = UIFontColor.Font();
+            base.Font = UIStyles.Font();
             AfterSetFillColor(FillColor);
             Size = new Size(450, 270);
             Version = UIGlobal.Version;
@@ -71,7 +72,7 @@ namespace Sunny.UI
         /// <summary>
         /// 控件缩放前在其容器里的位置
         /// </summary>
-        [Browsable(false)]
+        [Browsable(false), DefaultValue(typeof(Rectangle), "0, 0, 0, 0")]
         public Rectangle ZoomScaleRect { get; set; }
 
         /// <summary>
@@ -83,22 +84,20 @@ namespace Sunny.UI
 
         }
 
-        [Browsable(false)]
-        public bool IsScaled { get; private set; }
+        private float DefaultFontSize = -1;
 
         public void SetDPIScale()
         {
-            if (!IsScaled)
-            {
-                this.SetDPIScaleFont();
-                IsScaled = true;
-            }
+            if (DesignMode) return;
+            if (!UIDPIScale.NeedSetDPIFont()) return;
+            if (DefaultFontSize < 0) DefaultFontSize = this.Font.Size;
+            this.SetDPIScaleFont(DefaultFontSize);
         }
 
         /// <summary>
         /// 自定义主题风格
         /// </summary>
-        [DefaultValue(false)]
+        [DefaultValue(false), Browsable(false)]
         [Description("获取或设置可以自定义主题风格"), Category("SunnyUI")]
         public bool StyleCustomMode { get; set; }
 
@@ -142,7 +141,7 @@ namespace Sunny.UI
                 {
                     _fillColor = value;
                     AfterSetFillColor(value);
-                    SetStyleCustom();
+                    Invalidate();
                 }
             }
         }
@@ -202,7 +201,7 @@ namespace Sunny.UI
                 if (tabSelectedForeColor != value)
                 {
                     tabSelectedForeColor = value;
-                    SetStyleCustom();
+                    Invalidate();
                 }
             }
         }
@@ -244,17 +243,17 @@ namespace Sunny.UI
                 if (tabSelectedHighColor != value)
                 {
                     tabSelectedHighColor = value;
-                    SetStyleCustom();
+                    Invalidate();
                 }
             }
         }
 
-        private UIStyle _style = UIStyle.Blue;
+        private UIStyle _style = UIStyle.Inherited;
 
         /// <summary>
         /// 主题样式
         /// </summary>
-        [DefaultValue(UIStyle.Blue), Description("主题样式"), Category("SunnyUI")]
+        [DefaultValue(UIStyle.Inherited), Description("主题样式"), Category("SunnyUI")]
         public UIStyle Style
         {
             get => _style;
@@ -278,7 +277,11 @@ namespace Sunny.UI
             }
         }
 
-        public void SetStyle(UIStyle style)
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="style">主题样式</param>
+        private void SetStyle(UIStyle style)
         {
             if (!style.IsCustom())
             {
@@ -286,7 +289,13 @@ namespace Sunny.UI
                 Invalidate();
             }
 
-            _style = style;
+            _style = style == UIStyle.Inherited ? UIStyle.Inherited : UIStyle.Custom;
+        }
+
+        public void SetInheritedStyle(UIStyle style)
+        {
+            SetStyle(style);
+            _style = UIStyle.Inherited;
         }
 
         public void SetStyleColor(UIBaseStyle uiColor)
@@ -294,12 +303,6 @@ namespace Sunny.UI
             tabSelectedForeColor = uiColor.TabControlTabSelectedColor;
             tabSelectedHighColor = uiColor.TabControlTabSelectedColor;
             _fillColor = uiColor.TabControlBackColor;
-        }
-
-        private void SetStyleCustom(bool needRefresh = true)
-        {
-            _style = UIStyle.Custom;
-            if (needRefresh) Invalidate();
         }
 
         private UIMenuStyle _menuStyle = UIMenuStyle.Black;
@@ -359,10 +362,10 @@ namespace Sunny.UI
             for (int index = 0; index <= TabCount - 1; index++)
             {
                 Rectangle TabRect = new Rectangle(GetTabRect(index).Location.X - 2, GetTabRect(index).Location.Y - 2, base.ItemSize.Height + 4, base.ItemSize.Width);
-                SizeF sf = e.Graphics.MeasureString(TabPages[index].Text, Font);
+                Size sf = TextRenderer.MeasureText(TabPages[index].Text, Font);
                 int textLeft = 4 + 6 + 4 + (ImageList?.ImageSize.Width ?? 0);
                 if (TextAlignment == HorizontalAlignment.Right)
-                    textLeft = (int)(TabRect.Width - 4 - sf.Width);
+                    textLeft = TabRect.Width - 4 - sf.Width;
                 if (TextAlignment == HorizontalAlignment.Center)
                     textLeft = textLeft + (int)((TabRect.Width - textLeft - sf.Width) / 2.0f);
 
@@ -377,7 +380,7 @@ namespace Sunny.UI
 
                 // 绘制标题
                 Color textColor = index == SelectedIndex ? tabSelectedForeColor : TabUnSelectedForeColor;
-                e.Graphics.DrawString(TabPages[index].Text, Font, textColor, textLeft, TabRect.Top + 2 + (TabRect.Height - sf.Height) / 2.0f);
+                e.Graphics.DrawString(TabPages[index].Text, Font, textColor, new Rectangle(textLeft, TabRect.Top, TabRect.Width, TabRect.Height), ContentAlignment.MiddleLeft);
 
                 // 绘制图标
                 if (ImageList != null)

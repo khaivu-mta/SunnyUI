@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -37,6 +37,28 @@
  * 2022-06-23: V3.2.0 重写水印文字，解决不同背景色下泛白的问题
  * 2022-07-17: V3.2.1 增加SelectionChanged事件
  * 2022-07-28: V3.2.2 修复了有水印文字时，不响应Click和DoubleClick事件的问题
+ * 2022-09-05: V3.2.3 修复了无水印文字时，光标有时不显示的问题
+ * 2022-09-16: V3.2.4 支持自定义右键菜单
+ * 2022-09-16: V3.2.4 修改右侧Button可能不显示的问题
+ * 2022-11-03: V3.2.6 增加了可设置垂直滚动条宽度的属性
+ * 2022-11-12: V3.2.8 修改整数、浮点数大小离开判断为实时输入判断
+ * 2022-11-12: V3.2.8 删除MaximumEnabled、MinimumEnabled、HasMaximum、HasMinimum属性
+ * 2022-11-26: V3.2.9 增加MouseClick，MouseDoubleClick事件
+ * 2023-02-07: V3.3.1 增加Tips小红点
+ * 2023-02-10: V3.3.2 有水印时，系统响应触摸屏增加了TouchPressClick属性，默认关闭
+ * 2023-06-14: V3.3.9 按钮图标位置修正
+ * 2023-07-03: V3.3.9 增加Enabled为false时，可修改文字颜色
+ * 2023-07-16: V3.4.0 修复了Enabled为false时，PasswordChar失效的问题
+ * 2023-08-17: V3.4.1 修复了Enabled为false时，字体大小调整后，文字显示位置的问题
+ * 2023-08-24: V3.4.2 修复了Enabled为false时，自定义颜色，文字不显示的问题
+ * 2023-10-25: V3.5.1 修复在高DPI下，文字垂直不居中的问题
+ * 2023-10-25: V3.5.1 修复在某些字体不显示下划线的问题
+ * 2023-10-26: V3.5.1 字体图标增加旋转角度参数SymbolRotate
+ * 2023-11-16: V3.5.2 重构主题
+ * 2023-12-18: V3.6.2 修复高度不随字体改变
+ * 2023-12-18: V3.6.2 修改显示按钮时Tips小红点的位置
+ * 2023-12-25: V3.6.2 增加Text的属性编辑器
+ * 2024-01-13: V3.6.3 调整Radius时，自动调整文本框的位置
 ******************************************************************************/
 
 using System;
@@ -63,14 +85,9 @@ namespace Sunny.UI
             SetStyleFlags(true, true, true);
 
             ShowText = false;
-            Font = UIFontColor.Font();
-            Padding = new Padding(0);
             MinimumSize = new Size(1, 16);
 
-            Width = 150;
-            Height = 29;
-
-            edit.AutoSize = false;
+            edit.AutoSize = true;
             edit.Top = (Height - edit.Height) / 2;
             edit.Left = 4;
             edit.Width = Width - 8;
@@ -94,18 +111,21 @@ namespace Sunny.UI
             edit.MouseUp += Edit_MouseUp;
             edit.MouseMove += Edit_MouseMove;
             edit.SelectionChanged += Edit_SelectionChanged;
+            edit.MouseClick += Edit_MouseClick;
+            edit.MouseDoubleClick += Edit_MouseDoubleClick;
+            edit.SizeChanged += Edit_SizeChanged;
 
             btn.Parent = this;
             btn.Visible = false;
             btn.Text = "";
             btn.Symbol = 361761;
-            btn.SymbolOffset = new Point(0, 1);
             btn.Top = 1;
             btn.Height = 25;
             btn.Width = 29;
             btn.BackColor = Color.Transparent;
             btn.Click += Btn_Click;
             btn.Radius = 3;
+            btn.SymbolOffset = new Point(-1, 1);
 
             edit.Invalidate();
             Controls.Add(edit);
@@ -113,16 +133,120 @@ namespace Sunny.UI
 
             bar.Parent = this;
             bar.Dock = DockStyle.None;
-            bar.Style = UIStyle.Custom;
             bar.Visible = false;
             bar.ValueChanged += Bar_ValueChanged;
             bar.MouseEnter += Bar_MouseEnter;
             TextAlignment = ContentAlignment.MiddleLeft;
 
-            SizeChange();
+            lastEditHeight = edit.Height;
+            Width = 150;
+            Height = 29;
 
             editCursor = Cursor;
             TextAlignmentChange += UITextBox_TextAlignmentChange;
+        }
+
+        int lastEditHeight = -1;
+        private void Edit_SizeChanged(object sender, EventArgs e)
+        {
+            if (lastEditHeight != edit.Height)
+            {
+                lastEditHeight = edit.Height;
+                SizeChange();
+            }
+        }
+
+        public override void SetDPIScale()
+        {
+            base.SetDPIScale();
+            if (DesignMode) return;
+            if (!UIDPIScale.NeedSetDPIFont()) return;
+
+            edit.SetDPIScale();
+        }
+
+        [Description("开启后可响应某些触屏的点击事件"), Category("SunnyUI")]
+        [DefaultValue(false)]
+        public bool TouchPressClick
+        {
+            get => edit.TouchPressClick;
+            set => edit.TouchPressClick = value;
+        }
+
+        private UIButton tipsBtn;
+        public void SetTipsText(ToolTip toolTip, string text)
+        {
+            if (tipsBtn == null)
+            {
+                tipsBtn = new UIButton();
+                tipsBtn.Cursor = System.Windows.Forms.Cursors.Hand;
+                tipsBtn.Size = new System.Drawing.Size(6, 6);
+                tipsBtn.Style = Sunny.UI.UIStyle.Red;
+                tipsBtn.StyleCustomMode = true;
+                tipsBtn.Text = "";
+                tipsBtn.Click += TipsBtn_Click;
+
+                Controls.Add(tipsBtn);
+                tipsBtn.Location = new System.Drawing.Point(Width - 8, 2);
+                tipsBtn.BringToFront();
+            }
+
+            toolTip.SetToolTip(tipsBtn, text);
+        }
+
+        public event EventHandler TipsClick;
+        private void TipsBtn_Click(object sender, EventArgs e)
+        {
+            TipsClick?.Invoke(this, EventArgs.Empty);
+        }
+
+        public void CloseTips()
+        {
+            if (tipsBtn != null)
+            {
+                tipsBtn.Click -= TipsBtn_Click;
+                tipsBtn.Dispose();
+                tipsBtn = null;
+            }
+        }
+
+        public new event EventHandler MouseDoubleClick;
+        public new event EventHandler MouseClick;
+
+        private void Edit_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+            MouseDoubleClick?.Invoke(this, e);
+        }
+
+        private void Edit_MouseClick(object sender, MouseEventArgs e)
+        {
+            MouseClick?.Invoke(this, e);
+        }
+
+        private int scrollBarWidth = 0;
+
+        [DefaultValue(0), Category("SunnyUI"), Description("垂直滚动条宽度，最小为原生滚动条宽度")]
+        public int ScrollBarWidth
+        {
+            get => scrollBarWidth;
+            set
+            {
+                scrollBarWidth = value;
+                SetScrollInfo();
+            }
+        }
+
+        private int scrollBarHandleWidth = 6;
+
+        [DefaultValue(6), Category("SunnyUI"), Description("垂直滚动条滑块宽度，最小为原生滚动条宽度")]
+        public int ScrollBarHandleWidth
+        {
+            get => scrollBarHandleWidth;
+            set
+            {
+                scrollBarHandleWidth = value;
+                if (bar != null) bar.FillWidth = value;
+            }
         }
 
         private void Edit_SelectionChanged(object sender, UITextBoxSelectionArgs e)
@@ -135,6 +259,12 @@ namespace Sunny.UI
         public void SetButtonToolTip(ToolTip toolTip, string tipText)
         {
             toolTip.SetToolTip(btn, tipText);
+        }
+
+        protected override void OnContextMenuStripChanged(EventArgs e)
+        {
+            base.OnContextMenuStripChanged(e);
+            if (edit != null) edit.ContextMenuStrip = ContextMenuStrip;
         }
 
         /// <summary>
@@ -153,7 +283,6 @@ namespace Sunny.UI
                 if (fillColor != value)
                 {
                     fillColor = value;
-                    _style = UIStyle.Custom;
                     Invalidate();
                 }
 
@@ -201,21 +330,15 @@ namespace Sunny.UI
         [DefaultValue(29), Category("SunnyUI"), Description("按钮宽度")]
         public int ButtonWidth { get => btn.Width; set { btn.Width = Math.Max(20, value); SizeChange(); } }
 
+        private bool showButton = false;
         [DefaultValue(false), Category("SunnyUI"), Description("显示按钮")]
         public bool ShowButton
         {
-            get => btn.Visible;
+            get => showButton;
             set
             {
-                if (Multiline)
-                {
-                    btn.Visible = false;
-                }
-                else
-                {
-                    btn.Visible = value;
-                }
-
+                showButton = !multiline && value;
+                if (btn.IsValid()) btn.Visible = showButton;
                 SizeChange();
             }
         }
@@ -304,8 +427,16 @@ namespace Sunny.UI
         {
             base.OnEnabledChanged(e);
             edit.BackColor = GetFillColor();
+
+            edit.Visible = true;
             edit.Enabled = Enabled;
+            if (!Enabled)
+            {
+                if (NeedDrawDisabledText) edit.Visible = false;
+            }
         }
+
+        private bool NeedDrawDisabledText => !Enabled && StyleCustomMode && (ForeDisableColor != Color.FromArgb(109, 109, 103) || FillDisableColor != Color.FromArgb(244, 244, 244));
 
         public override bool Focused => edit.Focused;
 
@@ -399,7 +530,7 @@ namespace Sunny.UI
             }
         }
 
-        private bool multiline;
+        private bool multiline = false;
 
         [DefaultValue(false)]
         public bool Multiline
@@ -515,7 +646,7 @@ namespace Sunny.UI
             edit.SelectAll();
         }
 
-        public void CheckMaxMin()
+        internal void CheckMaxMin()
         {
             edit.CheckMaxMin();
         }
@@ -533,9 +664,12 @@ namespace Sunny.UI
         protected override void OnFontChanged(EventArgs e)
         {
             base.OnFontChanged(e);
-            edit.IsScaled = true;
-            edit.Font = Font;
-            SizeChange();
+
+            if (DefaultFontSize < 0 && edit != null)
+            {
+                edit.Font = this.Font;
+            }
+
             Invalidate();
         }
 
@@ -546,13 +680,11 @@ namespace Sunny.UI
         protected override void OnSizeChanged(EventArgs e)
         {
             base.OnSizeChanged(e);
-            SizeChange();
-        }
 
-        protected override void OnPaddingChanged(EventArgs e)
-        {
-            base.OnPaddingChanged(e);
+            //if (!NoNeedChange)
+            //{
             SizeChange();
+            //}
         }
 
         public void SetScrollInfo()
@@ -574,6 +706,12 @@ namespace Sunny.UI
             }
         }
 
+        protected override void OnRadiusChanged(int value)
+        {
+            base.OnRadiusChanged(value);
+            SizeChange();
+        }
+
         private void SizeChange()
         {
             if (!InitializeComponentEnd) return;
@@ -582,38 +720,57 @@ namespace Sunny.UI
 
             if (!multiline)
             {
-                if (Height < UIGlobal.EditorMinHeight) Height = UIGlobal.EditorMinHeight;
-                if (Height > UIGlobal.EditorMaxHeight) Height = UIGlobal.EditorMaxHeight;
+                //if (Height < edit.Height + RectSize * 2 + 2)
+                //{
+                //    NoNeedChange = true;
+                //    Height = edit.Height + RectSize * 2 + 2;
+                //    edit.Top = (Height - edit.Height) / 2;
+                //    NoNeedChange = false;
+                //}
 
-                edit.Height = Math.Min(Height - RectSize * 2, edit.PreferredHeight);
-                edit.Top = (Height - edit.Height) / 2;
+                if (edit.Top != (Height - edit.Height) / 2 + 1)
+                {
+                    edit.Top = (Height - edit.Height) / 2 + 1;
+                }
+
+                int added = Radius <= 5 ? 0 : (Radius - 5) / 2;
 
                 if (icon == null && Symbol == 0)
                 {
-                    edit.Left = 4 + Padding.Left;
-                    edit.Width = Width - 8 - Padding.Left - Padding.Right;
+                    edit.Left = 4;
+                    edit.Width = Width - 8;
+                    edit.Left = edit.Left + added;
+                    edit.Width = edit.Width - added * 2;
                 }
                 else
                 {
                     if (icon != null)
                     {
-                        edit.Left = 4 + iconSize + Padding.Left;
-                        edit.Width = Width - 8 - iconSize - Padding.Left - Padding.Right;
+                        edit.Left = 4 + iconSize;
+                        edit.Width = Width - 8 - iconSize - added;
                     }
                     else if (Symbol > 0)
                     {
-                        edit.Left = 4 + SymbolSize + Padding.Left;
-                        edit.Width = Width - 8 - SymbolSize - Padding.Left - Padding.Right;
+                        edit.Left = 4 + SymbolSize;
+                        edit.Width = Width - 8 - SymbolSize - added;
                     }
                 }
 
-                btn.Left = Width - 2 - ButtonWidth;
+                btn.Left = Width - 2 - ButtonWidth - added;
                 btn.Top = 2;
                 btn.Height = Height - 4;
 
                 if (ShowButton)
                 {
-                    edit.Width = edit.Width - btn.Width - 3;
+                    edit.Width = edit.Width - btn.Width - 3 - added;
+                }
+
+                if (tipsBtn != null)
+                {
+                    if (ShowButton)
+                        tipsBtn.Location = new System.Drawing.Point(Width - btn.Width - 10 - added, 2);
+                    else
+                        tipsBtn.Location = new System.Drawing.Point(Width - 8 - added, 2);
                 }
             }
             else
@@ -621,12 +778,13 @@ namespace Sunny.UI
                 btn.Visible = false;
                 edit.Top = 3;
                 edit.Height = Height - 6;
-                edit.Left = 1;
-                edit.Width = Width - 2;
+                edit.Left = 4;
+                edit.Width = Width - 8;
 
+                int barWidth = Math.Max(ScrollBarInfo.VerticalScrollBarWidth() + 2, ScrollBarWidth);
                 bar.Top = 2;
-                bar.Width = ScrollBarInfo.VerticalScrollBarWidth();
-                bar.Left = Width - bar.Width - 1;
+                bar.Width = barWidth + 1;
+                bar.Left = Width - barWidth - 3;
                 bar.Height = Height - 4;
                 bar.BringToFront();
 
@@ -697,38 +855,6 @@ namespace Sunny.UI
             set => edit.MinValue = value;
         }
 
-        [DefaultValue(false)]
-        [Description("是否判断最大值显示"), Category("SunnyUI")]
-        public bool MaximumEnabled
-        {
-            get => HasMaximum;
-            set => HasMaximum = value;
-        }
-
-        [DefaultValue(false)]
-        [Description("是否判断最小值显示"), Category("SunnyUI")]
-        public bool MinimumEnabled
-        {
-            get => HasMinimum;
-            set => HasMinimum = value;
-        }
-
-        [DefaultValue(false), Browsable(false)]
-        [Description("是否判断最大值显示"), Category("SunnyUI")]
-        public bool HasMaximum
-        {
-            get => edit.HasMaxValue;
-            set => edit.HasMaxValue = value;
-        }
-
-        [DefaultValue(false), Browsable(false)]
-        [Description("是否判断最小值显示"), Category("SunnyUI")]
-        public bool HasMinimum
-        {
-            get => edit.HasMinValue;
-            set => edit.HasMinValue = value;
-        }
-
         [DefaultValue(0.00)]
         [Description("浮点返回值"), Category("SunnyUI")]
         public double DoubleValue
@@ -748,6 +874,7 @@ namespace Sunny.UI
         [Description("文本返回值"), Category("SunnyUI")]
         [Browsable(true)]
         [DefaultValue("")]
+        [Editor("System.ComponentModel.Design.MultilineStringEditor, System.Design, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a", typeof(UITypeEditor))]
         public override string Text
         {
             get => edit.Text;
@@ -806,8 +933,9 @@ namespace Sunny.UI
             foreColor = UIFontColor.Primary;
             edit.BackColor = GetFillColor();
             edit.ForeColor = GetForeColor();
+            edit.ForeDisableColor = uiColor.ForeDisableColor;
 
-            if (bar != null)
+            if (bar != null && bar.Style == UIStyle.Inherited)
             {
                 bar.ForeColor = uiColor.PrimaryColor;
                 bar.HoverColor = uiColor.ButtonFillHoverColor;
@@ -817,7 +945,7 @@ namespace Sunny.UI
                 scrollBarBackColor = fillColor;
             }
 
-            if (btn != null)
+            if (btn != null && btn.Style == UIStyle.Inherited)
             {
                 btn.ForeColor = uiColor.ButtonForeColor;
                 btn.FillColor = uiColor.ButtonFillColor;
@@ -831,6 +959,31 @@ namespace Sunny.UI
                 btn.RectPressColor = uiColor.ButtonRectPressColor;
                 btn.ForePressColor = uiColor.ButtonForePressColor;
             }
+        }
+
+        /// <summary>
+        /// 滚动条主题样式
+        /// </summary>
+        [DefaultValue(true), Description("滚动条主题样式"), Category("SunnyUI")]
+        public bool ScrollBarStyleInherited
+        {
+            get => bar != null && bar.Style == UIStyle.Inherited;
+            set
+            {
+                if (value)
+                {
+                    if (bar != null) bar.Style = UIStyle.Inherited;
+                    scrollBarColor = UIStyles.Blue.PrimaryColor;
+                    scrollBarBackColor = UIStyles.Blue.EditorBackColor;
+                }
+
+            }
+        }
+
+        protected override void SetForeDisableColor(Color color)
+        {
+            base.SetForeDisableColor(color);
+            edit.ForeDisableColor = color;
         }
 
         private Color scrollBarColor = Color.FromArgb(80, 160, 255);
@@ -847,6 +1000,7 @@ namespace Sunny.UI
             {
                 scrollBarColor = value;
                 bar.HoverColor = bar.PressColor = bar.ForeColor = value;
+                bar.Style = UIStyle.Custom;
                 Invalidate();
             }
         }
@@ -865,7 +1019,7 @@ namespace Sunny.UI
             {
                 scrollBarBackColor = value;
                 bar.FillColor = value;
-                _style = UIStyle.Custom;
+                bar.Style = UIStyle.Custom;
                 Invalidate();
             }
         }
@@ -1184,7 +1338,25 @@ namespace Sunny.UI
             }
             else if (Symbol != 0)
             {
-                e.Graphics.DrawFontImage(Symbol, SymbolSize, SymbolColor, new Rectangle(4 + symbolOffset.X, (Height - SymbolSize) / 2 + 1 + symbolOffset.Y, SymbolSize, SymbolSize), SymbolOffset.X, SymbolOffset.Y);
+                e.Graphics.DrawFontImage(Symbol, SymbolSize, SymbolColor, new Rectangle(4 + symbolOffset.X, (Height - SymbolSize) / 2 + 1 + symbolOffset.Y, SymbolSize, SymbolSize), SymbolOffset.X, SymbolOffset.Y, SymbolRotate);
+            }
+
+            if (Text.IsValid() && NeedDrawDisabledText)
+            {
+                string text = Text;
+                if (PasswordChar > 0)
+                {
+                    text = PasswordChar.ToString().Repeat(text.Length);
+                }
+
+                ContentAlignment textAlign = ContentAlignment.MiddleLeft;
+                if (TextAlignment == ContentAlignment.TopCenter || TextAlignment == ContentAlignment.MiddleCenter || TextAlignment == ContentAlignment.BottomCenter)
+                    textAlign = ContentAlignment.MiddleCenter;
+
+                if (TextAlignment == ContentAlignment.TopRight || TextAlignment == ContentAlignment.MiddleRight || TextAlignment == ContentAlignment.BottomRight)
+                    textAlign = ContentAlignment.MiddleRight;
+
+                e.Graphics.DrawString(text, edit.Font, ForeDisableColor, edit.Bounds, textAlign);
             }
         }
 
@@ -1261,6 +1433,26 @@ namespace Sunny.UI
             }
         }
 
+        private int _symbolRotate = 0;
+
+        /// <summary>
+        /// 字体图标旋转角度
+        /// </summary>
+        [DefaultValue(0)]
+        [Description("字体图标旋转角度"), Category("SunnyUI")]
+        public int SymbolRotate
+        {
+            get => _symbolRotate;
+            set
+            {
+                if (_symbolRotate != value)
+                {
+                    _symbolRotate = value;
+                    Invalidate();
+                }
+            }
+        }
+
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         [Editor("Sunny.UI.UIImagePropertyEditor, " + AssemblyRefEx.SystemDesign, typeof(UITypeEditor))]
         [DefaultValue(361761)]
@@ -1279,12 +1471,23 @@ namespace Sunny.UI
             set => btn.SymbolSize = value;
         }
 
-        [DefaultValue(typeof(Point), "0, 1")]
+        [DefaultValue(typeof(Point), "-1, 1")]
         [Description("按钮字体图标的偏移位置"), Category("SunnyUI")]
         public Point ButtonSymbolOffset
         {
             get => btn.SymbolOffset;
             set => btn.SymbolOffset = value;
+        }
+
+        /// <summary>
+        /// 字体图标旋转角度
+        /// </summary>
+        [DefaultValue(0)]
+        [Description("按钮字体图标旋转角度"), Category("SunnyUI")]
+        public int ButtonSymbolRotate
+        {
+            get => btn.SymbolRotate;
+            set => btn.SymbolRotate = value;
         }
 
         /// <summary>
@@ -1298,7 +1501,7 @@ namespace Sunny.UI
             set
             {
                 btn.FillColor = value;
-                _style = UIStyle.Custom;
+                btn.Style = UIStyle.Custom;
             }
         }
 
@@ -1313,7 +1516,7 @@ namespace Sunny.UI
             set
             {
                 btn.SymbolColor = btn.ForeColor = value;
-                _style = UIStyle.Custom;
+                btn.Style = UIStyle.Custom;
             }
         }
 
@@ -1328,7 +1531,7 @@ namespace Sunny.UI
             set
             {
                 btn.RectColor = value;
-                _style = UIStyle.Custom;
+                btn.Style = UIStyle.Custom;
             }
         }
 
@@ -1340,7 +1543,7 @@ namespace Sunny.UI
             set
             {
                 btn.FillHoverColor = value;
-                _style = UIStyle.Custom;
+                btn.Style = UIStyle.Custom;
             }
         }
 
@@ -1352,7 +1555,7 @@ namespace Sunny.UI
             set
             {
                 btn.SymbolHoverColor = btn.ForeHoverColor = value;
-                _style = UIStyle.Custom;
+                btn.Style = UIStyle.Custom;
             }
         }
 
@@ -1364,7 +1567,7 @@ namespace Sunny.UI
             set
             {
                 btn.RectHoverColor = value;
-                _style = UIStyle.Custom;
+                btn.Style = UIStyle.Custom;
             }
         }
 
@@ -1376,7 +1579,7 @@ namespace Sunny.UI
             set
             {
                 btn.FillPressColor = value;
-                _style = UIStyle.Custom;
+                btn.Style = UIStyle.Custom;
             }
         }
 
@@ -1388,7 +1591,7 @@ namespace Sunny.UI
             set
             {
                 btn.SymbolPressColor = btn.ForePressColor = value;
-                _style = UIStyle.Custom;
+                btn.Style = UIStyle.Custom;
             }
         }
 
@@ -1400,7 +1603,23 @@ namespace Sunny.UI
             set
             {
                 btn.RectPressColor = value;
-                _style = UIStyle.Custom;
+                btn.Style = UIStyle.Custom;
+            }
+        }
+
+        /// <summary>
+        /// 滚动条主题样式
+        /// </summary>
+        [DefaultValue(true), Description("滚动条主题样式"), Category("SunnyUI")]
+        public bool ButtonStyleInherited
+        {
+            get => btn != null && btn.Style == UIStyle.Inherited;
+            set
+            {
+                if (value && btn != null)
+                {
+                    btn.Style = UIStyle.Inherited;
+                }
             }
         }
     }

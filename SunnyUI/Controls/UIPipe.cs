@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -18,6 +18,7 @@
  *
  * 2020-07-26: V3.0.5 增加管道控件
  * 2021-07-29: V3.0.5 优化管道连接
+ * 2023-02-24: V3.3.2 修复了管道宽度调大后水流不显示的问题
 ******************************************************************************/
 
 using System;
@@ -337,12 +338,12 @@ namespace Sunny.UI
                 if (Height < Width * 2 + 4) return;
                 w = Width.Div(2) + Width.Mod(2);
 
-                if (RadiusSides.HasFlag(UICornerRadiusSides.LeftTop) &&
-                    !RadiusSides.HasFlag(UICornerRadiusSides.RightTop))
+                if (RadiusSides.HasFlag(UICornerRadiusSides.LeftTop) && !RadiusSides.HasFlag(UICornerRadiusSides.RightTop))
                 {
                     for (int i = 1; i < w; i++)
                     {
-                        g.DrawArc(new Pen(colors[i], 2), new Rectangle(i, i, Width - i * 2, Width - i * 2), 180, 90);
+                        using Pen pen = new Pen(colors[i], 2);
+                        g.DrawArc(pen, new Rectangle(i, i, Width - i * 2, Width - i * 2), 180, 90);
                     }
 
                     for (int i = 0; i < w; i++)
@@ -356,12 +357,12 @@ namespace Sunny.UI
                     }
                 }
 
-                if (!RadiusSides.HasFlag(UICornerRadiusSides.LeftTop) &&
-                    RadiusSides.HasFlag(UICornerRadiusSides.RightTop))
+                if (!RadiusSides.HasFlag(UICornerRadiusSides.LeftTop) && RadiusSides.HasFlag(UICornerRadiusSides.RightTop))
                 {
                     for (int i = 1; i < w; i++)
                     {
-                        g.DrawArc(new Pen(colors[i], 2), new Rectangle(i - 1, i, Width - i * 2, Width - i * 2), 270, 90);
+                        using Pen pen = new Pen(colors[i], 2);
+                        g.DrawArc(pen, new Rectangle(i - 1, i, Width - i * 2, Width - i * 2), 270, 90);
                     }
 
                     for (int i = 0; i < w; i++)
@@ -379,12 +380,12 @@ namespace Sunny.UI
                     }
                 }
 
-                if (RadiusSides.HasFlag(UICornerRadiusSides.LeftBottom) &&
-                    !RadiusSides.HasFlag(UICornerRadiusSides.RightBottom))
+                if (RadiusSides.HasFlag(UICornerRadiusSides.LeftBottom) && !RadiusSides.HasFlag(UICornerRadiusSides.RightBottom))
                 {
                     for (int i = 1; i < w; i++)
                     {
-                        g.DrawArc(new Pen(colors[i], 2), new Rectangle(i, Height - Width + i - 1, Width - i * 2, Width - i * 2), 90, 90);
+                        using Pen pen = new Pen(colors[i], 2);
+                        g.DrawArc(pen, new Rectangle(i, Height - Width + i - 1, Width - i * 2, Width - i * 2), 90, 90);
                     }
 
                     for (int i = 0; i < w; i++)
@@ -398,12 +399,12 @@ namespace Sunny.UI
                     }
                 }
 
-                if (!RadiusSides.HasFlag(UICornerRadiusSides.LeftBottom) &&
-                    RadiusSides.HasFlag(UICornerRadiusSides.RightBottom))
+                if (!RadiusSides.HasFlag(UICornerRadiusSides.LeftBottom) && RadiusSides.HasFlag(UICornerRadiusSides.RightBottom))
                 {
                     for (int i = 1; i < w; i++)
                     {
-                        g.DrawArc(new Pen(colors[i], 2), new Rectangle(i - 1, Height - Width - 1 + i, Width - i * 2, Width - i * 2), 0, 90);
+                        using Pen pen = new Pen(colors[i], 2);
+                        g.DrawArc(pen, new Rectangle(i - 1, Height - Width - 1 + i, Width - i * 2, Width - i * 2), 0, 90);
                     }
 
                     for (int i = 0; i < w; i++)
@@ -531,8 +532,8 @@ namespace Sunny.UI
         private Bitmap CreatePipeBack(UIPipe pipe)
         {
             Bitmap result = new Bitmap(pipe.Width, pipe.Height);
-            Graphics g = result.Graphics();
-            var path = result.Bounds().CreateRoundedRectanglePath(5, UICornerRadiusSides.None);
+            using Graphics g = result.Graphics();
+            using var path = result.Bounds().CreateRoundedRectanglePath(5, UICornerRadiusSides.None);
 
             int h = pipe.Height.Div(2) + pipe.Height.Mod(2);
             using (Bitmap bmp = new Bitmap(pipe.Width, pipe.Height))
@@ -562,7 +563,6 @@ namespace Sunny.UI
                 g.DrawImage(bmp, new Rectangle(0, h, pipe.Width, pipe.Height - h), new Rectangle(0, h, pipe.Width, pipe.Height - h), GraphicsUnit.Pixel);
             }
 
-            g.Dispose();
             return result;
         }
 
@@ -600,9 +600,9 @@ namespace Sunny.UI
                         }
                     }
 
-                    if (rect.Width >= rect.Height && isShow)
+                    if (isShow)
                     {
-                        g.FillRoundRectangle(color, rect, Radius - 4);
+                        g.FillRoundRectangle(color, rect, Math.Min(rect.Width, rect.Height));
                     }
 
                     pos += FlowSize;
@@ -654,9 +654,9 @@ namespace Sunny.UI
                         }
                     }
 
-                    if (rect.Height >= rect.Width && isShow)
+                    if (isShow)
                     {
-                        g.FillRoundRectangle(color, rect, Radius - 4);
+                        g.FillRoundRectangle(color, rect, Math.Min(rect.Width, rect.Height));
                     }
 
                     pos += FlowSize;

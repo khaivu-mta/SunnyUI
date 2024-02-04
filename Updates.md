@@ -1,7 +1,360 @@
 \+ 增加    \* 修改    \- 删除    
     
+#### 2024\-01\-01 V3.6.3      
+\+ Demo增加字体图标界面    
+\* UIButton: 修复LightStyle的背景颜色    
+\* ShowStatusForm: 增加可设置进度值    
+\* UIForm: 优化UIPage的Init和Final加载逻辑    
+\* UITabControl: 优化UIPage的Init和Final加载逻辑    
+\* UIForm: RemovePage时调用Final    
+\* UITextBox: 修复高度不随字体改变    
+\* UIDropControl: 修复高度不随字体改变    
+\* UITextBox: 修改显示按钮时Tips小红点的位置    
+\* UIPage: 调整AfterShow事件位置及逻辑    
+\* UIRichTextBox: 增加Text的属性编辑器    
+\* UITextBox: 增加Text的属性编辑器    
+\* UIComboBox: 增加下拉界面的滚动条设置    
+\* UIIntegerUpDown: 修复设置Style时按钮颜色不一致    
+\* UIDoubleUpDown: 修复设置Style时按钮颜色不一致    
+\* UITreeView: 增加可修改滚动条颜色    
+    
+#### 2023\-12\-04 V3.6.2    
+\+ UIRuler: 增加刻度尺控件    
+\+ UIThermometer: 增加温度计控件    
+\+ UIDigitalLabel: 增加冷液晶显示LCD标签    
+\* UIForm: 修复修改Style后，BackColor未保存的问题    
+\* UIPage: 修复修改Style后，BackColor未保存的问题    
+\* UITrackBar: 增加一种从上到下的进度显示方式    
+\* UICheckBox: 增加属性可修改图标大小    
+\* UICheckBoxGroup: 增加属性可修改图标大小    
+\* UIRadioButton: 增加属性可修改图标大小    
+\* UIRadioButtonGroup: 增加属性可修改图标大小    
+    
+#### 2023\-11\-28 V3.6.1    
+\+ UISymbolPanel：增加图标编辑器面板    
+\* UIFontImages: 重写字体图标编辑器，优化打开速度    
+\* UILineChart: 增加了区域选择范围相等时不执行事件    
+\* UIButton: 修复LightStyle的文字颜色    
+\* UIUserControl: 修复Panel内控件颜色设置问题    
+    
+#### 2023\-11\-21 V3.6.0    
+ **注意：大版本更新，重构主题**     
+建议新项目使用此版本，如果3.6.0以下版本需要升级参照文档比较差异：   
+[升级指南/3.5.2-->3.6.0](https://gitee.com/yhuse/SunnyUI/wikis/%E5%8D%87%E7%BA%A7%E6%8C%87%E5%8D%97/3.5.2--%3E3.6.0)    
+\+ 增加.Net8支持    
+\- UIKnobControl: 删除UIKnobControl，源码见：[UIKnobControl.cs](https://gitee.com/yhuse/SunnyUI/blob/V3.5.2/SunnyUI/Controls/UIKnobControl.cs)    
+\* 重构主题     
+\* 修改点阵字体数字显示    
+\* UIForm: 修改默认ShowShadow边框阴影打开，ShowRadius显示圆角关闭    
+\* UIRadioButtonGroup: 重写UIRadioButtonGroup    
+\* UICheckBoxGroup: 重写UICheckBoxGroup    
+\* UIRadioButton: 增加修改图标大小    
+\* UIEditForm: 代码生成增加ComboDataGridView类型    
+\* 修改几个进度弹窗的关闭标志    
+\* 重构GDI一些方法    
+    
+#### 2023\-10\-27 V3.5.2    
+\+  **字体图标增加旋转角度参数SymbolRotate** 
+\* UINavBar: 修正下拉菜单文字显示垂直居中    
+\* UINavBar: ImageList为空时，下拉菜单增加Symbol绘制    
+\* UIContextMenuStrip: 修正文字显示垂直居中    
+\* UIContextMenuStrip: 当右键菜单未绑定ImageList，并且ImageIndex>0时，将ImageIndex绑定为Symbol绘制    
+\* UIIPTextBox: 修复UIIPTextBox在Readonly且光标位于小数点后面时，可以通过Backspace键删除前一位的问题    
+\* UILineChart: 增加了绘制线的DashStyle样式    
+\* UFontImage: MaterialIcons字体图标调大3个像素    
+\* UITextBox: 修复在高DPI下，文字垂直不居中的问题    
+\* UITextBox: 修复在某些字体不显示下划线的问题    
+\* UITextBox: 多行显示时位置调整     
+\* UIDropControl: 修复在高DPI下，文字垂直不居中的问题    
+\* UIDropControl: 修复在某些字体不显示下划线的问题    
+    
+#### 2023\-10\-16 V3.5.1    
+\+ 增加.Net8支持        
+\+ 增加MaterialIcons字体图标    
+\* 重构进度提示框和等待提示框，解决有时无法关闭的问题，并作为窗体的扩展方法使用    
+\* 重构字体图标类    
+\* UIForm: 增加一个在窗体显示后延时执行的事件    
+\* IHideDropDown: 修改关闭下拉弹窗可能引起的出错    
+\* UILineChart: 增加了X轴和Y轴鼠标选择区域并返回选中范围    
+\* UILineChart: 增加了Y轴数据由上向下绘制    
+\* UIComboDataGridView: 增加ClearFilter，可以清除弹窗的搜索栏文字    
+    
+#### 2023\-09\-19 V3.5.0   
+ **注意：大版本更新，SunnyUI字体改为系统默认字体（中文Windows常见字体为宋体）**     
+建议新项目使用此版本，如果3.5.0以下版本需要升级参照文档设置全局字体：    
+[https://gitee.com/yhuse/SunnyUI/wikis/多页面框架/全局字体设置](https://gitee.com/yhuse/SunnyUI/wikis/%E5%A4%9A%E9%A1%B5%E9%9D%A2%E6%A1%86%E6%9E%B6/%E5%85%A8%E5%B1%80%E5%AD%97%E4%BD%93%E8%AE%BE%E7%BD%AE)   
+ 
+\+ 重构全局字体设置逻辑，可以在运行时设置全局字体    
+\+ 增加全局矩形设计，忽略圆角，UIStyleManager的GlobalRectangle属性    
+\* UITextBox: 修复了Enabled为false时，自定义颜色，文字不显示的问题    
+\* UIDropControl: 修改背景色后编辑框颜色修复    
+\* UIStyles: 修改全局字体为系统默认：System.Drawing.SystemFonts.DefaultFont    
+\* UILight: 恢复全局矩形设计时圆形灯光效果    
+\* UIDropControl: 下拉框按钮图标增加编辑器    
+\* UIProcessBar: 修复值计算过程中的Int越界问题    
+\* UIBreadcrumb: 增加Readonly，禁用鼠标点击，可通过代码设置ItemIndex    
+    
+#### 2023\-08\-18 V3.4.2    
+\* UIGroupBox: 解决BackColor,FillColor设置为透明时，文本位置与边框线重叠的问题    
+\* UIForm: 修复页面切换时，第一个UIPage未执行Final事件的问题    
+\* UIComboDataGridView: 过滤输入后，按键盘下键切换至DataGridView，选中数据后按回车可快捷选中数据    
+\* UIChart: Legend增加一种绘制直线的方法    
+\* UIForm: 默认提示弹窗TopMost为true    
+\* UIFormHelper: 默认提示弹窗TopMost为true    
+\* UIEditForm: 默认弹窗TopMost为true    
+\* UIFormHelper: 提问弹窗增加可默认是确认或者取消按钮的选择    
+\* UITitlePanel: 增加OnCollapsed事件    
+\* UIniFile: 增加提示文件名必须为绝对路径，不能用相对路径    
+\* UIniFile: 增加了文件绝对路径判断和文件夹是否存在判断    
+\* UIComboBox: Items.Clear后，DropDownStyle为DropDown时，不清空Text    
+\* UILineChartOption: 增加了GetDataPoint，可获取曲线上的数据值    
+\* UITextBox: 修复了Enabled为false时，字体大小调整后，文字显示位置的问题    
+    
+#### 2023\-07\-18 V3.4.1    
+\* UIGroupBox: 解决BackColor,FillColor设置为透明时，标题下面会出现横线    
+\* UIDataGridView: 修复了有冻结行时垂直滚动条点击时出错的问题    
+\* UITitlePanel: 删除Padding设置    
+\* UIRoundProcess: 内圈尺寸小的时候更新配色    
+\* UILineChart: 增加了坐标轴绘制时显示箭头，并在箭头处显示数量单位的功能    
+\* UIRoundProcess: 增加起始角度和扫描角度    
+\* UITextBox: 修复了Enabled为false时，PasswordChar失效的问题    
+\+ UCompress: 增加数据帧压缩类    
+    
+#### 2023\-07\-09 V3.4.0    
+\+ UITurnSwitch: 增加旋转开关    
+\+ ScanerHook: 增加扫码枪键盘钩子类    
+\* UITurnSwitch: 调整配色，增加自定义角度    
+\* UIniFile: 将文件版本和文件编码写入文件头部    
+\* UITextBox: 增加Enabled为false时，可修改文字颜色    
+\* UIDropControl: 增加了下拉框控件的主动释放    
+\* UIComboBox: 修改了几个对象的释放    
+\* UILineChart: 增加了数据沿Y轴变化时鼠标移动到数据点时显示数据点标签    
+\* UILineChart: 增加PointFormat，鼠标选中值显示格式化事件    
+\* UITreeView: 屏蔽DrawMode属性，默认为OwnerDrawAll    
+\* UIButton: 渐变色增加方向选择    
+\* UIUserControl: 渐变色增加方向选择    
+\* UIDataGridView: 增加了可设置水平滚动条宽度的属性，但可能会遮挡最下面数据行的数据，看情况使用    
+\* UIComboBox: 增加过滤时忽略大小写    
+\* UIMiniPagination: 内置按钮关联值由Tag改为TagString    
+\* UIRadioButtonGroup: 内置条目关联值由Tag改为TagString    
+    
+#### 2023\-06\-14 V3.3.9    
+\* UIComboTreeView: 修复使用清空按钮后，再次打开下拉框，上次的选择内容还是存在    
+\* UIEdit: 修复输入范围判断的问题    
+    
+#### 2023\-06\-06 V3.3.8    
+\+ **支持全局字体设置，UIStyleManager的GlobalFont属性设置为true后，设置GlobalFontName属性**     
+\+ **支持全局文字缩放比例设置，UIStyleManager的GlobalFont属性设置为true后，设置GlobalFontScale属性**    
+\* UILineChart: 修复X轴文字重叠问题    
+\* UIBarChart: 修复Y轴文字居中    
+\* UINavMenu: 增加PageGuid相关扩展方法    
+\* UIVerificationCode: 修改字体缩放时显示    
+\* UITransfer: 增加列表框字体可调整    
+\* UIStyle: 更新获取Font.GdiCharSet 属性的方法    
+\* UFontImage: 修复了一个窗体属性编辑器图标显示不全的问题    
+\* 重构一些笔刷和画笔的资源释放    
+\* 重构一些控件的Dispose事件    
+\* 重构字体    
+    
+#### 2023\-05\-16 V3.3.7    
+\* 重构DrawFontImage函数    
+\* 重构MeasureString    
+\* 重构DrawString函数    
+\* UIDatePicker: 年、年月、年月日可单独设置格式化掩码    
+\* UIDatePicker: 修复文字格式化显示问题    
+\* UILineChart: 增加了一种开关量曲线的显示方式    
+\* UIBarChart: Option.BarInterval,设置Bar之间间隔，默认-1，自动计算间隔    
+\* UITitlePanel: 标题栏文字位置属性由TextAlign改为TextAlignment    
+\* UIBarChart: Option.ShowFullRect为true时，绘制右侧和上侧的边框实线    
+\* UIIPTextBox: 修复Enabled切换时背景色不一致的问题    
+\* UIDropControl: 最小高度限制，以防丢失边框    
+\* UILineChartOption: 增加了UpdateYData函数，按序号更新Y轴值    
+\* UIImageButton: 增加调用点击事件PerformClick    
+\* UITitlePanel: 增加了一个关闭按钮的属性，点击后隐藏控件    
+    
+#### 2023\-04\-24 V3.3.6    
+\*  **FontAwesome: 字体图标从V5.15.2升级到V6.4.0**     
+\* FDialogs: 增加了等待提示窗的示例    
+\* UIEdit: 修复了最大值最小值范围判断的问题    
+\* UICheckBoxGroup: 设置选择项ForeColor    
+\* UILoginForm: 增加可选择显示时激活的控件    
+\* UIChartOption: 图表的一些参数设置为只读或者私有设置    
+\* UIRadioButtonGroup: 设置选择项ForeColor    
+\* UILineChart: 打开Smooth绘制，建议数据差距不大时可平滑绘制    
+\* UIFontImages: 增加搜索结果显示页面    
+\* UIEditForm: 代码生成增加，Double类型增加小数点位数    
+\* UISwitch: 增加ActiveChanging事件，在状态改变前可以进行判断    
+    
+#### 2023\-04\-08 V3.3.5    
+\*  **UMessageTip: 解决了Release模式下GDI位图未释放的Bug**     
+\* Demo: 重写FMain，从UIForm继承       
+\* UITreeView: 修改LabelEdit属性    
+\* 内置的一些容器增加关闭过滤下拉框的点击事件    
+\* UINumPadTextBox: 增加了最大值、最小值等属性    
+\* UGraphics: 重构了一遍绘图方法    
+\* UIComboDataGridViewItem: 增加多语翻译    
+\* UIComboTreeView: 显示清除按钮    
+\* UControl: 修复关闭弹窗null的Bug    
+\* UIDropControl: DropDownList时，显示水印文字    
+       
+#### 2023\-03\-26 V3.3.4   
+\+ UINumPadTextBox: 增加模拟数字键盘输入框    
+\- UIIntegerUpDown: 删除ForbidInput属性，使用Inputable属性    
+\- UIDoubleUpDown: 删除ForbidInput属性，使用Inputable属性    
+\* UIEdit: 修复了删除为空时小数位数和设置值不一致的问题    
+\* UIPage: 调整了页面切换时Final和Init的顺序    
+\* UITreeView: 增加MouseDoubleClick和MouseClick事件    
+\* UIComboBox: 修改失去焦点自动关闭过滤下拉框    
+\* UIPage: 重新梳理页面加载顺序    
+\* UILineChart: 自定义X轴坐标时，点数据提示显示为原始值    
+\* UIDateItem: 修复下拉框鼠标移动位置的Bug    
+\* UINumPadTextBox: 增加默认事件ValueChanged，下键盘Enter事件相应此事件    
+    
+#### 2023\-03\-05 V3.3.3    
+\+ UIMiniPagination: 新增迷你分页控件，只有分页按钮，无其他    
+\* UINavMenu: 有子节点时，鼠标左键点击父级点展开/收缩，右键选中    
+\* UITextBox: 有水印时，系统响应触摸屏增加了TouchPressClick属性，默认关闭    
+\* FastLZ: 修改加载库    
+\* UINavMenu: 增加可重绘DrawNode    
+\* UIDataGridView: 加了一个简洁显示的模式    
+\* 增加了Windows里阻止系统电源选项里的系统睡眠，屏幕关闭API    
+\* UINavBar: 去除下拉菜单宽度调整    
+\* UIScrollingText: 重写滚动逻辑    
+\* UIPipe: 修复了管道宽度调大后水流不显示的问题    
+\* UIForm: 修复PageSelected可能未显示选中页面的问题    
+\* UIPage: 增加PageDeselecting，取消页面选择时增加判断    
+\* UIPage: 取消设计期的Dock.Fill，改为运行时设置    
+\* UIDropControl: 下拉框类型的ClearButton在尺寸变化时，重新计算位置    
+    
+#### 2023\-02\-07 V3.3.2    
+\+ UIControl: 增加WIN10系统响应触摸屏的按下和弹起事件    
+\* UIDropControl: 下拉框控件增加Tips小红点    
+\* UITextBox: 增加Tips小红点    
+\* UIComboBox: 增加清除按钮    
+\* UIComboTreeView: 下拉框增加显示全选选择框    
+\* UITransfer: 支持鼠标框选和Shift，Ctrl多选移动    
+\* UINavMenu: 修复了鼠标离开事件    
+\* UIIntegerUpDown: 修改文本框数据输入数据变更事件为MouseLeave    
+\* UIDoubleUpDown: 修改文本框数据输入数据变更事件为MouseLeave    
+\* UIFlowLayoutPanel: 增加AutoScroll属性    
+\* UIFlowLayoutPanel: 修复只显示水平滚动条时，鼠标滚轮滚动水平滚动条不动的问题    
+    
+#### 2023\-01\-07 V3.3.1    
+\+ UIProcessIndicatorForm: 增加等待窗体    
+\* UIDataGridView: 增加可重载的函数    
+\* UIRadioButton: 修复CheckedChanged事件    
+\* UIEdit: 修复了一个最小值大于0是，显示类型为字符串Text为空仍有显示的问题    
+\* UIProgressIndicator: 增加Active属性，是否激活动态显示    
+\* UIStatusForm: 更改了进度提示框，不在任务栏显示，并置顶    
+\* UISplitContainer: SplitterWidth值小的时不绘制箭头    
+\* UISplitContainer: 去掉SplitterWidth限制    
+\* UITreeView: 增加了可自定义行的颜色    
+\* UIIPTextBox: 删除TextChanged事件，增加ValueChanged事件    
+\* UIForm: 增加RemoveAllPages函数    
+\* UIComboBox: 增加Clear方法    
+\* UIComboDataGridView; 增加Clear方法    
+\* UIComboTreeView: 增加Clear方法    
+\* UINavMenuHelper: 重构RemovePage方法    
+\* UIPieOption: 增加了一些为空的判断    
+\* UIDoughnutOption: 增加了一些为空的判断    
+\* UIBarOption: 增加了一些为空的判断    
+\* UILineOption: 增加了一些为空的判断    
+    
+#### 2022\-11\-28 V3.3.0       
+\+ .Net7支持    
+\* UILine: 水平方向文字不居中时，可设置线条渐变色    
+\* UILineChartOption: 增加了线的最大点数设置，以及移除点数的设置    
+\* UILineChartOption: 重构对象    
+\* UIBarChartOption: 重构对象    
+\* UIPieChartOption: 重构对象    
+\* UIFlowLayoutPanel: 增加Get方法以获取控件    
+\* UIEditForm: UITextBox类型为Double的时候会导致CheckRange无法验证最大值    
+\* UICheckBoxGroup: 修复未显示时切换节点文本为空的问题    
+\* UIRadioButtonGroup: 修复未显示时切换节点文本为空的问题    
+\* UIComboDataGridView: 过滤框输入增加回车确认    
+\* UIComboDataGridView: 增加过滤框输入逐一过滤属性Filter1by1    
+\* UITextBox: 增加MouseClick，MouseDoubleClick事件    
+    
+#### 2022\-11\-13 V3.2.9      
+\+ .Net7支持    
+**:star: 删除一些过时的方法**    
+\- UIFlowLayoutPanel: 删除AddControl、RemoveControl方法    
+\- UIDoubleUpDown: 删除MaximumEnabled、MinimumEnabled、HasMaximum、HasMinimum属性    
+\- UIIntegerUpDown: 删除MaximumEnabled、MinimumEnabled、HasMaximum、HasMinimum属性    
+\- UITextBox: 删除MaximumEnabled、MinimumEnabled、HasMaximum、HasMinimum属性    
+**:star: 其他更新内容：**    
+\* UIHorScrollBarEx: 增加了可设置水平滚动条高度的属性    
+\* UIHorScrollBar: 增加了可设置水平滚动条高度的属性    
+\* UIComboBox: 增加不显示过滤可以自动调整下拉框宽度    
+\* UIFlowLayoutPanel: 增加滚动条背景色调整    
+\* UIIntegerUpDown: 修改整数离开判断为实时输入判断    
+\* UIDoubleUpDown: 修改浮点数大小离开判断为实时输入判断    
+\* UITextBox: 修改整数、浮点数大小离开判断为实时输入判断    
+\* UIDatePicker: 增加MaxDate,MinDate    
+    
+#### 2022\-11\-03 V3.2.8      
+\* UIDataGridView: 增加了可设置垂直滚动条宽度的属性    
+\* UITitlePanel: 箭头图标可设置颜色    
+\* UIPage: 标题栏增加扩展按钮    
+\* UITreeView: TreeNode支持imagekey绑定图标    
+\* UIniFile: 增加读取字符串长度到4096，增加文件编码    
+\* UIIPTextBox: 增加TextChanged事件    
+\* UIVerScrollBarEx: 增加了可设置垂直滚动条宽度的属性    
+\* UIImageListBox: 增加了可设置垂直滚动条宽度的属性    
+\* UIListBox: 增加了可设置垂直滚动条宽度的属性    
+\* UITreeView: 增加了可设置垂直滚动条宽度的属性    
+\* UIComboBox: 过滤时删除字符串前面、后面的空格    
+\* UIComboDataGridView: 过滤时删除字符串前面、后面的空格    
+\* UINavMenu: 增加了可设置垂直滚动条宽度的属性    
+\* UINavMenu: 重写了节点右侧图标的绘制    
+\* UIFlowLayoutPanel: 增加了可设置垂直滚动条宽度的属性    
+\* UIRichTextBox: 增加了可设置垂直滚动条宽度的属性    
+\* UITextBox: 增加了可设置垂直滚动条宽度的属性    
+    
+#### 2022\-10\-03 V3.2.6       
+\* UIniFile: 修改IniFile，恢复为WinApi读取，以保证与以前配置文件兼容    
+    
+#### 2022\-10\-01 V3.2.5    
+\* UISwitch: 修复了Readonly时，双击还可以改变值的问题    
+\* UILineChart: 增加鼠标可框选缩放属性MouseZoom    
+\* UIIntegerUpDown: 增加是否可以双击输入属性    
+\* UIDoubleUpDown: 增加是否可以双击输入属性    
+\* UITextBox: 修改右侧Button可能不显示的问题    
+\* UIDropControl: 支持自定义右键菜单    
+\* UITextBox: 支持自定义右键菜单    
+\* UIniFile: 修改IniFile，改WinApi读取为直接C#代码读取    
+\- JsonConfig: 删除JsonConfig，Json可以直接对象序列化字符串保存。JsonConfig有点鸡肋了    
+    
+#### 2022\-09\-11 V3.2.4    
+**:star: 重构多页面框架传值**     
+\* UIForm: 重构多页面框架传值：删除SetParamToPage    
+\* UIForm: 重构多页面框架传值：框架发送给页面 SendParamToPage 函数    
+\* UIForm: 重构多页面框架传值：接收页面传值 ReceiveParams 事件    
+\* UIPage: 重构多页面框架传值：删除SetParam，FeedbackToFrame    
+\* UIPage: 重构多页面框架传值：页面发送给框架 SendParamToFrame 函数    
+\* UIPage: 重构多页面框架传值：页面发送给框架 SendParamToPage 函数    
+\* UIPage: 重构多页面框架传值：接收框架、页面传值 ReceiveParams 事件    
+**:star: UIListBox: 修复Click，DoubleClick事件**         
+\* UIListBox: 修复Click，DoubleClick事件，替换ItemClick，ItemDoubleClick    
+**:star: 其他更新内容：**     
+\* UIForm: 修复继承页面可响应WM_HOTKEY消息    
+\* UIComboDataGridView: 增加过滤字异常判断    
+\* UIBarChart: Option.YAxis.ShowGridLine为false时，不显示水平表格虚线    
+\* 下拉框控件文字位置微调，和文本框显示位置一致    
+\* UITextBox: 修复了无水印文字时，光标有时不显示的问题    
+\* UIDataGridViewFooter: 重构文字显示    
+\* UIProcessBar: 修改最大值至少为1    
+\* UIImageListBox: 增加了一些事件    
+\* UIForm: 重构页面添加、选择、删除事件    
+\* UIComboBox: 下拉框边框可设置颜色    
+\* UIButton: 增加同一个容器的相同GroupIndex的按钮控件的Selected单选    
+\* UINavMenu: 修复选中节点右侧图标前景色    
+\* UIBarChart: 增加数据可为Nan    
+\* UILineChart: 修复数据全为Nan时绘制出错    
+\* 增加UIKnob的Demo    
+        
 #### 2022\-08\-16 V3.2.3
- **〇〇 关于图表数据显示格式化已经重构，需重点关注，可参考Demo：**     
+**:star: 关于图表数据显示格式化已经重构，需重点关注，可参考Demo：**     
 \* UILineChart: 数据显示的小数位数重构调整至数据序列 Series.XAxisDecimalPlaces，YAxisDecimalPlaces    
 \* UILineChart: 数据显示的日期格式重构调整至数据序列 Series.XAxisDateTimeFormat    
 \* UILineChart: 坐标轴的小数位数重构调整至坐标轴标签 AxisLabel.DecimalPlaces    
@@ -11,9 +364,9 @@
 \* UIDoughnutChart: 数据显示的小数位数重构调整至Option.DecimalPlaces    
 \* UIPieChart: 数据显示的小数位数重构调整至Option.DecimalPlaces    
 \* UIDoubleUpDown, UIProcessBar, UITextBox: 小数位数统一改名为DecimalPlaces    
- **〇〇 UITabControlMenu需要重新设置ItemSize：**  
+**:star: UITabControlMenu需要重新设置ItemSize：**  
 \* UITabControlMenu: 重写ItemSize，将宽、高调整为正常显示    
- **〇〇 其他更新内容：**     
+**:star: 其他更新内容：**     
 \* UITreeView: 去掉窗体控件的默认设计器    
 \* UINavBar: 删除界面此控件的编辑器    
 \+ UIKnob: 新增控件    
@@ -29,7 +382,7 @@
 \* UIForm: 多页面框架增加程序关闭时调用UIPage的Final和FormClosed事件    
 \+ 增加LineAweSome字体图标，测试下看看效果    
 \- 删除LineAweSome字体图标，经过测试显示效果不理想    
-      
+            
 #### 2022\-07\-25 V3.2.2    
 \* UIForm: 多页面框架增加PageAdded，PageSelected，PageRemoved事件    
 \* UIComboBox: 屏蔽FormatString的编辑器    

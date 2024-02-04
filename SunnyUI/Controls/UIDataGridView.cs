@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -43,6 +43,10 @@
  * 2022-07-11: V3.2.1 增加滚动条边框线的设置
  * 2022-07-28: V3.2.2 修复了ScrollBars为None时仍然显示滚动条的问题
  * 2022-07-28: V3.2.2 修复了单行时表格高度低时，垂直滚动条拖拽至底部出错的问题
+ * 2022-10-14: V3.2.6 增加了可设置垂直滚动条宽度的属性
+ * 2023-06-28: V3.3.9 增加了可设置水平滚动条宽度的属性，但可能会遮挡最下面数据行的数据，看情况使用
+ * 2023-07-12: V3.4.0 修复了有冻结行时垂直滚动条点击时出错的问题
+ * 2023-11-05: V3.5.2 重构主题
 ******************************************************************************/
 
 using System;
@@ -62,7 +66,7 @@ namespace Sunny.UI
         {
             BackgroundColor = UIColor.White;
             GridColor = UIColor.Blue;
-            base.Font = UIFontColor.Font();
+            base.Font = UIStyles.Font();
             base.DoubleBuffered = true;
 
             VBar.Parent = this;
@@ -90,17 +94,17 @@ namespace Sunny.UI
             ColumnHeadersDefaultCellStyle.BackColor = UIColor.Blue;
             ColumnHeadersDefaultCellStyle.ForeColor = UIColor.White;
             ColumnHeadersDefaultCellStyle.WrapMode = DataGridViewTriState.True;
-            ColumnHeadersDefaultCellStyle.Font = UIFontColor.Font();
+            ColumnHeadersDefaultCellStyle.Font = UIStyles.Font();
 
             //行头部颜色
             RowHeadersDefaultCellStyle.BackColor = UIColor.LightBlue;
             RowHeadersDefaultCellStyle.ForeColor = UIFontColor.Primary;
             RowHeadersDefaultCellStyle.SelectionBackColor = UIColor.Blue;
             RowHeadersDefaultCellStyle.SelectionForeColor = Color.White;
-            RowHeadersDefaultCellStyle.Font = UIFontColor.Font();
+            RowHeadersDefaultCellStyle.Font = UIStyles.Font();
 
-            RowsDefaultCellStyle.Font = UIFontColor.Font();
-            DefaultCellStyle.Font = UIFontColor.Font();
+            RowsDefaultCellStyle.Font = UIStyles.Font();
+            DefaultCellStyle.Font = UIStyles.Font();
 
             //标题行行高，与OnColumnAdded事件配合
             ColumnHeadersHeight = 32;
@@ -115,6 +119,58 @@ namespace Sunny.UI
             HorizontalScrollBar.VisibleChanged += HorizontalScrollBar_VisibleChanged;
         }
 
+        private int scrollBarWidth = 0;
+
+        [DefaultValue(0), Category("SunnyUI"), Description("垂直滚动条宽度，最小为原生滚动条宽度")]
+        public int ScrollBarWidth
+        {
+            get => scrollBarWidth;
+            set
+            {
+                scrollBarWidth = value;
+                SetScrollInfo();
+            }
+        }
+
+        private int scrollBarHandleWidth = 6;
+
+        [DefaultValue(6), Category("SunnyUI"), Description("垂直滚动条滑块宽度，最小为原生滚动条宽度")]
+        public int ScrollBarHandleWidth
+        {
+            get => scrollBarHandleWidth;
+            set
+            {
+                scrollBarHandleWidth = value;
+                if (VBar != null) VBar.FillWidth = value;
+            }
+        }
+
+        private int scrollBarHeight = 0;
+
+        [DefaultValue(0), Category("SunnyUI"), Description("水平滚动条高度，最小为原生滚动条宽度")]
+        public int ScrollBarHeight
+        {
+            get => scrollBarHeight;
+            set
+            {
+                scrollBarHeight = value;
+                SetScrollInfo();
+            }
+        }
+
+        private int scrollBarHandleHeight = 6;
+
+        [DefaultValue(6), Category("SunnyUI"), Description("水平滚动条滑块高度，最小为原生滚动条宽度")]
+        public int ScrollBarHandleHeight
+        {
+            get => scrollBarHandleHeight;
+            set
+            {
+                scrollBarHandleHeight = value;
+                if (HBar != null) HBar.FillHeight = value;
+            }
+        }
+
         /// <summary>
         /// 禁止控件跟随窗体缩放
         /// </summary>
@@ -124,7 +180,7 @@ namespace Sunny.UI
         /// <summary>
         /// 控件缩放前在其容器里的位置
         /// </summary>
-        [Browsable(false)]
+        [Browsable(false), DefaultValue(typeof(Rectangle), "0, 0, 0, 0")]
         public Rectangle ZoomScaleRect { get; set; }
 
         /// <summary>
@@ -136,22 +192,35 @@ namespace Sunny.UI
 
         }
 
-        [Browsable(false)]
-        public bool IsScaled { get; private set; }
+        float ColumnHeadersDefaultCellStyleFontSize = -1;
+        float RowHeadersDefaultCellStyleFontSize = -1;
+        float DefaultCellStyleFontSize = -1;
+        float RowsDefaultCellStyleFontSize = -1;
 
         public void SetDPIScale()
         {
-            if (!IsScaled)
+            if (ColumnHeadersDefaultCellStyle.Font != null)
             {
-                if (ColumnHeadersDefaultCellStyle.Font != null)
-                    ColumnHeadersDefaultCellStyle.Font = ColumnHeadersDefaultCellStyle.Font.DPIScaleFont();
-                if (RowHeadersDefaultCellStyle.Font != null)
-                    RowHeadersDefaultCellStyle.Font = RowHeadersDefaultCellStyle.Font.DPIScaleFont();
-                if (DefaultCellStyle.Font != null)
-                    DefaultCellStyle.Font = DefaultCellStyle.Font.DPIScaleFont();
-                if (RowsDefaultCellStyle.Font != null)
-                    RowsDefaultCellStyle.Font = RowsDefaultCellStyle.Font.DPIScaleFont();
-                IsScaled = true;
+                if (ColumnHeadersDefaultCellStyleFontSize < 0) ColumnHeadersDefaultCellStyleFontSize = ColumnHeadersDefaultCellStyle.Font.Size;
+                ColumnHeadersDefaultCellStyle.Font = ColumnHeadersDefaultCellStyle.Font.DPIScaleFont(ColumnHeadersDefaultCellStyleFontSize);
+            }
+
+            if (RowHeadersDefaultCellStyle.Font != null)
+            {
+                if (RowHeadersDefaultCellStyleFontSize < 0) RowHeadersDefaultCellStyleFontSize = RowHeadersDefaultCellStyle.Font.Size;
+                RowHeadersDefaultCellStyle.Font = RowHeadersDefaultCellStyle.Font.DPIScaleFont(RowHeadersDefaultCellStyleFontSize);
+            }
+
+            if (DefaultCellStyle.Font != null)
+            {
+                if (DefaultCellStyleFontSize < 0) DefaultCellStyleFontSize = DefaultCellStyle.Font.Size;
+                DefaultCellStyle.Font = DefaultCellStyle.Font.DPIScaleFont(DefaultCellStyleFontSize);
+            }
+
+            if (RowsDefaultCellStyle.Font != null)
+            {
+                if (RowsDefaultCellStyleFontSize < 0) RowsDefaultCellStyleFontSize = RowsDefaultCellStyle.Font.Size;
+                RowsDefaultCellStyle.Font = RowsDefaultCellStyle.Font.DPIScaleFont(RowsDefaultCellStyleFontSize);
             }
         }
 
@@ -280,6 +349,28 @@ namespace Sunny.UI
             SelectionMode = DataGridViewSelectionMode.FullRowSelect;
         }
 
+        private bool isLightMode = false;
+        public void LightMode()
+        {
+            AllowUserToAddRows = false;
+            AllowUserToDeleteRows = false;
+            AllowUserToResizeColumns = false;
+            AllowUserToResizeRows = false;
+            AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
+            BackgroundColor = System.Drawing.Color.White;
+            BorderStyle = System.Windows.Forms.BorderStyle.None;
+            CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.SingleHorizontal;
+            ColumnHeadersBorderStyle = System.Windows.Forms.DataGridViewHeaderBorderStyle.None;
+            StripeOddColor = System.Drawing.Color.White;
+            ColumnHeadersDefaultCellStyle.BackColor = Color.White;
+            ColumnHeadersDefaultCellStyle.ForeColor = Color.Black;
+            ColumnHeadersDefaultCellStyle.SelectionBackColor = Color.White;
+            ColumnHeadersDefaultCellStyle.SelectionForeColor = Color.Black;
+            SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
+            GridColor = Color.LightGray;
+            isLightMode = true;
+        }
+
         private void VerticalScrollBar_ValueChanged(object sender, EventArgs e)
         {
             VBar.Value = FirstDisplayedScrollingRowIndex;
@@ -292,7 +383,41 @@ namespace Sunny.UI
             int idx = VBar.Value;
             if (idx < 0) idx = 0;
             if (idx >= RowCount) idx = RowCount - 1;
-            FirstDisplayedScrollingRowIndex = idx;
+
+            int lastFrozen = GetFrozenBottomIndex();
+            if (Rows[0].Frozen)
+            {
+                if (RowCount > lastFrozen + 1)
+                {
+                    lastFrozen += 1;
+                    FirstDisplayedScrollingRowIndex = Math.Max(idx, lastFrozen);
+                }
+            }
+            else
+            {
+                FirstDisplayedScrollingRowIndex = idx;
+            }
+        }
+
+        private int GetFrozenBottomIndex()
+        {
+            int lastFrozen = 0;
+            if (Rows[0].Frozen)
+            {
+                for (int i = 0; i < Rows.Count; i++)
+                {
+                    if (Rows[i].Frozen)
+                    {
+                        lastFrozen = i;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+
+            return lastFrozen;
         }
 
         private void HorizontalScrollBar_ValueChanged(object sender, EventArgs e)
@@ -358,6 +483,11 @@ namespace Sunny.UI
                 Color color = RectColor;
                 color = Enabled ? color : UIDisableColor.Fill;
                 e.Graphics.DrawRectangle(color, new Rectangle(0, 0, Width - 1, Height - 1));
+            }
+
+            if (isLightMode)
+            {
+                e.Graphics.DrawLine(GridColor, 0, ColumnHeadersHeight - 1, Width, ColumnHeadersHeight - 1);
             }
         }
 
@@ -438,30 +568,33 @@ namespace Sunny.UI
                 return;
             }
 
+            int barWidth = Math.Max(ScrollBarInfo.VerticalScrollBarWidth(), ScrollBarWidth);
+            int barHeight = Math.Max(ScrollBarInfo.HorizontalScrollBarHeight(), ScrollBarHeight);
+
             if (BorderStyle == BorderStyle.FixedSingle)
             {
-                VBar.Left = Width - ScrollBarInfo.VerticalScrollBarWidth() - 2;
+                VBar.Left = Width - barWidth - 2;
                 VBar.Top = 1;
-                VBar.Width = ScrollBarInfo.VerticalScrollBarWidth() + 1;
+                VBar.Width = barWidth + 1;
                 VBar.Height = Height - 2;
                 VBar.BringToFront();
 
                 HBar.Left = 1;
-                HBar.Height = ScrollBarInfo.HorizontalScrollBarHeight() + 1;
+                HBar.Height = barHeight + 1;
                 HBar.Width = Width - (VBar.Visible ? VBar.Width : 0) - 2;
                 HBar.Top = Height - HBar.Height - 1;
                 HBar.BringToFront();
             }
             else
             {
-                VBar.Left = Width - ScrollBarInfo.VerticalScrollBarWidth() - 1;
+                VBar.Left = Width - barWidth - 1;
                 VBar.Top = 0;
-                VBar.Width = ScrollBarInfo.VerticalScrollBarWidth() + 1;
+                VBar.Width = barWidth + 1;
                 VBar.Height = Height;
                 VBar.BringToFront();
 
                 HBar.Left = 0;
-                HBar.Height = ScrollBarInfo.HorizontalScrollBarHeight() + 1;
+                HBar.Height = barHeight + 1;
                 HBar.Width = Width - (VBar.Visible ? VBar.Width : 0);
                 HBar.Top = Height - HBar.Height;
                 HBar.BringToFront();
@@ -481,12 +614,12 @@ namespace Sunny.UI
             SetScrollInfo();
         }
 
-        private UIStyle _style = UIStyle.Blue;
+        private UIStyle _style = UIStyle.Inherited;
 
         /// <summary>
         /// 主题样式
         /// </summary>
-        [DefaultValue(UIStyle.Blue), Description("主题样式"), Category("SunnyUI")]
+        [DefaultValue(UIStyle.Inherited), Description("主题样式"), Category("SunnyUI")]
         public UIStyle Style
         {
             get => _style;
@@ -517,7 +650,11 @@ namespace Sunny.UI
             }
         }
 
-        public void SetStyle(UIStyle style)
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="style">主题样式</param>
+        private void SetStyle(UIStyle style)
         {
             if (!style.IsCustom())
             {
@@ -525,7 +662,13 @@ namespace Sunny.UI
                 Invalidate();
             }
 
-            _style = style;
+            _style = style == UIStyle.Inherited ? UIStyle.Inherited : UIStyle.Custom;
+        }
+
+        public void SetInheritedStyle(UIStyle style)
+        {
+            SetStyle(style);
+            _style = UIStyle.Inherited;
         }
 
         public void SetStyleColor(UIBaseStyle uiColor)
@@ -562,7 +705,7 @@ namespace Sunny.UI
             StripeEvenColor = uiColor.GridStripeEvenColor;
             StripeOddColor = uiColor.GridStripeOddColor;
 
-            if (HBar != null)
+            if (HBar != null && HBar.Style == UIStyle.Inherited)
             {
                 HBar.ForeColor = uiColor.GridBarForeColor;
                 HBar.HoverColor = uiColor.ButtonFillHoverColor;
@@ -573,7 +716,7 @@ namespace Sunny.UI
                 scrollBarBackColor = uiColor.GridBarFillColor;
             }
 
-            if (VBar != null)
+            if (VBar != null && VBar.Style == UIStyle.Inherited)
             {
                 VBar.ForeColor = uiColor.GridBarForeColor;
                 VBar.HoverColor = uiColor.ButtonFillHoverColor;
@@ -588,7 +731,7 @@ namespace Sunny.UI
         /// <summary>
         /// 自定义主题风格
         /// </summary>
-        [DefaultValue(false)]
+        [DefaultValue(false), Browsable(false)]
         [Description("获取或设置可以自定义主题风格"), Category("SunnyUI")]
         public bool StyleCustomMode { get; set; }
 
@@ -647,7 +790,20 @@ namespace Sunny.UI
                     }
 
                     Rows[value].Selected = true;
-                    FirstDisplayedScrollingRowIndex = value;
+
+                    int lastFrozen = GetFrozenBottomIndex();
+                    if (Rows[0].Frozen)
+                    {
+                        if (RowCount > lastFrozen + 1)
+                        {
+                            lastFrozen += 1;
+                            FirstDisplayedScrollingRowIndex = Math.Max(value, lastFrozen);
+                        }
+                    }
+                    else
+                    {
+                        FirstDisplayedScrollingRowIndex = value;
+                    }
 
                     if (selectedIndex >= 0 && selectedIndex <= Rows.Count)
                         jumpIndex = selectedIndex;
@@ -729,7 +885,7 @@ namespace Sunny.UI
             return column;
         }
 
-        public void ClearRows()
+        public virtual void ClearRows()
         {
             if (DataSource != null)
             {
@@ -739,12 +895,12 @@ namespace Sunny.UI
             Rows.Clear();
         }
 
-        public void ClearColumns()
+        public virtual void ClearColumns()
         {
             Columns.Clear();
         }
 
-        public void ClearAll()
+        public virtual void ClearAll()
         {
             ClearRows();
             ClearColumns();
@@ -802,13 +958,18 @@ namespace Sunny.UI
                 scrollBarColor = value;
                 HBar.HoverColor = HBar.PressColor = HBar.ForeColor = value;
                 VBar.HoverColor = VBar.PressColor = VBar.ForeColor = value;
-                _style = UIStyle.Custom;
+                HBar.Style = VBar.Style = UIStyle.Custom;
                 Invalidate();
             }
         }
 
         private Color scrollBarRectColor = Color.FromArgb(80, 160, 255);
 
+        /// <summary>
+        /// 填充颜色，当值为背景色或透明色或空值则不填充
+        /// </summary>
+        [Description("滚动条边框颜色"), Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "80, 160, 255")]
         public Color ScrollBarRectColor
         {
             get => scrollBarRectColor;
@@ -816,7 +977,7 @@ namespace Sunny.UI
             {
                 scrollBarRectColor = value;
                 VBar.RectColor = value;
-                _style = UIStyle.Custom;
+                HBar.Style = VBar.Style = UIStyle.Custom;
                 Invalidate();
             }
         }
@@ -836,8 +997,30 @@ namespace Sunny.UI
                 scrollBarBackColor = value;
                 HBar.FillColor = value;
                 VBar.FillColor = value;
-                _style = UIStyle.Custom;
+                HBar.Style = VBar.Style = UIStyle.Custom;
                 Invalidate();
+            }
+        }
+
+        /// <summary>
+        /// 滚动条主题样式
+        /// </summary>
+        [DefaultValue(true), Description("滚动条主题样式"), Category("SunnyUI")]
+        public bool ScrollBarStyleInherited
+        {
+            get => HBar != null && HBar.Style == UIStyle.Inherited;
+            set
+            {
+                if (value)
+                {
+                    if (HBar != null) HBar.Style = UIStyle.Inherited;
+                    if (VBar != null) VBar.Style = UIStyle.Inherited;
+
+                    scrollBarColor = UIStyles.Blue.GridBarForeColor;
+                    scrollBarBackColor = UIStyles.Blue.GridBarFillColor;
+                    scrollBarRectColor = VBar.RectColor = UIStyles.Blue.RectColor;
+                }
+
             }
         }
     }

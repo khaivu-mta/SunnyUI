@@ -29,153 +29,238 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.TreeNode treeNode1 = new System.Windows.Forms.TreeNode("控件");
-            System.Windows.Forms.TreeNode treeNode2 = new System.Windows.Forms.TreeNode("窗体");
-            System.Windows.Forms.TreeNode treeNode3 = new System.Windows.Forms.TreeNode("图表");
-            System.Windows.Forms.TreeNode treeNode4 = new System.Windows.Forms.TreeNode("工控");
-            System.Windows.Forms.TreeNode treeNode5 = new System.Windows.Forms.TreeNode("主题");
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FMain));
-            this.uiLogo1 = new Sunny.UI.UILogo();
-            this.uiAvatar = new Sunny.UI.UIAvatar();
-            this.StyleManager = new Sunny.UI.UIStyleManager(this.components);
             this.uiContextMenuStrip1 = new Sunny.UI.UIContextMenuStrip();
             this.关于ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.关于ToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
-            this.Header.SuspendLayout();
+            this.StyleManager = new Sunny.UI.UIStyleManager(this.components);
+            this.uiNavBar1 = new Sunny.UI.UINavBar();
+            this.uiAvatar1 = new Sunny.UI.UIAvatar();
+            this.uiLogo1 = new Sunny.UI.UILogo();
+            this.uiPanel1 = new Sunny.UI.UIPanel();
+            this.uiPanel4 = new Sunny.UI.UIPanel();
+            this.uiPanel3 = new Sunny.UI.UIPanel();
+            this.uiPanel2 = new Sunny.UI.UIPanel();
+            this.uiNavMenu1 = new Sunny.UI.UINavMenu();
+            this.uiTabControl1 = new Sunny.UI.UITabControl();
+            this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.uiContextMenuStrip1.SuspendLayout();
+            this.uiNavBar1.SuspendLayout();
+            this.uiPanel1.SuspendLayout();
             this.SuspendLayout();
-            // 
-            // Aside
-            // 
-            this.Aside.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(240)))), ((int)(((byte)(240)))));
-            this.Aside.ItemHeight = 36;
-            this.Aside.LineColor = System.Drawing.Color.Black;
-            this.Aside.Location = new System.Drawing.Point(2, 146);
-            this.Aside.MenuStyle = Sunny.UI.UIMenuStyle.Custom;
-            this.Aside.ScrollBarColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(240)))), ((int)(((byte)(240)))));
-            this.Aside.ScrollBarHoverColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(240)))), ((int)(((byte)(240)))));
-            this.Aside.ScrollBarPressColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(240)))), ((int)(((byte)(240)))));
-            this.Aside.ShowOneNode = true;
-            this.Aside.ShowSecondBackColor = true;
-            this.Aside.ShowTips = true;
-            this.Aside.Size = new System.Drawing.Size(250, 572);
-            this.Aside.Style = Sunny.UI.UIStyle.Custom;
-            // 
-            // Header
-            // 
-            this.Header.Controls.Add(this.uiAvatar);
-            this.Header.Controls.Add(this.uiLogo1);
-            this.Header.Location = new System.Drawing.Point(2, 36);
-            treeNode1.ImageIndex = 1;
-            treeNode1.Name = "节点0";
-            treeNode1.Text = "控件";
-            treeNode2.Name = "节点1";
-            treeNode2.Text = "窗体";
-            treeNode3.Name = "节点2";
-            treeNode3.Text = "图表";
-            treeNode4.Name = "节点0";
-            treeNode4.Text = "工控";
-            treeNode5.Name = "节点2";
-            treeNode5.Text = "主题";
-            this.Header.Nodes.AddRange(new System.Windows.Forms.TreeNode[] {
-            treeNode1,
-            treeNode2,
-            treeNode3,
-            treeNode4,
-            treeNode5});
-            this.Header.NodeSize = new System.Drawing.Size(110, 45);
-            this.Header.SelectedIndex = 0;
-            this.Header.Size = new System.Drawing.Size(1020, 110);
-            this.Header.Style = Sunny.UI.UIStyle.Custom;
-            this.Header.MenuItemClick += new Sunny.UI.UINavBar.OnMenuItemClick(this.Header_MenuItemClick);
-            // 
-            // uiLogo1
-            // 
-            this.uiLogo1.Font = new System.Drawing.Font("微软雅黑", 12F);
-            this.uiLogo1.Location = new System.Drawing.Point(2, 15);
-            this.uiLogo1.MaximumSize = new System.Drawing.Size(300, 80);
-            this.uiLogo1.MinimumSize = new System.Drawing.Size(300, 80);
-            this.uiLogo1.Name = "uiLogo1";
-            this.uiLogo1.Size = new System.Drawing.Size(300, 80);
-            this.uiLogo1.Style = Sunny.UI.UIStyle.Custom;
-            this.uiLogo1.TabIndex = 3;
-            this.uiLogo1.Text = "uiLogo1";
-            this.uiLogo1.ZoomScaleRect = new System.Drawing.Rectangle(0, 0, 0, 0);
-            // 
-            // uiAvatar
-            // 
-            this.uiAvatar.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.uiAvatar.Font = new System.Drawing.Font("微软雅黑", 12F);
-            this.uiAvatar.Location = new System.Drawing.Point(939, 25);
-            this.uiAvatar.MinimumSize = new System.Drawing.Size(1, 1);
-            this.uiAvatar.Name = "uiAvatar";
-            this.uiAvatar.Size = new System.Drawing.Size(66, 70);
-            this.uiAvatar.TabIndex = 4;
-            this.uiAvatar.Text = "uiAvatar1";
-            this.uiAvatar.ZoomScaleRect = new System.Drawing.Rectangle(0, 0, 0, 0);
-            // 
-            // StyleManager
-            // 
-            this.StyleManager.DPIScale = true;
             // 
             // uiContextMenuStrip1
             // 
             this.uiContextMenuStrip1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(243)))), ((int)(((byte)(249)))), ((int)(((byte)(255)))));
-            this.uiContextMenuStrip1.Font = new System.Drawing.Font("微软雅黑", 12F);
-            this.uiContextMenuStrip1.IsScaled = true;
+            this.uiContextMenuStrip1.Font = new System.Drawing.Font("宋体", 12F);
             this.uiContextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.关于ToolStripMenuItem,
             this.关于ToolStripMenuItem1});
             this.uiContextMenuStrip1.Name = "uiContextMenuStrip1";
-            this.uiContextMenuStrip1.Size = new System.Drawing.Size(113, 56);
-            this.uiContextMenuStrip1.ZoomScaleRect = new System.Drawing.Rectangle(0, 0, 0, 0);
+            this.uiContextMenuStrip1.Size = new System.Drawing.Size(107, 48);
             // 
             // 关于ToolStripMenuItem
             // 
             this.关于ToolStripMenuItem.Name = "关于ToolStripMenuItem";
-            this.关于ToolStripMenuItem.Size = new System.Drawing.Size(112, 26);
+            this.关于ToolStripMenuItem.Size = new System.Drawing.Size(106, 22);
             this.关于ToolStripMenuItem.Text = "主页";
             this.关于ToolStripMenuItem.Click += new System.EventHandler(this.关于ToolStripMenuItem_Click);
             // 
             // 关于ToolStripMenuItem1
             // 
             this.关于ToolStripMenuItem1.Name = "关于ToolStripMenuItem1";
-            this.关于ToolStripMenuItem1.Size = new System.Drawing.Size(112, 26);
+            this.关于ToolStripMenuItem1.Size = new System.Drawing.Size(106, 22);
             this.关于ToolStripMenuItem1.Text = "关于";
             this.关于ToolStripMenuItem1.Click += new System.EventHandler(this.关于ToolStripMenuItem1_Click);
+            // 
+            // StyleManager
+            // 
+            this.StyleManager.DPIScale = true;
+            this.StyleManager.GlobalFont = true;
+            this.StyleManager.GlobalFontName = "Tahoma";
+            // 
+            // uiNavBar1
+            // 
+            this.uiNavBar1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(240)))), ((int)(((byte)(240)))));
+            this.uiNavBar1.Controls.Add(this.uiAvatar1);
+            this.uiNavBar1.Controls.Add(this.uiLogo1);
+            this.uiNavBar1.Dock = System.Windows.Forms.DockStyle.Top;
+            this.uiNavBar1.DropMenuFont = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.uiNavBar1.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.uiNavBar1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(48)))), ((int)(((byte)(48)))), ((int)(((byte)(48)))));
+            this.uiNavBar1.Location = new System.Drawing.Point(2, 36);
+            this.uiNavBar1.MenuHoverColor = System.Drawing.Color.FromArgb(((int)(((byte)(230)))), ((int)(((byte)(230)))), ((int)(((byte)(230)))));
+            this.uiNavBar1.MenuSelectedColor = System.Drawing.Color.FromArgb(((int)(((byte)(250)))), ((int)(((byte)(250)))), ((int)(((byte)(250)))));
+            this.uiNavBar1.MenuStyle = Sunny.UI.UIMenuStyle.White;
+            this.uiNavBar1.Name = "uiNavBar1";
+            this.uiNavBar1.Size = new System.Drawing.Size(1096, 126);
+            this.uiNavBar1.TabIndex = 1;
+            this.uiNavBar1.Text = "uiNavBar1";
+            this.uiNavBar1.MenuItemClick += new Sunny.UI.UINavBar.OnMenuItemClick(this.uiNavBar1_MenuItemClick);
+            // 
+            // uiAvatar1
+            // 
+            this.uiAvatar1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.uiAvatar1.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.uiAvatar1.Location = new System.Drawing.Point(1016, 33);
+            this.uiAvatar1.MinimumSize = new System.Drawing.Size(1, 1);
+            this.uiAvatar1.Name = "uiAvatar1";
+            this.uiAvatar1.Size = new System.Drawing.Size(60, 60);
+            this.uiAvatar1.TabIndex = 5;
+            this.uiAvatar1.Text = "uiAvatar1";
+            // 
+            // uiLogo1
+            // 
+            this.uiLogo1.Font = new System.Drawing.Font("宋体", 12F);
+            this.uiLogo1.Location = new System.Drawing.Point(8, 23);
+            this.uiLogo1.MaximumSize = new System.Drawing.Size(300, 80);
+            this.uiLogo1.MinimumSize = new System.Drawing.Size(300, 80);
+            this.uiLogo1.Name = "uiLogo1";
+            this.uiLogo1.Size = new System.Drawing.Size(300, 80);
+            this.uiLogo1.TabIndex = 4;
+            this.uiLogo1.Text = "uiLogo1";
+            // 
+            // uiPanel1
+            // 
+            this.uiPanel1.Controls.Add(this.uiPanel4);
+            this.uiPanel1.Controls.Add(this.uiPanel3);
+            this.uiPanel1.Controls.Add(this.uiPanel2);
+            this.uiPanel1.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.uiPanel1.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.uiPanel1.Location = new System.Drawing.Point(2, 734);
+            this.uiPanel1.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.uiPanel1.MinimumSize = new System.Drawing.Size(1, 1);
+            this.uiPanel1.Name = "uiPanel1";
+            this.uiPanel1.RadiusSides = Sunny.UI.UICornerRadiusSides.None;
+            this.uiPanel1.RectSides = System.Windows.Forms.ToolStripStatusLabelBorderSides.Top;
+            this.uiPanel1.Size = new System.Drawing.Size(1096, 32);
+            this.uiPanel1.TabIndex = 3;
+            this.uiPanel1.Text = null;
+            this.uiPanel1.TextAlignment = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // uiPanel4
+            // 
+            this.uiPanel4.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.uiPanel4.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.uiPanel4.Location = new System.Drawing.Point(286, 0);
+            this.uiPanel4.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.uiPanel4.MinimumSize = new System.Drawing.Size(1, 1);
+            this.uiPanel4.Name = "uiPanel4";
+            this.uiPanel4.RadiusSides = Sunny.UI.UICornerRadiusSides.None;
+            this.uiPanel4.RectSides = System.Windows.Forms.ToolStripStatusLabelBorderSides.Top;
+            this.uiPanel4.Size = new System.Drawing.Size(524, 32);
+            this.uiPanel4.TabIndex = 2;
+            this.uiPanel4.Text = null;
+            this.uiPanel4.TextAlignment = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // uiPanel3
+            // 
+            this.uiPanel3.Dock = System.Windows.Forms.DockStyle.Right;
+            this.uiPanel3.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.uiPanel3.Location = new System.Drawing.Point(810, 0);
+            this.uiPanel3.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.uiPanel3.MinimumSize = new System.Drawing.Size(1, 1);
+            this.uiPanel3.Name = "uiPanel3";
+            this.uiPanel3.RadiusSides = Sunny.UI.UICornerRadiusSides.None;
+            this.uiPanel3.RectSides = ((System.Windows.Forms.ToolStripStatusLabelBorderSides)((System.Windows.Forms.ToolStripStatusLabelBorderSides.Left | System.Windows.Forms.ToolStripStatusLabelBorderSides.Top)));
+            this.uiPanel3.Size = new System.Drawing.Size(286, 32);
+            this.uiPanel3.TabIndex = 1;
+            this.uiPanel3.Text = null;
+            this.uiPanel3.TextAlignment = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // uiPanel2
+            // 
+            this.uiPanel2.Dock = System.Windows.Forms.DockStyle.Left;
+            this.uiPanel2.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.uiPanel2.Location = new System.Drawing.Point(0, 0);
+            this.uiPanel2.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.uiPanel2.MinimumSize = new System.Drawing.Size(1, 1);
+            this.uiPanel2.Name = "uiPanel2";
+            this.uiPanel2.RadiusSides = Sunny.UI.UICornerRadiusSides.None;
+            this.uiPanel2.RectSides = ((System.Windows.Forms.ToolStripStatusLabelBorderSides)((System.Windows.Forms.ToolStripStatusLabelBorderSides.Top | System.Windows.Forms.ToolStripStatusLabelBorderSides.Right)));
+            this.uiPanel2.Size = new System.Drawing.Size(286, 32);
+            this.uiPanel2.TabIndex = 0;
+            this.uiPanel2.Text = null;
+            this.uiPanel2.TextAlignment = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // uiNavMenu1
+            // 
+            this.uiNavMenu1.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.uiNavMenu1.Dock = System.Windows.Forms.DockStyle.Left;
+            this.uiNavMenu1.DrawMode = System.Windows.Forms.TreeViewDrawMode.OwnerDrawAll;
+            this.uiNavMenu1.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.uiNavMenu1.FullRowSelect = true;
+            this.uiNavMenu1.ItemHeight = 35;
+            this.uiNavMenu1.Location = new System.Drawing.Point(2, 162);
+            this.uiNavMenu1.Name = "uiNavMenu1";
+            this.uiNavMenu1.ShowLines = false;
+            this.uiNavMenu1.ShowOneNode = true;
+            this.uiNavMenu1.Size = new System.Drawing.Size(286, 572);
+            this.uiNavMenu1.TabIndex = 4;
+            this.uiNavMenu1.TipsFont = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            // 
+            // uiTabControl1
+            // 
+            this.uiTabControl1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.uiTabControl1.DrawMode = System.Windows.Forms.TabDrawMode.OwnerDrawFixed;
+            this.uiTabControl1.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.uiTabControl1.Frame = this;
+            this.uiTabControl1.ItemSize = new System.Drawing.Size(0, 1);
+            this.uiTabControl1.Location = new System.Drawing.Point(288, 162);
+            this.uiTabControl1.MainPage = "";
+            this.uiTabControl1.Name = "uiTabControl1";
+            this.uiTabControl1.SelectedIndex = 0;
+            this.uiTabControl1.Size = new System.Drawing.Size(810, 572);
+            this.uiTabControl1.SizeMode = System.Windows.Forms.TabSizeMode.Fixed;
+            this.uiTabControl1.TabIndex = 5;
+            this.uiTabControl1.TabVisible = false;
+            this.uiTabControl1.TipsFont = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            // 
+            // timer1
+            // 
+            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
             // 
             // FMain
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
-            this.ClientSize = new System.Drawing.Size(1024, 720);
+            this.ClientSize = new System.Drawing.Size(1100, 768);
+            this.Controls.Add(this.uiTabControl1);
+            this.Controls.Add(this.uiNavMenu1);
+            this.Controls.Add(this.uiPanel1);
+            this.Controls.Add(this.uiNavBar1);
             this.ExtendBox = true;
             this.ExtendMenu = this.uiContextMenuStrip1;
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.MinimumSize = new System.Drawing.Size(1024, 720);
+            this.MainTabControl = this.uiTabControl1;
             this.Name = "FMain";
             this.Padding = new System.Windows.Forms.Padding(2, 36, 2, 2);
             this.ShowDragStretch = true;
             this.ShowRadius = false;
-            this.ShowShadow = true;
-            this.Text = "SunnyUI.Net";
-            this.ZoomScaleRect = new System.Drawing.Rectangle(15, 15, 1024, 720);
-            this.Selecting += new Sunny.UI.UIMainFrame.OnSelecting(this.FMain_Selecting);
-            this.HotKeyEventHandler += new Sunny.UI.HotKeyEventHandler(this.FMain_HotKeyEventHandler);
-            this.Controls.SetChildIndex(this.Header, 0);
-            this.Controls.SetChildIndex(this.Aside, 0);
-            this.Header.ResumeLayout(false);
+            this.Text = "Form1";
+            this.ZoomScaleRect = new System.Drawing.Rectangle(15, 15, 800, 450);
+            this.HotKeyEventHandler += new Sunny.UI.HotKeyEventHandler(this.Form1_HotKeyEventHandler);
+            this.PageSelected += new Sunny.UI.OnUIPageChanged(this.Form1_PageSelected);
+            this.ReceiveParams += new Sunny.UI.OnReceiveParams(this.Form1_ReceiveParams);
             this.uiContextMenuStrip1.ResumeLayout(false);
+            this.uiNavBar1.ResumeLayout(false);
+            this.uiPanel1.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
 
         #endregion
 
-        private UILogo uiLogo1;
-        private UIAvatar uiAvatar;
-        private UIStyleManager StyleManager;
         private UIContextMenuStrip uiContextMenuStrip1;
         private System.Windows.Forms.ToolStripMenuItem 关于ToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem 关于ToolStripMenuItem1;
+        private UIStyleManager StyleManager;
+        private UINavBar uiNavBar1;
+        private UIPanel uiPanel1;
+        private UINavMenu uiNavMenu1;
+        private UITabControl uiTabControl1;
+        private UILogo uiLogo1;
+        private UIAvatar uiAvatar1;
+        private UIPanel uiPanel2;
+        private UIPanel uiPanel3;
+        private System.Windows.Forms.Timer timer1;
+        private UIPanel uiPanel4;
     }
 }

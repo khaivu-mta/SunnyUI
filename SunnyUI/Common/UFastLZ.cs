@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -129,6 +129,7 @@ namespace Sunny.UI
         /// <returns>压缩结果</returns>
         public static byte[] Compress(byte[] input, int begin, int length)
         {
+            CheckFastLZDll();
             byte[] output = new byte[Math.Max(length * 2, 66)];
             fixed (void* pSrc1 = &input[begin])
             fixed (void* pSrc2 = output)
@@ -150,6 +151,7 @@ namespace Sunny.UI
         /// <returns>压缩结果</returns>
         public static byte[] Compress(FastLZCompressionLevel level, byte[] input, int begin, int length)
         {
+            CheckFastLZDll();
             byte[] output = new byte[Math.Max(length * 2, 66)];
             fixed (void* pSrc1 = &input[begin])
             fixed (void* pSrc2 = output)
@@ -171,6 +173,7 @@ namespace Sunny.UI
         /// <returns>解压缩结果</returns>
         public static byte[] Decompress(byte[] input, int begin, int length, int maxout)
         {
+            CheckFastLZDll();
             byte[] output = new byte[maxout + 66];
             fixed (byte* pSrc1 = &input[begin])
             fixed (byte* pSrc2 = output)
@@ -198,6 +201,7 @@ namespace Sunny.UI
         /// <returns>压缩结果</returns>
         public static byte[] CompressEx(byte[] input, int begin, int length, DateTime dateTime, int index)
         {
+            CheckFastLZDll();
             byte[] result = CompressEx(input, begin, length);
             if (result.Length > 0)
             {
@@ -221,6 +225,7 @@ namespace Sunny.UI
         /// <returns>压缩结果</returns>
         public static byte[] CompressEx(byte[] input, int begin, int length)
         {
+            CheckFastLZDll();
             byte[] result = new byte[0];
             if (begin + length > input.Length) return result;
             byte[] output = new byte[Math.Max(length * 2, 66)];
@@ -257,6 +262,7 @@ namespace Sunny.UI
         /// <returns>解压缩结果</returns>
         public static byte[] DecompressEx(byte[] input, int begin, int length)
         {
+            CheckFastLZDll();
             byte[] result = new byte[0];
             if (input.Length <= 2 + ExHeadAllLength + ExTailAllLength) return result;
             if (begin + length > input.Length) return result;
@@ -287,6 +293,7 @@ namespace Sunny.UI
         /// <returns>解压缩结果</returns>
         public static byte[] DecompressEx(byte[] input, int begin, int length, out DateTime datetime, out int index)
         {
+            CheckFastLZDll();
             byte[] result = DecompressEx(input, begin, length);
 
             datetime = Jan1st1970;
@@ -300,9 +307,16 @@ namespace Sunny.UI
             return result;
         }
 
+        private static bool FileExist = false;
+
         public static bool CheckFastLZDll()
         {
-            if (File.Exists(DirEx.CurrentDir() + "FastLZx86.dll") && File.Exists(DirEx.CurrentDir() + "FastLZx64.dll")) return true;
+            if (FileExist) return true;
+            if (File.Exists(DirEx.CurrentDir() + "FastLZx86.dll") && File.Exists(DirEx.CurrentDir() + "FastLZx64.dll"))
+            {
+                FileExist = true;
+                return true;
+            }
 
             try
             {
@@ -314,7 +328,8 @@ namespace Sunny.UI
                 return false;
             }
 
-            return File.Exists(DirEx.CurrentDir() + "FastLZx86.dll") && File.Exists(DirEx.CurrentDir() + "FastLZx64.dll");
+            FileExist = File.Exists(DirEx.CurrentDir() + "FastLZx86.dll") && File.Exists(DirEx.CurrentDir() + "FastLZx64.dll");
+            return FileExist;
         }
 
         /// <summary>

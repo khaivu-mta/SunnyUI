@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -166,7 +166,7 @@ namespace Sunny.UI
             head = new BmpHead();
             head.Init(bitmap);
             data = new byte[head.FileSize];
-            Array.Copy(head.StructToBytes(), 0, data, 0, (int)head.BitmapDataOffset);
+            Array.Copy(head.ToBytes(), 0, data, 0, (int)head.BitmapDataOffset);
 
             var sourceArea = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
             var bitmapData = bitmap.LockBits(sourceArea, ImageLockMode.ReadOnly, PixelFormat.Format32bppPArgb);
@@ -203,7 +203,7 @@ namespace Sunny.UI
             head = new BmpHead();
             head.Init(width, height);
             data = new byte[head.FileSize];
-            Array.Copy(head.StructToBytes(), 0, data, 0, (int)head.BitmapDataOffset);
+            Array.Copy(head.ToBytes(), 0, data, 0, (int)head.BitmapDataOffset);
             if (bmpData.Length != width * height * 3) return;
 
             //BMP文件的数据从左下角开始，每行向上。System.Drawing.Bitmap数据是从左上角开始，每行向下

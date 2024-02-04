@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -21,6 +21,9 @@
  * 2021-07-29: V3.0.5 修改滚动条没有文字时自动隐藏
  * 2022-02-23: V3.1.1 增加了一些原生的属性和事件
  * 2022-03-14: V3.1.1 增加滚动条的颜色设置
+ * 2022-11-03: V3.2.6 增加了可设置垂直滚动条宽度的属性
+ * 2023-11-13: V3.5.2 重构主题
+ * 2023-12-25: V3.6.2 增加Text的属性编辑器
 ******************************************************************************/
 
 using System;
@@ -54,7 +57,6 @@ namespace Sunny.UI
             edit.Click += Edit_Click;
 
             bar.Parent = this;
-            bar.Style = UIStyle.Custom;
             bar.Visible = false;
             bar.ValueChanged += Bar_ValueChanged;
             bar.MouseEnter += Bar_MouseEnter;
@@ -83,6 +85,13 @@ namespace Sunny.UI
             edit.MouseMove += Edit_MouseMove;
         }
 
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            edit?.Dispose();
+            bar?.Dispose();
+        }
+
         public new event EventHandler Leave;
         public new event EventHandler Validated;
         public new event CancelEventHandler Validating;
@@ -92,6 +101,32 @@ namespace Sunny.UI
         public new event MouseEventHandler MouseUp;
         public new event MouseEventHandler MouseMove;
         public new event EventHandler MouseLeave;
+
+        private int scrollBarWidth = 0;
+
+        [DefaultValue(0), Category("SunnyUI"), Description("垂直滚动条宽度，最小为原生滚动条宽度")]
+        public int ScrollBarWidth
+        {
+            get => scrollBarWidth;
+            set
+            {
+                scrollBarWidth = value;
+                SetScrollInfo();
+            }
+        }
+
+        private int scrollBarHandleWidth = 6;
+
+        [DefaultValue(6), Category("SunnyUI"), Description("垂直滚动条滑块宽度，最小为原生滚动条宽度")]
+        public int ScrollBarHandleWidth
+        {
+            get => scrollBarHandleWidth;
+            set
+            {
+                scrollBarHandleWidth = value;
+                if (bar != null) bar.FillWidth = value;
+            }
+        }
 
         private void Edit_MouseMove(object sender, MouseEventArgs e)
         {
@@ -184,7 +219,7 @@ namespace Sunny.UI
         protected override void OnContextMenuStripChanged(EventArgs e)
         {
             base.OnContextMenuStripChanged(e);
-            edit.ContextMenuStrip = ContextMenuStrip;
+            if (edit != null) edit.ContextMenuStrip = ContextMenuStrip;
         }
 
         /// <summary>
@@ -194,7 +229,7 @@ namespace Sunny.UI
         protected override void OnFontChanged(EventArgs e)
         {
             base.OnFontChanged(e);
-            if (edit != null) edit.Font = Font;
+            if (DefaultFontSize < 0 && edit != null) edit.Font = this.Font;
         }
 
         private bool showScrollBar = true;
@@ -285,7 +320,7 @@ namespace Sunny.UI
             edit.BackColor = GetFillColor();
             edit.ForeColor = GetForeColor();
 
-            if (bar != null)
+            if (bar != null && bar.Style == UIStyle.Inherited)
             {
                 bar.ForeColor = uiColor.PrimaryColor;
                 bar.HoverColor = uiColor.ButtonFillHoverColor;
@@ -293,6 +328,25 @@ namespace Sunny.UI
                 bar.FillColor = fillColor;
                 scrollBarColor = uiColor.PrimaryColor;
                 scrollBarBackColor = fillColor;
+            }
+        }
+
+        /// <summary>
+        /// 滚动条主题样式
+        /// </summary>
+        [DefaultValue(true), Description("滚动条主题样式"), Category("SunnyUI")]
+        public bool ScrollBarStyleInherited
+        {
+            get => bar != null && bar.Style == UIStyle.Inherited;
+            set
+            {
+                if (value)
+                {
+                    if (bar != null) bar.Style = UIStyle.Inherited;
+                    scrollBarColor = UIStyles.Blue.PrimaryColor;
+                    scrollBarBackColor = UIStyles.Blue.EditorBackColor;
+                }
+
             }
         }
 
@@ -310,7 +364,7 @@ namespace Sunny.UI
             {
                 scrollBarColor = value;
                 bar.HoverColor = bar.PressColor = bar.ForeColor = value;
-                _style = UIStyle.Custom;
+                bar.Style = UIStyle.Custom;
                 Invalidate();
             }
         }
@@ -329,7 +383,7 @@ namespace Sunny.UI
             {
                 scrollBarBackColor = value;
                 bar.FillColor = value;
-                _style = UIStyle.Custom;
+                bar.Style = UIStyle.Custom;
                 Invalidate();
             }
         }
@@ -363,6 +417,8 @@ namespace Sunny.UI
         }
 
         [Category("SunnyUI"), Browsable(true), DefaultValue(""), Description("文字")]
+        [Editor("System.ComponentModel.Design.MultilineStringEditor, System.Design, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a", typeof(UITypeEditor))]
+
         public override string Text
         {
             get => edit.Text;
@@ -418,12 +474,10 @@ namespace Sunny.UI
 
         public void SetScrollInfo()
         {
-            bar.Width = ScrollBarInfo.VerticalScrollBarWidth() + 1;
-            bar.Left = Width - bar.Width - 1;
-            if (bar == null)
-            {
-                return;
-            }
+            int barWidth = Math.Max(ScrollBarInfo.VerticalScrollBarWidth() + 2, ScrollBarWidth);
+            if (bar == null) return;
+            bar.Width = barWidth + 1;
+            bar.Left = Width - barWidth - 3;
 
             var si = ScrollBarInfo.GetInfo(edit.Handle);
             if (si.ScrollMax > 0)
@@ -441,9 +495,10 @@ namespace Sunny.UI
 
         private void SizeChange()
         {
+            int barWidth = Math.Max(ScrollBarInfo.VerticalScrollBarWidth() + 2, ScrollBarWidth);
             bar.Top = 2;
-            bar.Width = ScrollBarInfo.VerticalScrollBarWidth() + 1;
-            bar.Left = Width - bar.Width - 1;
+            bar.Width = barWidth + 1;
+            bar.Left = Width - barWidth - 3;
             bar.Height = Height - 4;
             bar.BringToFront();
             SetScrollInfo();
@@ -467,7 +522,7 @@ namespace Sunny.UI
             //
             // bar
             //
-            this.bar.Font = new System.Drawing.Font("微软雅黑", 12F);
+            this.bar.Font = new System.Drawing.Font("宋体", 12F);
             this.bar.Location = new System.Drawing.Point(247, 4);
             this.bar.Name = "bar";
             this.bar.Size = new System.Drawing.Size(19, 173);
@@ -482,7 +537,6 @@ namespace Sunny.UI
             this.FillColor = System.Drawing.Color.White;
             this.Name = "UIRichTextBox";
             this.Padding = new System.Windows.Forms.Padding(2);
-            this.Style = Sunny.UI.UIStyle.Custom;
             this.FontChanged += new System.EventHandler(this.UIRichTextBox_FontChanged);
             this.SizeChanged += new System.EventHandler(this.UIRichTextBox_SizeChanged);
             this.ResumeLayout(false);

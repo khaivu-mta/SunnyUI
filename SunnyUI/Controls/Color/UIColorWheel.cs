@@ -20,6 +20,12 @@ namespace Sunny.UI
         private readonly List<Color> m_colors = new List<Color>();
         private double m_wheelLightness = 0.5;
 
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            m_brush?.Dispose();
+        }
+
         public HSLColor SelectedHSLColor
         {
             get { return m_selectedColor; }
@@ -43,7 +49,7 @@ namespace Sunny.UI
         /// <summary>
         /// 控件缩放前在其容器里的位置
         /// </summary>
-        [Browsable(false)]
+        [Browsable(false), DefaultValue(typeof(Rectangle), "0, 0, 0, 0")]
         public Rectangle ZoomScaleRect { get; set; }
 
         /// <summary>
@@ -55,16 +61,14 @@ namespace Sunny.UI
 
         }
 
-        [Browsable(false)]
-        public bool IsScaled { get; private set; }
+        private float DefaultFontSize = -1;
 
         public void SetDPIScale()
         {
-            if (!IsScaled)
-            {
-                this.SetDPIScaleFont();
-                IsScaled = true;
-            }
+            if (DesignMode) return;
+            if (!UIDPIScale.NeedSetDPIFont()) return;
+            if (DefaultFontSize < 0) DefaultFontSize = this.Font.Size;
+            this.SetDPIScaleFont(DefaultFontSize);
         }
 
         public void SetLightness(double lightness)
@@ -127,10 +131,8 @@ namespace Sunny.UI
                 Height = Width;
             }
 
-            using (SolidBrush b = new SolidBrush(BackColor))
-            {
-                e.Graphics.FillRectangle(b, ClientRectangle);
-            }
+            using SolidBrush b = new SolidBrush(BackColor);
+            e.Graphics.FillRectangle(b, ClientRectangle);
 
             RectangleF wheelRectangle = WheelRectangle;
             UIColorUtil.DrawFrame(e.Graphics, wheelRectangle, 6, m_frameColor);
@@ -311,12 +313,12 @@ namespace Sunny.UI
             SelectedHSLColor = new HSLColor(angle, saturation, SelectedHSLColor.Lightness);
         }
 
-        private UIStyle _style = UIStyle.Blue;
+        private UIStyle _style = UIStyle.Inherited;
 
         /// <summary>
         /// 主题样式
         /// </summary>
-        [DefaultValue(UIStyle.Blue), Description("主题样式"), Category("SunnyUI")]
+        [DefaultValue(UIStyle.Inherited), Description("主题样式"), Category("SunnyUI")]
         public UIStyle Style
         {
             get => _style;
@@ -327,7 +329,7 @@ namespace Sunny.UI
         /// 设置主题样式
         /// </summary>
         /// <param name="style">主题样式</param>
-        public void SetStyle(UIStyle style)
+        private void SetStyle(UIStyle style)
         {
             if (!style.IsCustom())
             {
@@ -335,7 +337,13 @@ namespace Sunny.UI
                 Invalidate();
             }
 
-            _style = style;
+            _style = style == UIStyle.Inherited ? UIStyle.Inherited : UIStyle.Custom;
+        }
+
+        public void SetInheritedStyle(UIStyle style)
+        {
+            SetStyle(style);
+            _style = UIStyle.Inherited;
         }
 
         /// <summary>
@@ -351,7 +359,7 @@ namespace Sunny.UI
         /// <summary>
         /// 自定义主题风格
         /// </summary>
-        [DefaultValue(false)]
+        [DefaultValue(false), Browsable(false)]
         [Description("获取或设置可以自定义主题风格"), Category("SunnyUI")]
         public bool StyleCustomMode { get; set; }
 

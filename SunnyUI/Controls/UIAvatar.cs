@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -18,6 +18,8 @@
  *
  * 2020-01-01: V2.2.0 增加文件说明
  * 2022-03-19: V3.1.1 重构主题配色
+ * 2023-05-12: V3.3.6 重构DrawString函数
+ * 2023-10-26: V3.5.1 字体图标增加旋转角度参数SymbolRotate
 ******************************************************************************/
 
 using System;
@@ -241,6 +243,26 @@ namespace Sunny.UI
             }
         }
 
+        private int _symbolRotate = 0;
+
+        /// <summary>
+        /// 字体图标旋转角度
+        /// </summary>
+        [DefaultValue(0)]
+        [Description("字体图标旋转角度"), Category("SunnyUI")]
+        public int SymbolRotate
+        {
+            get => _symbolRotate;
+            set
+            {
+                if (_symbolRotate != value)
+                {
+                    _symbolRotate = value;
+                    Invalidate();
+                }
+            }
+        }
+
         private Point textOffset = new Point(0, 0);
 
         /// <summary>
@@ -346,17 +368,15 @@ namespace Sunny.UI
                 scaleImage.Dispose();
                 e.Graphics.SetHighQuality();
 
-                using (Pen pn = new Pen(BackColor, 4))
+                using Pen pn = new Pen(BackColor, 4);
+                if (Shape == UIShape.Circle)
                 {
-                    if (Shape == UIShape.Circle)
-                    {
-                        e.Graphics.DrawEllipse(pn, (Width - avatarSize) / 2 + 1 + ImageOffset.X, (Height - avatarSize) / 2 + 1 + ImageOffset.Y, size, size);
-                    }
+                    e.Graphics.DrawEllipse(pn, (Width - avatarSize) / 2 + 1 + ImageOffset.X, (Height - avatarSize) / 2 + 1 + ImageOffset.Y, size, size);
+                }
 
-                    if (Shape == UIShape.Square)
-                    {
-                        e.Graphics.DrawRoundRectangle(pn, (Width - avatarSize) / 2 + 1 + ImageOffset.X, (Height - avatarSize) / 2 + 1 + ImageOffset.Y, size, size, 5);
-                    }
+                if (Shape == UIShape.Square)
+                {
+                    e.Graphics.DrawRoundRectangle(pn, (Width - avatarSize) / 2 + 1 + ImageOffset.X, (Height - avatarSize) / 2 + 1 + ImageOffset.Y, size, size, 5);
                 }
 
                 e.Graphics.SetDefaultQuality();
@@ -365,13 +385,12 @@ namespace Sunny.UI
             if (Icon == UIIcon.Symbol)
             {
                 e.Graphics.DrawFontImage(symbol, symbolSize, ForeColor, new Rectangle((Width - avatarSize) / 2 + 1 + SymbolOffset.X,
-                    (Height - avatarSize) / 2 + 1 + SymbolOffset.Y, avatarSize, avatarSize));
+                    (Height - avatarSize) / 2 + 1 + SymbolOffset.Y, avatarSize, avatarSize), 0, 0, SymbolRotate);
             }
 
             if (Icon == UIIcon.Text)
             {
-                SizeF sf = e.Graphics.MeasureString(Text, Font);
-                e.Graphics.DrawString(Text, Font, foreColor, (Width - sf.Width) / 2.0f + TextOffset.X, (Height - sf.Height) / 2.0f + 1 + TextOffset.Y);
+                e.Graphics.DrawString(Text, Font, foreColor, ClientRectangle, ContentAlignment.MiddleCenter, TextOffset.X, TextOffset.Y);
             }
 
             PaintAgain?.Invoke(this, e);

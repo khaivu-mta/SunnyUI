@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -22,12 +22,16 @@
  * 2022-01-10: V3.1.0 调整边框和圆角的绘制
  * 2022-02-16: V3.1.1 基类增加只读颜色设置
  * 2022-03-19: V3.1.1 重构主题配色
+ * 2023-02-03: V3.3.1 增加WIN10系统响应触摸屏的按下和弹起事件
+ * 2023-05-12: V3.3.6 重构DrawString函数
+ * 2023-11-05: V3.5.2 重构主题
 ******************************************************************************/
 
 using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace Sunny.UI
@@ -44,7 +48,7 @@ namespace Sunny.UI
         public UIControl()
         {
             Version = UIGlobal.Version;
-            base.Font = UIFontColor.Font();
+            base.Font = UIStyles.Font();
             Size = new Size(100, 35);
             base.MinimumSize = new Size(1, 1);
         }
@@ -61,7 +65,7 @@ namespace Sunny.UI
         /// <summary>
         /// 控件缩放前在其容器里的位置
         /// </summary>
-        [Browsable(false)]
+        [Browsable(false), DefaultValue(typeof(Rectangle), "0, 0, 0, 0")]
         public Rectangle ZoomScaleRect { get; set; }
 
         /// <summary>
@@ -75,16 +79,13 @@ namespace Sunny.UI
 
         protected bool selected;
 
-        [Browsable(false), DefaultValue(false)]
-        public bool IsScaled { get; set; }
+        private float DefaultFontSize = -1;
 
         public virtual void SetDPIScale()
         {
-            if (!IsScaled)
-            {
-                this.SetDPIScaleFont();
-                IsScaled = true;
-            }
+            if (!UIDPIScale.NeedSetDPIFont()) return;
+            if (DefaultFontSize < 0) DefaultFontSize = this.Font.Size;
+            this.SetDPIScaleFont(DefaultFontSize);
         }
 
         protected void SetStyleFlags(bool supportTransparent = true, bool selectable = true, bool resizeRedraw = false)
@@ -268,29 +269,23 @@ namespace Sunny.UI
             get;
         }
 
-        protected UIStyle _style = UIStyle.Blue;
+        protected UIStyle _style = UIStyle.Inherited;
 
         /// <summary>
         /// 主题样式
         /// </summary>
-        [DefaultValue(UIStyle.Blue), Description("主题样式"), Category("SunnyUI")]
+        [DefaultValue(UIStyle.Inherited), Description("主题样式"), Category("SunnyUI")]
         public UIStyle Style
         {
             get => _style;
             set => SetStyle(value);
         }
 
-        protected void SetStyleCustom(bool needRefresh = true)
-        {
-            _style = UIStyle.Custom;
-            if (needRefresh) Invalidate();
-        }
-
         /// <summary>
         /// 设置主题样式
         /// </summary>
         /// <param name="style">主题样式</param>
-        public void SetStyle(UIStyle style)
+        private void SetStyle(UIStyle style)
         {
             if (!style.IsCustom())
             {
@@ -298,13 +293,19 @@ namespace Sunny.UI
                 Invalidate();
             }
 
-            _style = style;
+            _style = style == UIStyle.Inherited ? UIStyle.Inherited : UIStyle.Custom;
+        }
+
+        public void SetInheritedStyle(UIStyle style)
+        {
+            SetStyle(style);
+            _style = UIStyle.Inherited;
         }
 
         /// <summary>
         /// 自定义主题风格
         /// </summary>
-        [DefaultValue(false)]
+        [DefaultValue(false), Browsable(false)]
         [Description("获取或设置可以自定义主题风格"), Category("SunnyUI")]
         public bool StyleCustomMode { get; set; }
 
@@ -405,7 +406,7 @@ namespace Sunny.UI
             if (IsDisposed) return;
 
             Rectangle rect = new Rectangle(0, 0, Width - 1, Height - 1);
-            GraphicsPath path = rect.CreateRoundedRectanglePath(radius, RadiusSides, RectSize);
+            using GraphicsPath path = rect.CreateRoundedRectanglePath(radius, RadiusSides, RectSize);
 
             //填充背景色
             if (ShowFill && fillColor.IsValid())
@@ -425,7 +426,6 @@ namespace Sunny.UI
                 OnPaintFore(e.Graphics, path);
             }
 
-            path.Dispose();
             base.OnPaint(e);
         }
 
@@ -467,7 +467,7 @@ namespace Sunny.UI
         protected Color GetForeColor()
         {
             //文字
-            Color color = lightStyle ? _style.Colors().ButtonForeLightColor : foreColor;
+            Color color = lightStyle ? rectColor : foreColor;
             if (IsHover)
                 color = foreHoverColor;
             if (IsPress)
@@ -488,7 +488,7 @@ namespace Sunny.UI
         protected Color GetFillColor()
         {
             //填充
-            Color color = lightStyle ? _style.Colors().ButtonFillLightColor : fillColor;
+            Color color = lightStyle ? plainColor : fillColor;
             if (IsHover)
                 color = fillHoverColor;
             if (IsPress)
@@ -622,8 +622,8 @@ namespace Sunny.UI
         /// <param name="path">路径</param>
         protected virtual void OnPaintFore(Graphics g, GraphicsPath path)
         {
-            Color color = GetForeColor();
-            g.DrawString(Text, Font, color, Size, Padding, TextAlign);
+            Rectangle rect = new Rectangle(Padding.Left, Padding.Top, Width - Padding.Left - Padding.Right, Height - Padding.Top - Padding.Bottom);
+            g.DrawString(Text, Font, GetForeColor(), rect, TextAlign);
         }
 
         protected override void OnTextChanged(EventArgs e)
@@ -631,6 +631,11 @@ namespace Sunny.UI
             base.OnTextChanged(e);
             Invalidate();
         }
+
+        /// <summary>
+        /// 填充浅色
+        /// </summary>
+        protected Color plainColor = UIStyles.Blue.PlainColor;
 
         /// <summary>
         /// 填充颜色
@@ -733,12 +738,25 @@ namespace Sunny.UI
         /// 设置选中颜色
         /// </summary>
         /// <param name="color">颜色</param>
+        protected void SetPlainColor(Color color)
+        {
+            if (plainColor != color)
+            {
+                plainColor = color;
+                Invalidate();
+            }
+        }
+
+        /// <summary>
+        /// 设置选中颜色
+        /// </summary>
+        /// <param name="color">颜色</param>
         protected void SetFillSelectedColor(Color color)
         {
             if (fillSelectedColor != color)
             {
                 fillSelectedColor = color;
-                SetStyleCustom();
+                Invalidate();
             }
         }
 
@@ -751,7 +769,7 @@ namespace Sunny.UI
             if (foreSelectedColor != color)
             {
                 foreSelectedColor = color;
-                SetStyleCustom();
+                Invalidate();
             }
         }
 
@@ -764,7 +782,7 @@ namespace Sunny.UI
             if (rectSelectedColor != color)
             {
                 rectSelectedColor = color;
-                SetStyleCustom();
+                Invalidate();
             }
         }
 
@@ -777,7 +795,7 @@ namespace Sunny.UI
             if (fillHoverColor != color)
             {
                 fillHoverColor = color;
-                SetStyleCustom(false);
+                Invalidate();
             }
         }
 
@@ -790,7 +808,7 @@ namespace Sunny.UI
             if (fillPressColor != color)
             {
                 fillPressColor = color;
-                SetStyleCustom(false);
+                Invalidate();
             }
         }
 
@@ -803,7 +821,7 @@ namespace Sunny.UI
             if (fillDisableColor != color)
             {
                 fillDisableColor = color;
-                SetStyleCustom();
+                Invalidate();
             }
         }
 
@@ -816,7 +834,7 @@ namespace Sunny.UI
             if (fillReadOnlyColor != color)
             {
                 fillReadOnlyColor = color;
-                SetStyleCustom();
+                Invalidate();
             }
         }
 
@@ -829,7 +847,7 @@ namespace Sunny.UI
             if (rectHoverColor != color)
             {
                 rectHoverColor = color;
-                SetStyleCustom(false);
+                Invalidate();
             }
         }
 
@@ -842,7 +860,7 @@ namespace Sunny.UI
             if (rectPressColor != color)
             {
                 rectPressColor = color;
-                SetStyleCustom(false);
+                Invalidate();
             }
         }
 
@@ -855,7 +873,7 @@ namespace Sunny.UI
             if (rectDisableColor != color)
             {
                 rectDisableColor = color;
-                SetStyleCustom();
+                Invalidate();
             }
         }
 
@@ -868,7 +886,7 @@ namespace Sunny.UI
             if (rectReadOnlyColor != color)
             {
                 rectReadOnlyColor = color;
-                SetStyleCustom();
+                Invalidate();
             }
         }
 
@@ -881,7 +899,7 @@ namespace Sunny.UI
             if (foreHoverColor != color)
             {
                 foreHoverColor = color;
-                SetStyleCustom(false);
+                Invalidate();
             }
         }
 
@@ -894,7 +912,7 @@ namespace Sunny.UI
             if (forePressColor != color)
             {
                 forePressColor = color;
-                SetStyleCustom(false);
+                Invalidate();
             }
         }
 
@@ -907,7 +925,7 @@ namespace Sunny.UI
             if (foreDisableColor != color)
             {
                 foreDisableColor = color;
-                SetStyleCustom();
+                Invalidate();
             }
         }
 
@@ -920,7 +938,7 @@ namespace Sunny.UI
             if (foreReadOnlyColor != color)
             {
                 foreReadOnlyColor = color;
-                SetStyleCustom();
+                Invalidate();
             }
         }
 
@@ -933,7 +951,7 @@ namespace Sunny.UI
             if (rectColor != value)
             {
                 rectColor = value;
-                SetStyleCustom();
+                Invalidate();
             }
         }
 
@@ -946,7 +964,7 @@ namespace Sunny.UI
             if (fillColor != value)
             {
                 fillColor = value;
-                SetStyleCustom();
+                Invalidate();
             }
         }
 
@@ -959,7 +977,7 @@ namespace Sunny.UI
             if (fillColor2 != value)
             {
                 fillColor2 = value;
-                SetStyleCustom();
+                Invalidate();
             }
         }
 
@@ -972,7 +990,7 @@ namespace Sunny.UI
             if (foreColor != value)
             {
                 foreColor = value;
-                SetStyleCustom();
+                Invalidate();
             }
         }
 
@@ -991,5 +1009,59 @@ namespace Sunny.UI
             base.OnLostFocus(e);
             this.Invalidate();
         }
+
+        [Description("开启后可响应某些触屏的点击事件"), Category("SunnyUI")]
+        [DefaultValue(false)]
+        public bool TouchPressClick { get; set; } = false;
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //////  WndProc窗口程序：
+        //////  当按压屏幕时，产生一个WM_POINTERDOWN消息时，我们通过API函数 PostMessage 投送出一个WM_LBUTTONDOWN消息
+        //////  WM_LBUTTONDOWN消息会产生一个相对应的鼠标按下左键的事件，于是我们只要在mouse_down事件里写下处理过程即可
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        #region WndProc 窗口程序
+
+        [DllImport("user32.dll")]
+        public static extern int PostMessage(IntPtr hwnd, int wMsg, int wParam, int lParam);
+
+        const int WM_POINTERDOWN = 0x0246;
+        const int WM_POINTERUP = 0x0247;
+        const int WM_LBUTTONDOWN = 0x0201;
+        const int WM_LBUTTONUP = 0x0202;
+
+        protected override void WndProc(ref Message m)
+        {
+            if (TouchPressClick)
+            {
+                switch (m.Msg)
+                {
+                    case WM_POINTERDOWN:
+                        break;
+                    case WM_POINTERUP:
+                        break;
+                    default:
+                        base.WndProc(ref m);
+                        return;
+                }
+
+                switch (m.Msg)
+                {
+                    case WM_POINTERDOWN:
+                        PostMessage(m.HWnd, WM_LBUTTONDOWN, (int)m.WParam, (int)m.LParam);
+                        break;
+                    case WM_POINTERUP:
+                        PostMessage(m.HWnd, WM_LBUTTONUP, (int)m.WParam, (int)m.LParam);
+                        break;
+                }
+            }
+            else
+            {
+                base.WndProc(ref m);
+            }
+        }
+
+        #endregion
+
     }
 }

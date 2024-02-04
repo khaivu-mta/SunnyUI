@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -74,15 +74,16 @@ namespace Sunny.UI
             int len = 60;
             x = x + 34;
             y = y + 34;
-            g.DrawLine(new Pen(BackColor, 2), x, y, x - len, y - len / 2 - 4);
-            g.DrawLine(new Pen(BackColor, 2), x, y, x - len, y + len / 2 + 4);
+            using Pen pen = new Pen(BackColor, 2);
+            g.DrawLine(pen, x, y, x - len, y - len / 2 - 4);
+            g.DrawLine(pen, x, y, x - len, y + len / 2 + 4);
 
-            g.DrawLine(new Pen(BackColor, 2), x, y, x + len, y - len / 2 - 4);
-            g.DrawLine(new Pen(BackColor, 2), x, y, x + len, y + len / 2 + 4);
+            g.DrawLine(pen, x, y, x + len, y - len / 2 - 4);
+            g.DrawLine(pen, x, y, x + len, y + len / 2 + 4);
             g.SetDefaultQuality();
 
-            g.DrawLine(new Pen(BackColor, 2), x, y, x, y - 60);
-            g.DrawLine(new Pen(BackColor, 2), x, y, x, y + 60);
+            g.DrawLine(pen, x, y, x, y - 60);
+            g.DrawLine(pen, x, y, x, y + 60);
 
             //S
             DrawVerticalLine(g, ForeColor, 88, 22, 6, 17, true);

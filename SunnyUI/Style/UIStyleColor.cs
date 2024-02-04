@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -19,6 +19,7 @@
  * 2020-01-01: V2.2.0 增加文件说明
  * 2020-04-25: V2.2.4 更新主题配置类
  * 2022-03-19: V3.1.1 重构主题配色
+ * 2023-11-05: V3.5.2 重构主题
 ******************************************************************************/
 
 using System.Drawing;
@@ -192,6 +193,7 @@ namespace Sunny.UI
         public virtual Color ListForeColor { get; protected set; }
 
         //TreeView
+        public virtual Color TreeViewSelectedForeColor { get; protected set; }
         public virtual Color TreeViewSelectedColor { get; protected set; }
         public virtual Color TreeViewHoverColor { get; protected set; }
         public virtual Color TreeViewBarFillColor { get; protected set; }
@@ -227,6 +229,9 @@ namespace Sunny.UI
 
         //SplitContainer
         public virtual Color SplitContainerArrowColor { get; protected set; }
+
+        //RoundProcess
+        public virtual Color RoundProcessForeColor2 { get; protected set; }
 
         protected Color ForeColor { get; set; }
 
@@ -382,6 +387,7 @@ namespace Sunny.UI
             ListForeColor = foreColor;
 
             TreeViewSelectedColor = PrimaryColor;
+            TreeViewSelectedForeColor = Color.White;
             TreeViewHoverColor = colors[3];
             TreeViewBarFillColor = PlainColor;
             TreeViewBarForeColor = PrimaryColor;
@@ -399,6 +405,8 @@ namespace Sunny.UI
 
             FlowLayoutPanelBarFillColor = PlainColor;
             FlowLayoutPanelBarForeColor = PrimaryColor;
+
+            RoundProcessForeColor2 = Color.Black;
 
             DropDownStyle = this;
 
@@ -441,6 +449,14 @@ namespace Sunny.UI
     public class UICustomStyle : UIBlueStyle
     {
         public override UIStyle Name => UIStyle.Custom;
+    }
+
+    public class UIInheritedStyle : UIBaseStyle
+    {
+        public UIInheritedStyle()
+        {
+            base.Init(UIColor.Blue, UIStyle.Inherited, Color.White, UIFontColor.Primary);
+        }
     }
 
     public class UIBlueStyle : UIBaseStyle
@@ -566,6 +582,7 @@ namespace Sunny.UI
             TreeViewBarFillColor = PlainColor;
             TreeViewBarForeColor = ForeColor;
             TreeViewForeColor = ForeColor;
+            TreeViewSelectedForeColor = ForeColor;
             TreeViewBackColor = PlainColor;
             TreeViewLineColor = ForeColor;
 
@@ -593,6 +610,8 @@ namespace Sunny.UI
             DropDownControlColor = ForeColor;
             DropDownPanelFillColor = UIColor.LightBlue;
             DropDownPanelForeColor = UIFontColor.Primary;
+
+            RoundProcessForeColor2 = Color.White;
 
             DropDownStyle = UIStyles.Blue;
 
@@ -683,6 +702,7 @@ namespace Sunny.UI
             TreeViewBarFillColor = PlainColor;
             TreeViewBarForeColor = ForeColor;
             TreeViewForeColor = ForeColor;
+            TreeViewSelectedForeColor = ForeColor;
             TreeViewBackColor = PlainColor;
             TreeViewLineColor = ForeColor;
 
@@ -710,6 +730,8 @@ namespace Sunny.UI
             DropDownControlColor = ForeColor;
             DropDownPanelFillColor = UIColor.LightBlue;
             DropDownPanelForeColor = UIFontColor.Primary;
+
+            RoundProcessForeColor2 = Color.White;
 
             DropDownStyle = UIStyles.Blue;
 

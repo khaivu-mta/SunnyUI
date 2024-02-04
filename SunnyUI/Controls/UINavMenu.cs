@@ -1,34 +1,42 @@
 ﻿/******************************************************************************
- * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
- * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
- *
- * Blog:   https://www.cnblogs.com/yhuse
- * Gitee:  https://gitee.com/yhuse/SunnyUI
- * GitHub: https://github.com/yhuse/SunnyUI
- *
- * SunnyUI.dll can be used for free under the GPL-3.0 license.
- * If you use this code, please keep this note.
- * 如果您使用此代码，请保留此说明。
- ******************************************************************************
- * 文件名称: UINavMenu.cs
- * 文件说明: 导航菜单
- * 当前版本: V3.1
- * 创建日期: 2020-01-01
- *
- * 2020-01-01: V2.2.0 增加文件说明
- * 2020-07-01: V2.2.6 解决引发事件所有结点重绘导致闪烁；解决滚轮失效问题。
- * 2020-03-12: V3.0.2 增加设置二级菜单底色
- * 2021-06-14: V3.0.4 增加右侧图标
- * 2021-08-07: V3.0.5 显示/隐藏子节点提示箭头
- * 2021-08-27: V3.0.6 增加自定义TipsText显示的颜色 
- * 2021-12-13: V3.0.9 选中项可设置背景色渐变
- * 2022-01-02: V3.0.9 滚动条可设置颜色
- * 2022-03-19: V3.1.1 重构主题配色
- * 2022-03-24: V3.1.1 修复TipsText显示位置
- * 2022-04-14: V3.1.3 重构扩展函数
- * 2022-06-23: V3.2.0 绘制节点字体图标增加偏移SymbolOffset
- * 2022-08-19: V3.2.3 修复选中节点右侧图标前景色
+* SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
+* CopyRight (C) 2012-2023 ShenYongHua(沈永华).
+* QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
+*
+* Blog:   https://www.cnblogs.com/yhuse
+* Gitee:  https://gitee.com/yhuse/SunnyUI
+* GitHub: https://github.com/yhuse/SunnyUI
+*
+* SunnyUI.dll can be used for free under the GPL-3.0 license.
+* If you use this code, please keep this note.
+* 如果您使用此代码，请保留此说明。
+******************************************************************************
+* 文件名称: UINavMenu.cs
+* 文件说明: 导航菜单
+* 当前版本: V3.1
+* 创建日期: 2020-01-01
+*
+* 2020-01-01: V2.2.0 增加文件说明
+* 2020-07-01: V2.2.6 解决引发事件所有结点重绘导致闪烁；解决滚轮失效问题。
+* 2020-03-12: V3.0.2 增加设置二级菜单底色
+* 2021-06-14: V3.0.4 增加右侧图标
+* 2021-08-07: V3.0.5 显示/隐藏子节点提示箭头
+* 2021-08-27: V3.0.6 增加自定义TipsText显示的颜色 
+* 2021-12-13: V3.0.9 选中项可设置背景色渐变
+* 2022-01-02: V3.0.9 滚动条可设置颜色
+* 2022-03-19: V3.1.1 重构主题配色
+* 2022-03-24: V3.1.1 修复TipsText显示位置
+* 2022-04-14: V3.1.3 重构扩展函数
+* 2022-06-23: V3.2.0 绘制节点字体图标增加偏移SymbolOffset
+* 2022-08-19: V3.2.3 修复选中节点右侧图标前景色
+* 2022-11-03: V3.2.6 增加了可设置垂直滚动条宽度的属性
+* 2022-11-03: V3.2.6 重写了节点右侧图标的绘制
+* 2023-02-02: V3.3.1 修复了鼠标离开事件
+* 2023-02-10: V3.3.2 有子节点时，鼠标左键点击父级点展开/收缩，右键选中
+* 2023-05-12: V3.3.6 重构DrawString函数
+* 2023-05-16: V3.3.6 重构DrawFontImage函数
+* 2023-05-29: V3.3.7 增加PageGuid相关扩展方法
+* 2023-11-16: V3.5.2 重构主题
 ******************************************************************************/
 
 using System;
@@ -66,7 +74,7 @@ namespace Sunny.UI
             //ShowRootLines = false;
 
             DoubleBuffered = true;
-            Font = UIFontColor.Font();
+            base.Font = UIStyles.Font();
             //CheckBoxes = false;
             ItemHeight = 50;
             BackColor = Color.FromArgb(56, 56, 56);
@@ -91,6 +99,32 @@ namespace Sunny.UI
             selectedHighColor = UIStyles.Blue.NavMenuMenuSelectedColor;
         }
 
+        private int scrollBarWidth = 0;
+
+        [DefaultValue(0), Category("SunnyUI"), Description("垂直滚动条宽度，最小为原生滚动条宽度")]
+        public int ScrollBarWidth
+        {
+            get => scrollBarWidth;
+            set
+            {
+                scrollBarWidth = value;
+                SetScrollInfo();
+            }
+        }
+
+        private int scrollBarHandleWidth = 6;
+
+        [DefaultValue(6), Category("SunnyUI"), Description("垂直滚动条滑块宽度，最小为原生滚动条宽度")]
+        public int ScrollBarHandleWidth
+        {
+            get => scrollBarHandleWidth;
+            set
+            {
+                scrollBarHandleWidth = value;
+                if (Bar != null) Bar.FillWidth = value;
+            }
+        }
+
         /// <summary>
         /// 禁止控件跟随窗体缩放
         /// </summary>
@@ -100,7 +134,7 @@ namespace Sunny.UI
         /// <summary>
         /// 控件缩放前在其容器里的位置
         /// </summary>
-        [Browsable(false)]
+        [Browsable(false), DefaultValue(typeof(Rectangle), "0, 0, 0, 0")]
         public Rectangle ZoomScaleRect { get; set; }
 
         /// <summary>
@@ -164,22 +198,13 @@ namespace Sunny.UI
             }
         }
 
-        protected override void Dispose(bool disposing)
-        {
-            base.Dispose(disposing);
-            tmpFont?.Dispose();
-        }
-
-        [Browsable(false)]
-        public bool IsScaled { get; private set; }
+        private float DefaultFontSize = -1;
 
         public void SetDPIScale()
         {
-            if (!IsScaled)
-            {
-                this.SetDPIScaleFont();
-                IsScaled = true;
-            }
+            if (!UIDPIScale.NeedSetDPIFont()) return;
+            if (DefaultFontSize < 0) DefaultFontSize = this.Font.Size;
+            this.SetDPIScaleFont(DefaultFontSize);
         }
 
         [DefaultValue(false)]
@@ -281,7 +306,7 @@ namespace Sunny.UI
         /// <summary>
         /// 自定义主题风格
         /// </summary>
-        [DefaultValue(false)]
+        [DefaultValue(false), Browsable(false)]
         [Description("获取或设置可以自定义主题风格"), Category("SunnyUI")]
         public bool StyleCustomMode { get; set; }
 
@@ -308,10 +333,10 @@ namespace Sunny.UI
             }
         }
 
-        private Font tipsFont = UIFontColor.SubFont();
+        private Font tipsFont = UIStyles.SubFont();
 
         [Description("角标文字字体"), Category("SunnyUI")]
-        [DefaultValue(typeof(Font), "微软雅黑, 9pt")]
+        [DefaultValue(typeof(Font), "宋体, 9pt")]
         public Font TipsFont
         {
             get => tipsFont;
@@ -402,7 +427,7 @@ namespace Sunny.UI
             set
             {
                 selectedHighColor = value;
-                SetStyleCustom();
+                Invalidate();
             }
         }
 
@@ -423,19 +448,23 @@ namespace Sunny.UI
             }
         }
 
-        private UIStyle _style = UIStyle.Blue;
+        private UIStyle _style = UIStyle.Inherited;
 
         /// <summary>
         /// 主题样式
         /// </summary>
-        [DefaultValue(UIStyle.Blue), Description("主题样式"), Category("SunnyUI")]
+        [DefaultValue(UIStyle.Inherited), Description("主题样式"), Category("SunnyUI")]
         public UIStyle Style
         {
             get => _style;
             set => SetStyle(value);
         }
 
-        public void SetStyle(UIStyle style)
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="style">主题样式</param>
+        private void SetStyle(UIStyle style)
         {
             if (!style.IsCustom())
             {
@@ -443,7 +472,13 @@ namespace Sunny.UI
                 Invalidate();
             }
 
-            _style = style;
+            _style = style == UIStyle.Inherited ? UIStyle.Inherited : UIStyle.Custom;
+        }
+
+        public void SetInheritedStyle(UIStyle style)
+        {
+            SetStyle(style);
+            _style = UIStyle.Inherited;
         }
 
         public void SetStyleColor(UIBaseStyle uiColor)
@@ -491,12 +526,6 @@ namespace Sunny.UI
             Invalidate();
         }
 
-        private void SetStyleCustom(bool needRefresh = true)
-        {
-            _style = UIStyle.Custom;
-            if (needRefresh) Invalidate();
-        }
-
         private Color selectedForeColor = UIColor.Blue;
 
         [DefaultValue(typeof(Color), "80, 160, 255")]
@@ -509,7 +538,7 @@ namespace Sunny.UI
                 if (selectedForeColor != value)
                 {
                     selectedForeColor = value;
-                    SetStyleCustom();
+                    Invalidate();
                 }
             }
         }
@@ -531,7 +560,7 @@ namespace Sunny.UI
                 return;
             }
 
-            Graphics g = CreateGraphics();
+            using Graphics g = CreateGraphics();
             if (CurrentNode != null && CurrentNode != SelectedNode)
             {
                 ClearCurrentNode(g);
@@ -542,8 +571,6 @@ namespace Sunny.UI
                 CurrentNode = node;
                 OnDrawNode(new DrawTreeNodeEventArgs(g, CurrentNode, new Rectangle(0, CurrentNode.Bounds.Y, Width, CurrentNode.Bounds.Height), TreeNodeStates.Hot));
             }
-
-            g.Dispose();
         }
 
         private void ClearCurrentNode(Graphics g)
@@ -561,9 +588,9 @@ namespace Sunny.UI
         /// <param name="e">鼠标参数</param>
         protected override void OnMouseLeave(EventArgs e)
         {
-            Graphics g = CreateGraphics();
+            using Graphics g = CreateGraphics();
             ClearCurrentNode(g);
-            g.Dispose();
+            base.OnMouseLeave(e);
         }
 
         private bool checkBoxes;
@@ -643,52 +670,26 @@ namespace Sunny.UI
                     }
                 }
 
-                SizeF sf = e.Graphics.MeasureString(e.Node.Text, Font);
                 if (e.Node == SelectedNode)
                 {
                     if (SelectedColorGradient)
                     {
-                        LinearGradientBrush br = new LinearGradientBrush(new Point(0, 0), new Point(0, e.Node.Bounds.Height), SelectedColor, SelectedColor2);
+                        using LinearGradientBrush br = new LinearGradientBrush(new Point(0, 0), new Point(0, e.Node.Bounds.Height), SelectedColor, SelectedColor2);
                         br.GammaCorrection = true;
                         e.Graphics.FillRectangle(br, new Rectangle(new Point(0, e.Node.Bounds.Y), new Size(Width, e.Node.Bounds.Height)));
-                        br.Dispose();
                     }
                     else
                     {
                         e.Graphics.FillRectangle(SelectedColor, new Rectangle(new Point(0, e.Node.Bounds.Y), new Size(Width, e.Node.Bounds.Height)));
                     }
 
-                    e.Graphics.DrawString(e.Node.Text, Font, SelectedForeColor, drawLeft, e.Bounds.Y + (ItemHeight - sf.Height) / 2.0f);
+                    e.Graphics.DrawString(e.Node.Text, Font, SelectedForeColor, new Rectangle(drawLeft, e.Bounds.Y, e.Bounds.Width - drawLeft, ItemHeight), ContentAlignment.MiddleLeft);
                     e.Graphics.FillRectangle(SelectedHighColor, new Rectangle(0, e.Bounds.Y, 4, e.Bounds.Height));
-
-                    if (TreeNodeSymbols.ContainsKey(e.Node) && TreeNodeSymbols[e.Node].Count > 0)
-                    {
-                        int symbolRight = Width - (ScrollBarVisible ? ScrollBarInfo.VerticalScrollBarWidth() : 0) - 3;
-                        if (e.Node.Nodes.Count > 0) symbolRight -= 32;
-                        int firstLeft = symbolRight - TreeNodeSymbols[e.Node].Count * 32;
-
-                        for (int i = 0; i < TreeNodeSymbols[e.Node].Count; i++)
-                        {
-                            e.Graphics.DrawFontImage(TreeNodeSymbols[e.Node][i], 24, SelectedForeColor, new Rectangle(firstLeft + i * 32, e.Bounds.Top, 32, e.Bounds.Height));
-                        }
-                    }
                 }
                 else if (e.Node == CurrentNode && (e.State & TreeNodeStates.Hot) != 0)
                 {
                     e.Graphics.FillRectangle(HoverColor, new Rectangle(new Point(0, e.Node.Bounds.Y), new Size(Width, e.Node.Bounds.Height)));
-                    e.Graphics.DrawString(e.Node.Text, Font, ForeColor, drawLeft, e.Bounds.Y + (ItemHeight - sf.Height) / 2.0f);
-
-                    if (TreeNodeSymbols.ContainsKey(e.Node) && TreeNodeSymbols[e.Node].Count > 0)
-                    {
-                        int symbolRight = Width - (ScrollBarVisible ? ScrollBarInfo.VerticalScrollBarWidth() : 0) - 3;
-                        if (e.Node.Nodes.Count > 0) symbolRight -= 32;
-                        int firstLeft = symbolRight - TreeNodeSymbols[e.Node].Count * 32;
-
-                        for (int i = 0; i < TreeNodeSymbols[e.Node].Count; i++)
-                        {
-                            e.Graphics.DrawFontImage(TreeNodeSymbols[e.Node][i], 24, ForeColor, new Rectangle(firstLeft + i * 32, e.Bounds.Top, 32, e.Bounds.Height));
-                        }
-                    }
+                    e.Graphics.DrawString(e.Node.Text, Font, ForeColor, new Rectangle(drawLeft, e.Bounds.Y, e.Bounds.Width - drawLeft, ItemHeight), ContentAlignment.MiddleLeft);
                 }
                 else
                 {
@@ -699,17 +700,33 @@ namespace Sunny.UI
                     }
 
                     e.Graphics.FillRectangle(color, new Rectangle(new Point(0, e.Node.Bounds.Y), new Size(Width, e.Node.Bounds.Height)));
-                    e.Graphics.DrawString(e.Node.Text, Font, ForeColor, drawLeft, e.Bounds.Y + (ItemHeight - sf.Height) / 2.0f);
+                    e.Graphics.DrawString(e.Node.Text, Font, ForeColor, new Rectangle(drawLeft, e.Bounds.Y, e.Bounds.Width - drawLeft, ItemHeight), ContentAlignment.MiddleLeft);
                 }
 
+                //画右侧图标
+                Color rightSymbolColor = ForeColor;
+                if (e.Node == SelectedNode) rightSymbolColor = SelectedForeColor;
+                if (TreeNodeSymbols.ContainsKey(e.Node) && TreeNodeSymbols[e.Node].Count > 0)
+                {
+                    int size = e.Node.Nodes.Count > 0 ? 24 : 0;
+                    int left = Width - size - 6;
+                    if (Bar.Visible) left -= Bar.Width;
+
+                    int firstLeft = left - TreeNodeSymbols[e.Node].Count * 30;
+                    for (int i = 0; i < TreeNodeSymbols[e.Node].Count; i++)
+                    {
+                        e.Graphics.DrawFontImage(TreeNodeSymbols[e.Node][i], 24, rightSymbolColor, new Rectangle(firstLeft + i * 30, e.Bounds.Top, 30, e.Bounds.Height));
+                    }
+                }
+
+                //画图片
                 if (haveImage)
                 {
                     if (MenuHelper.GetSymbol(e.Node) > 0)
                     {
-                        SizeF fiSize = e.Graphics.GetFontImageSize(MenuHelper.GetSymbol(e.Node), MenuHelper.GetSymbolSize(e.Node));
                         Color color = e.Node == SelectedNode ? SelectedForeColor : ForeColor;
                         Point offset = MenuHelper.GetSymbolOffset(e.Node);
-                        e.Graphics.DrawFontImage(MenuHelper.GetSymbol(e.Node), MenuHelper.GetSymbolSize(e.Node), color, imageLeft + (MenuHelper.GetSymbolSize(e.Node) - fiSize.Width) / 2.0f + offset.X, e.Bounds.Y + (e.Bounds.Height - fiSize.Height) / 2 + offset.Y);
+                        e.Graphics.DrawFontImage(MenuHelper.GetSymbol(e.Node), MenuHelper.GetSymbolSize(e.Node), color, new Rectangle(imageLeft, e.Bounds.Y, MenuHelper.GetSymbolSize(e.Node), e.Bounds.Height), offset.X, offset.Y, MenuHelper.GetSymbolRotate(e.Node));
                     }
                     else
                     {
@@ -720,51 +737,47 @@ namespace Sunny.UI
                     }
                 }
 
+                //显示右侧下拉箭头
                 if (ShowItemsArrow && e.Node.Nodes.Count > 0)
                 {
-                    e.Graphics.DrawFontImage(e.Node.IsExpanded ? 61702 : 61703, 24, ForeColor, Width - (Bar.Visible ? 50 : 30), e.Bounds.Y + (ItemHeight - 24) / 2);
+                    int size = 24;
+                    int left = Width - size - 6;
+                    if (Bar.Visible) left -= Bar.Width;
+
+                    SizeF sf = e.Graphics.GetFontImageSize(61702, 24);
+                    Rectangle rect = new Rectangle((int)(left + sf.Width / 2) - 12, e.Bounds.Y, 24, e.Bounds.Height);
+                    e.Graphics.DrawFontImage(e.Node.IsExpanded ? 61702 : 61703, 24, ForeColor, rect);
                 }
 
-                if (ShowTips && MenuHelper.GetTipsText(e.Node).IsValid() && TreeNodeSymbols.NotContainsKey(e.Node))
+                //显示Tips圆圈
+                if (ShowTips && MenuHelper.GetTipsText(e.Node).IsValid())
                 {
-                    SizeF tipsSize = e.Graphics.MeasureString(MenuHelper.GetTipsText(e.Node), TempFont);
-                    float sfMax = Math.Max(tipsSize.Width, tipsSize.Height) + 1;
-                    float tipsLeft = Width - (ScrollBarVisible ? ScrollBarInfo.VerticalScrollBarWidth() : 0) - sfMax - sfMax;
+                    using var TempFont = TipsFont.DPIScaleFont(TipsFont.Size);
+                    Size tipsSize = TextRenderer.MeasureText(MenuHelper.GetTipsText(e.Node), TempFont);
+                    int sfMax = Math.Max(tipsSize.Width, tipsSize.Height);
+                    int tipsLeft = Width - sfMax - 16;
                     if (e.Node.Nodes.Count > 0) tipsLeft -= 24;
-                    float tipsTop = e.Bounds.Y + (ItemHeight - sfMax) / 2;
+                    if (Bar.Visible) tipsLeft -= Bar.Width;
+                    if (TreeNodeSymbols.ContainsKey(e.Node)) tipsLeft -= TreeNodeSymbols[e.Node].Count * 30;
+                    int tipsTop = e.Bounds.Y + (ItemHeight - sfMax) / 2;
 
                     if (MenuHelper[e.Node] != null)
                     {
-                        using StringFormat alignment = GDI.SetAlignment();
                         if (MenuHelper[e.Node].TipsCustom)
                         {
-                            e.Graphics.FillEllipse(MenuHelper[e.Node].TipsBackColor, tipsLeft, tipsTop, sfMax, sfMax);
-                            e.Graphics.DrawString(MenuHelper.GetTipsText(e.Node), TempFont, MenuHelper[e.Node].TipsForeColor, new RectangleF(tipsLeft, tipsTop, sfMax, sfMax), alignment);
+                            e.Graphics.FillEllipse(MenuHelper[e.Node].TipsBackColor, tipsLeft - 1, tipsTop, sfMax, sfMax);
+                            e.Graphics.DrawString(MenuHelper.GetTipsText(e.Node), TempFont, MenuHelper[e.Node].TipsForeColor, new Rectangle(tipsLeft, tipsTop, sfMax, sfMax), ContentAlignment.MiddleCenter);
                         }
                         else
                         {
-                            e.Graphics.FillEllipse(TipsColor, tipsLeft, tipsTop, sfMax, sfMax);
-                            e.Graphics.DrawString(MenuHelper.GetTipsText(e.Node), TempFont, TipsForeColor, new RectangleF(tipsLeft, tipsTop, sfMax, sfMax), alignment);
+                            e.Graphics.FillEllipse(TipsColor, tipsLeft - 1, tipsTop, sfMax, sfMax);
+                            e.Graphics.DrawString(MenuHelper.GetTipsText(e.Node), TempFont, TipsForeColor, new Rectangle(tipsLeft, tipsTop, sfMax, sfMax), ContentAlignment.MiddleCenter);
                         }
                     }
                 }
             }
-        }
 
-        Font tmpFont;
-
-        private Font TempFont
-        {
-            get
-            {
-                if (tmpFont == null || !tmpFont.Size.EqualsFloat(TipsFont.DPIScaleFontSize()))
-                {
-                    tmpFont?.Dispose();
-                    tmpFont = TipsFont.DPIScaleFont();
-                }
-
-                return tmpFont;
-            }
+            base.OnDrawNode(e);
         }
 
         private Color tipsColor = Color.Red;
@@ -801,48 +814,61 @@ namespace Sunny.UI
         protected override void OnNodeMouseClick(TreeNodeMouseClickEventArgs e)
         {
             base.OnNodeMouseClick(e);
+            if (e.Node == null) return;
 
-            if (e.Node.Nodes.Count > 0)
+            int size = e.Node.Nodes.Count > 0 ? 24 : 0;
+            int left = Width - size - 6;
+            if (Bar.Visible) left -= Bar.Width;
+
+            int firstLeft = 0;
+            if (TreeNodeSymbols.ContainsKey(e.Node))
+                firstLeft = left - TreeNodeSymbols[e.Node].Count * 30;
+
+            if (TreeNodeSymbols.ContainsKey(e.Node) && TreeNodeSymbols[e.Node].Count > 0 && e.X >= firstLeft && e.X < firstLeft + TreeNodeSymbols[e.Node].Count * 30)
             {
-                if (e.Node.IsExpanded)
+                int idx = (e.X - firstLeft) / 30;
+                if (idx >= 0 && idx < TreeNodeSymbols[e.Node].Count)
                 {
-                    e.Node.Collapse();
+                    NodeRightSymbolClick?.Invoke(this, e.Node, idx, TreeNodeSymbols[e.Node][idx]);
                 }
-                else
+            }
+            else
+            {
+                if (e.Node.Nodes.Count > 0)
                 {
-                    e.Node.Expand();
-                }
+                    if (e.Button == MouseButtons.Left)
+                    {
+                        if (e.Node.IsExpanded)
+                        {
+                            e.Node.Collapse();
+                        }
+                        else
+                        {
+                            e.Node.Expand();
+                        }
 
-                if (SelectedNode != null && SelectedNode == e.Node && e.Node.IsExpanded && ExpandSelectFirst && e.Node.Nodes.Count > 0)
-                {
-                    SelectedNode = e.Node.Nodes[0];
+                        if (SelectedNode != null && SelectedNode == e.Node && e.Node.IsExpanded && ExpandSelectFirst && e.Node.Nodes.Count > 0)
+                        {
+                            SelectedNode = e.Node.Nodes[0];
+                        }
+                        else
+                        {
+                            SelectedNode = e.Node;
+                        }
+                    }
+
+                    if (e.Button == MouseButtons.Right)
+                    {
+                        SelectedNode = e.Node;
+                    }
                 }
                 else
                 {
                     SelectedNode = e.Node;
                 }
-            }
-            else
-            {
-                SelectedNode = e.Node;
-            }
 
-            if (e.Node != null && TreeNodeSymbols.ContainsKey(e.Node) && TreeNodeSymbols[e.Node].Count > 0)
-            {
-                int symbolRight = Width - (ScrollBarVisible ? ScrollBarInfo.VerticalScrollBarWidth() : 0) - 3;
-                if (e.Node.Nodes.Count > 0) symbolRight -= 32;
-                int firstLeft = symbolRight - TreeNodeSymbols[e.Node].Count * 32;
-                if (e.X >= firstLeft && e.X < symbolRight)
-                {
-                    int idx = (e.X - firstLeft) / 32;
-                    if (idx >= 0 && idx < TreeNodeSymbols[e.Node].Count)
-                    {
-                        NodeRightSymbolClick?.Invoke(this, e.Node, idx, TreeNodeSymbols[e.Node][idx]);
-                    }
-                }
+                ShowSelectedNode();
             }
-
-            ShowSelectedNode();
         }
 
         public void SelectFirst()
@@ -910,10 +936,12 @@ namespace Sunny.UI
                 return;
             }
 
+            int barWidth = Math.Max(ScrollBarInfo.VerticalScrollBarWidth(), ScrollBarWidth);
             var si = ScrollBarInfo.GetInfo(Handle);
             Bar.Maximum = si.ScrollMax;
             Bar.Visible = si.ScrollMax > 0 && si.nMax > 0 && si.nPage > 0;
             Bar.Value = si.nPos;
+            Bar.Width = barWidth;
             Bar.BringToFront();
 
             if (ScrollBarVisible != Bar.Visible)
@@ -1014,9 +1042,19 @@ namespace Sunny.UI
             return MenuHelper.GetPageIndex(node);
         }
 
+        public Guid GetPageGuid(TreeNode node)
+        {
+            return MenuHelper.GetGuid(node);
+        }
+
         public TreeNode GetTreeNode(int pageIndex)
         {
             return MenuHelper.GetTreeNode(pageIndex);
+        }
+
+        public TreeNode GetTreeNode(Guid pageGuid)
+        {
+            return MenuHelper.GetTreeNode(pageGuid);
         }
 
         private void SetNodeItem(TreeNode node, NavMenuItem item)
@@ -1030,15 +1068,21 @@ namespace Sunny.UI
             return this;
         }
 
-        public UINavMenu SetNodeSymbol(TreeNode node, int symbol, int symbolSize = 24)
+        public UINavMenu SetNodePageGuid(TreeNode node, Guid pageGuid)
         {
-            MenuHelper.SetSymbol(node, symbol, symbolSize);
+            MenuHelper.SetPageGuid(node, pageGuid);
             return this;
         }
 
-        public UINavMenu SetNodeSymbol(TreeNode node, int symbol, Point symbolOffset, int symbolSize = 24)
+        public UINavMenu SetNodeSymbol(TreeNode node, int symbol, int symbolSize = 24, int symbolRotate = 0)
         {
-            MenuHelper.SetSymbol(node, symbol, symbolOffset, symbolSize);
+            MenuHelper.SetSymbol(node, symbol, symbolSize, symbolRotate);
+            return this;
+        }
+
+        public UINavMenu SetNodeSymbol(TreeNode node, int symbol, Point symbolOffset, int symbolSize = 24, int symbolRotate = 0)
+        {
+            MenuHelper.SetSymbol(node, symbol, symbolOffset, symbolSize, symbolRotate);
             return this;
         }
 
@@ -1073,17 +1117,17 @@ namespace Sunny.UI
             return CreateNode(new NavMenuItem(page));
         }
 
-        public TreeNode CreateNode(string text, int symbol, int symbolSize, int pageIndex)
+        public TreeNode CreateNode(string text, int symbol, int symbolSize, int pageIndex, int symbolRotate = 0)
         {
             var node = CreateNode(text, pageIndex);
-            SetNodeSymbol(node, symbol, symbolSize);
+            SetNodeSymbol(node, symbol, symbolSize, symbolRotate);
             return node;
         }
 
-        public TreeNode CreateNode(string text, int symbol, Point symbolOffset, int symbolSize, int pageIndex)
+        public TreeNode CreateNode(string text, int symbol, Point symbolOffset, int symbolSize, int pageIndex, int symbolRotate = 0)
         {
             var node = CreateNode(text, pageIndex);
-            SetNodeSymbol(node, symbol, symbolOffset, symbolSize);
+            SetNodeSymbol(node, symbol, symbolOffset, symbolSize, symbolRotate);
             return node;
         }
 
@@ -1110,23 +1154,23 @@ namespace Sunny.UI
             var childNode = CreateChildNode(parent, new NavMenuItem(page));
             if (page.Symbol > 0)
             {
-                MenuHelper.SetSymbol(childNode, page.Symbol, page.SymbolOffset, page.SymbolSize);
+                MenuHelper.SetSymbol(childNode, page.Symbol, page.SymbolOffset, page.SymbolSize, page.SymbolRotate);
             }
 
             return childNode;
         }
 
-        public TreeNode CreateChildNode(TreeNode parent, string text, int symbol, int symbolSize, int pageIndex)
+        public TreeNode CreateChildNode(TreeNode parent, string text, int symbol, int symbolSize, int pageIndex, int symbolRotate = 0)
         {
             var node = CreateChildNode(parent, text, pageIndex);
-            SetNodeSymbol(node, symbol, symbolSize);
+            SetNodeSymbol(node, symbol, symbolSize, symbolRotate);
             return node;
         }
 
-        public TreeNode CreateChildNode(TreeNode parent, string text, int symbol, Point symbolOffset, int symbolSize, int pageIndex)
+        public TreeNode CreateChildNode(TreeNode parent, string text, int symbol, Point symbolOffset, int symbolSize, int pageIndex, int symbolRotate = 0)
         {
             var node = CreateChildNode(parent, text, pageIndex);
-            SetNodeSymbol(node, symbol, symbolOffset, symbolSize);
+            SetNodeSymbol(node, symbol, symbolOffset, symbolSize, symbolRotate);
             return node;
         }
 

@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -21,6 +21,10 @@
  * 2020-05-21: V2.2.5 增加鼠标滑过高亮
  * 2021-08-07: V3.0.5 从文件载入图片，并且解除占用
  * 2022-03-19: V3.1.1 重构主题配色
+ * 2022-08-30: V3.2.3 增加了一些事件
+ * 2022-09-05: V3.2.3 修复Click，DoubleClick事件
+ * 2022-11-03: V3.2.6 增加了可设置垂直滚动条宽度的属性
+ * 2023-05-13: V3.3.6 重构DrawString函数
 ******************************************************************************/
 
 using System;
@@ -49,7 +53,6 @@ namespace Sunny.UI
             bar.Width = SystemInformation.VerticalScrollBarWidth + 2;
             bar.Parent = this;
             bar.Dock = DockStyle.None;
-            bar.Style = UIStyle.Custom;
             bar.Visible = false;
 
             listbox.Parent = this;
@@ -65,6 +68,167 @@ namespace Sunny.UI
             listbox.MouseDown += Listbox_MouseDown;
             listbox.MouseUp += Listbox_MouseUp;
             listbox.MouseMove += Listbox_MouseMove;
+
+            listbox.MouseClick += Listbox_MouseClick;
+            listbox.MouseDoubleClick += Listbox_MouseDoubleClick;
+            listbox.KeyPress += Listbox_KeyPress;
+            listbox.KeyDown += Listbox_KeyDown;
+            listbox.KeyUp += Listbox_KeyUp;
+            listbox.MouseEnter += Listbox_MouseEnter;
+            listbox.MouseLeave += Listbox_MouseLeave;
+            listbox.DrawItem += Listbox_DrawItem;
+        }
+
+        public override void SetDPIScale()
+        {
+            base.SetDPIScale();
+            listbox.SetDPIScale();
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            bar?.Dispose();
+            listbox?.Dispose();
+        }
+
+        private Color scrollBarColor = Color.FromArgb(80, 160, 255);
+
+        /// <summary>
+        /// 填充颜色，当值为背景色或透明色或空值则不填充
+        /// </summary>
+        [Description("滚动条填充颜色"), Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "80, 160, 255")]
+        public Color ScrollBarColor
+        {
+            get => scrollBarColor;
+            set
+            {
+                scrollBarColor = value;
+                bar.HoverColor = bar.PressColor = bar.ForeColor = value;
+                bar.Style = UIStyle.Custom;
+                Invalidate();
+            }
+        }
+
+        private Color scrollBarBackColor = Color.FromArgb(243, 249, 255);
+
+        /// <summary>
+        /// 填充颜色，当值为背景色或透明色或空值则不填充
+        /// </summary>
+        [Description("滚动条背景颜色"), Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "243, 249, 255")]
+        public Color ScrollBarBackColor
+        {
+            get => scrollBarBackColor;
+            set
+            {
+                scrollBarBackColor = value;
+                bar.FillColor = value;
+                bar.Style = UIStyle.Custom;
+                Invalidate();
+            }
+        }
+
+        /// <summary>
+        /// 滚动条主题样式
+        /// </summary>
+        [DefaultValue(true), Description("滚动条主题样式"), Category("SunnyUI")]
+        public bool ScrollBarStyleInherited
+        {
+            get => bar != null && bar.Style == UIStyle.Inherited;
+            set
+            {
+                if (value)
+                {
+                    if (bar != null) bar.Style = UIStyle.Inherited;
+
+                    scrollBarColor = UIStyles.Blue.ListBarForeColor;
+                    scrollBarBackColor = UIStyles.Blue.ListBarFillColor;
+                }
+            }
+        }
+
+        private int scrollBarWidth = 0;
+
+        [DefaultValue(0), Category("SunnyUI"), Description("垂直滚动条宽度，最小为原生滚动条宽度")]
+        public int ScrollBarWidth
+        {
+            get => scrollBarWidth;
+            set
+            {
+                scrollBarWidth = value;
+                SetScrollInfo();
+            }
+        }
+
+        private int scrollBarHandleWidth = 6;
+
+        [DefaultValue(6), Category("SunnyUI"), Description("垂直滚动条滑块宽度，最小为原生滚动条宽度")]
+        public int ScrollBarHandleWidth
+        {
+            get => scrollBarHandleWidth;
+            set
+            {
+                scrollBarHandleWidth = value;
+                if (bar != null) bar.FillWidth = value;
+            }
+        }
+
+        public event DrawItemEventHandler DrawItem;
+        public new event EventHandler MouseLeave;
+        public new event EventHandler MouseEnter;
+        public new event KeyPressEventHandler KeyPress;
+        public new event KeyEventHandler KeyDown;
+        public new event KeyEventHandler KeyUp;
+        public new event MouseEventHandler MouseClick;
+
+        public new event MouseEventHandler MouseDoubleClick;
+
+        protected override void OnContextMenuStripChanged(EventArgs e)
+        {
+            base.OnContextMenuStripChanged(e);
+            if (listbox != null) listbox.ContextMenuStrip = ContextMenuStrip;
+        }
+
+        private void Listbox_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+            MouseDoubleClick?.Invoke(this, e);
+        }
+
+        private void Listbox_DrawItem(object sender, DrawItemEventArgs e)
+        {
+            DrawItem?.Invoke(sender, e);
+        }
+
+        private void Listbox_MouseLeave(object sender, EventArgs e)
+        {
+            MouseLeave?.Invoke(this, e);
+        }
+
+        private void Listbox_MouseEnter(object sender, EventArgs e)
+        {
+            MouseEnter?.Invoke(this, e);
+        }
+
+        private void Listbox_MouseClick(object sender, MouseEventArgs e)
+        {
+            MouseClick?.Invoke(this, e);
+        }
+
+        private void Listbox_KeyUp(object sender, KeyEventArgs e)
+        {
+            KeyUp?.Invoke(this, e);
+        }
+
+        private void Listbox_KeyDown(object sender, KeyEventArgs e)
+        {
+            KeyDown?.Invoke(this, e);
+        }
+
+        private void Listbox_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            KeyPress?.Invoke(this, e);
         }
 
         /// <summary>
@@ -121,8 +285,7 @@ namespace Sunny.UI
         protected override void OnFontChanged(EventArgs e)
         {
             base.OnFontChanged(e);
-            listbox.IsScaled = true;
-            listbox.Font = Font;
+            if (DefaultFontSize < 0 && listbox != null) listbox.Font = this.Font;
         }
 
         /// <summary>
@@ -132,9 +295,16 @@ namespace Sunny.UI
         protected override void OnSizeChanged(EventArgs e)
         {
             base.OnSizeChanged(e);
+            SetScrollInfo();
+        }
+
+        private void SetScrollInfo()
+        {
             bar.Top = 2;
             bar.Height = Height - 4;
-            bar.Left = Width - bar.Width - 2;
+            int barWidth = Math.Max(ScrollBarInfo.VerticalScrollBarWidth() + Padding.Right, ScrollBarWidth);
+            bar.Width = barWidth + 1;
+            bar.Left = Width - barWidth - 3;
         }
 
         private void Listbox_BeforeDrawItem(object sender, ListBox.ObjectCollection items, DrawItemEventArgs e)
@@ -149,22 +319,20 @@ namespace Sunny.UI
 
         private void Listbox_DoubleClick(object sender, EventArgs e)
         {
-            if (SelectedItem != null)
-                ItemDoubleClick?.Invoke(this, e);
+            DoubleClick?.Invoke(this, e);
         }
 
         private void Listbox_Click(object sender, EventArgs e)
         {
-            if (SelectedItem != null)
-                ItemClick?.Invoke(this, e);
+            Click?.Invoke(this, e);
         }
 
         [Browsable(false)]
         public int Count => Items.Count;
 
-        public event EventHandler ItemClick;
+        public new event EventHandler Click;
 
-        public event EventHandler ItemDoubleClick;
+        public new event EventHandler DoubleClick;
 
         public event EventHandler ItemsCountChange;
 
@@ -214,12 +382,15 @@ namespace Sunny.UI
         public override void SetStyleColor(UIBaseStyle uiColor)
         {
             base.SetStyleColor(uiColor);
-            if (bar != null)
+            if (bar != null && bar.Style == UIStyle.Inherited)
             {
                 bar.ForeColor = uiColor.ListBarForeColor;
                 bar.HoverColor = uiColor.ButtonFillHoverColor;
                 bar.PressColor = uiColor.ButtonFillPressColor;
                 bar.FillColor = uiColor.ListBarFillColor;
+
+                scrollBarColor = uiColor.ListBarForeColor;
+                scrollBarBackColor = uiColor.ListBarFillColor;
             }
 
             hoverColor = uiColor.ListItemHoverColor;
@@ -349,12 +520,11 @@ namespace Sunny.UI
             {
                 hoverColor = value;
                 listbox.HoverColor = hoverColor;
-                _style = UIStyle.Custom;
             }
         }
 
         [ToolboxItem(false)]
-        private sealed class ImageListBox : ListBox
+        private sealed class ImageListBox : ListBox, IStyleInterface
         {
             private UIScrollBar bar;
 
@@ -375,16 +545,13 @@ namespace Sunny.UI
                 }
             }
 
-            [Browsable(false), DefaultValue(false)]
-            public bool IsScaled { get; set; }
+            private float DefaultFontSize = -1;
 
             public void SetDPIScale()
             {
-                if (!IsScaled)
-                {
-                    this.SetDPIScaleFont();
-                    IsScaled = true;
-                }
+                if (!UIDPIScale.NeedSetDPIFont()) return;
+                if (DefaultFontSize < 0) DefaultFontSize = this.Font.Size;
+                this.SetDPIScaleFont(DefaultFontSize);
             }
 
             //protected override void WndProc(ref Message m)
@@ -461,13 +628,13 @@ namespace Sunny.UI
             /// <summary>
             /// 自定义主题风格
             /// </summary>
-            [DefaultValue(false)]
+            [DefaultValue(false), Browsable(false)]
             [Description("获取或设置可以自定义主题风格"), Category("SunnyUI")]
             public bool StyleCustomMode { get; set; }
 
             public string Version { get; }
 
-            private UIStyle _style = UIStyle.Blue;
+            private UIStyle _style = UIStyle.Inherited;
             private Color _itemSelectBackColor = UIColor.Blue;
             private Color _itemSelectForeColor = Color.White;
             private int imageInterval = 4;
@@ -538,14 +705,18 @@ namespace Sunny.UI
             /// <summary>
             /// 主题样式
             /// </summary>
-            [DefaultValue(UIStyle.Blue), Description("主题样式"), Category("SunnyUI")]
+            [DefaultValue(UIStyle.Inherited), Description("主题样式"), Category("SunnyUI")]
             public UIStyle Style
             {
                 get => _style;
                 set => SetStyle(value);
             }
 
-            public void SetStyle(UIStyle style)
+            /// <summary>
+            /// 设置主题样式
+            /// </summary>
+            /// <param name="style">主题样式</param>
+            private void SetStyle(UIStyle style)
             {
                 if (!style.IsCustom())
                 {
@@ -553,7 +724,13 @@ namespace Sunny.UI
                     Invalidate();
                 }
 
-                _style = style;
+                _style = style == UIStyle.Inherited ? UIStyle.Inherited : UIStyle.Custom;
+            }
+
+            public void SetInheritedStyle(UIStyle style)
+            {
+                SetStyle(style);
+                _style = UIStyle.Inherited;
             }
 
             public void SetStyleColor(UIBaseStyle uiColor)
@@ -571,9 +748,7 @@ namespace Sunny.UI
                     if (_itemSelectBackColor != value)
                     {
                         _itemSelectBackColor = value;
-                        _style = UIStyle.Custom;
-                        if (DesignMode)
-                            Invalidate();
+                        Invalidate();
                     }
                 }
             }
@@ -587,9 +762,7 @@ namespace Sunny.UI
                     if (_itemSelectForeColor != value)
                     {
                         _itemSelectForeColor = value;
-                        _style = UIStyle.Custom;
-                        if (DesignMode)
-                            Invalidate();
+                        Invalidate();
                     }
                 }
             }
@@ -676,7 +849,7 @@ namespace Sunny.UI
                 newTransform.Translate(e.Bounds.X, e.Bounds.Y);
                 g.Transform = newTransform;
                 ImageListItem item = (ImageListItem)Items[e.Index];
-                SizeF sf = g.MeasureString("ImageListBox", Font);
+                Size sf = TextRenderer.MeasureText("ImageListBox", Font);
                 int thumbnailSize = ShowDescription ? ((int)(ItemHeight - ImageInterval - sf.Height)) : (ItemHeight - ImageInterval * 2);
 
                 if (item.Image != null)
@@ -694,7 +867,7 @@ namespace Sunny.UI
 
                 if (ShowDescription && !string.IsNullOrEmpty(item.Description))
                 {
-                    g.DrawString(item.Description, e.Font, foreColor, new Point(ImageInterval, thumbnailSize + ImageInterval));
+                    g.DrawString(item.Description, e.Font, foreColor, new Rectangle(ImageInterval, e.Bounds.Y + thumbnailSize, e.Bounds.Width, e.Bounds.Height), ContentAlignment.TopLeft);
                 }
 
                 g.Transform = oldTransform;
@@ -706,11 +879,7 @@ namespace Sunny.UI
             public Color HoverColor
             {
                 get => hoverColor;
-                set
-                {
-                    hoverColor = value;
-                    _style = UIStyle.Custom;
-                }
+                set => hoverColor = value;
             }
 
             private int lastIndex = -1;
@@ -726,13 +895,15 @@ namespace Sunny.UI
                     {
                         if (lastIndex >= 0 && lastIndex != SelectedIndex)
                         {
-                            OnDrawItem(new DrawItemEventArgs(this.CreateGraphics(), Font, GetItemRectangle(lastIndex), lastIndex, DrawItemState.Grayed));
+                            using var g = CreateGraphics();
+                            OnDrawItem(new DrawItemEventArgs(g, Font, GetItemRectangle(lastIndex), lastIndex, DrawItemState.Grayed));
                         }
 
                         mouseIndex = value;
                         if (mouseIndex >= 0 && mouseIndex != SelectedIndex)
                         {
-                            OnDrawItem(new DrawItemEventArgs(this.CreateGraphics(), Font, GetItemRectangle(value), value, DrawItemState.HotLight));
+                            using var g = CreateGraphics();
+                            OnDrawItem(new DrawItemEventArgs(g, Font, GetItemRectangle(value), value, DrawItemState.HotLight));
                         }
 
                         lastIndex = mouseIndex;

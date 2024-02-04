@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -21,6 +21,7 @@
  * 2021-07-18: V3.0.5 增加多彩主题，以颜色深色，文字白色为主
  * 2021-09-24: V3.0.7 修改默认字体的GdiCharSet
  * 2021-10-16: V3.0.8 增加系统DPI缩放自适应
+ * 2023-11-05: V3.5.2 重构主题
 ******************************************************************************/
 
 using System.Collections.Generic;
@@ -32,31 +33,16 @@ namespace Sunny.UI
 {
     public interface IStyleInterface
     {
-        UIStyle Style
-        {
-            get; set;
-        }
+        UIStyle Style { get; set; }
 
-        bool StyleCustomMode
-        {
-            get; set;
-        }
+        string Version { get; }
 
-        string Version
-        {
-            get;
-        }
-
-        string TagString
-        {
-            get; set;
-        }
+        string TagString { get; set; }
 
         void SetStyleColor(UIBaseStyle uiColor);
 
-        void SetStyle(UIStyle style);
-
-        bool IsScaled { get; }
+        //void SetStyle(UIStyle style);
+        void SetInheritedStyle(UIStyle style);
 
         void SetDPIScale();
     }
@@ -66,6 +52,12 @@ namespace Sunny.UI
     /// </summary>
     public enum UIStyle
     {
+        /// <summary>
+        /// 继承的全局主题
+        /// </summary>
+        [DisplayText("继承的全局主题")]
+        Inherited = -1,
+
         /// <summary>
         /// 自定义
         /// </summary>
@@ -307,70 +299,6 @@ namespace Sunny.UI
     /// </summary>
     public static class UIFontColor
     {
-        public static byte GdiCharSet
-        {
-            get
-            {
-                byte value = 1;
-                // 注解
-                // 除非在构造函数中指定了不同的字符集，否则此属性将返回 1 
-                // Font(String, Single, FontStyle, GraphicsUnit, Byte) 。 
-                // 此属性采用 Windows SDK 头文件 WinGDI 中定义的列表的值。 下表列出了字符集和字节值。
-                // 字符集 “值”
-                // ANSI    0
-                // DEFAULT 1
-                // 代号  2
-                // SHIFTJIS    128
-                // HANGEUL 129
-                // 文字  129
-                // GB2312  134
-                // CHINESEBIG5 136
-                // OEM 255
-                // JOHAB   130
-                // 希伯来语    177
-                // 阿拉伯语    178
-                // 希腊语 161
-                // 土耳其语    162
-                // 越南语 163
-                // 泰语  222
-                // EASTEUROPE  238
-                // 俄语  204
-                // MAC 77
-                // 波罗  186
-
-                if (System.Text.Encoding.Default.BodyName.ToUpper() == "GB2312") value = 134;
-                return value;
-            }
-        }
-
-        /// <summary>
-        /// 默认字体
-        /// </summary>
-        public static Font Font()
-        {
-            return new Font("微软雅黑", FontSize, FontStyle.Regular, GraphicsUnit.Point, GdiCharSet);
-        }
-
-        /// <summary>
-        /// 默认字体
-        /// </summary>
-        public static Font Font(float fontSize)
-        {
-            return new Font("微软雅黑", fontSize, FontStyle.Regular, GraphicsUnit.Point, GdiCharSet);
-        }
-
-        public static float FontSize = 12;
-
-        /// <summary>
-        /// 默认二级字体
-        /// </summary>
-        public static Font SubFont()
-        {
-            return new Font("微软雅黑", SubFontSize, FontStyle.Regular, GraphicsUnit.Point, GdiCharSet);
-        }
-
-        public static float SubFontSize = 9;
-
         /// <summary>
         /// 主要颜色
         /// </summary>
@@ -463,17 +391,7 @@ namespace Sunny.UI
 
         public static bool IsValid(this UIStyle style)
         {
-            return !style.IsCustom();
-        }
-
-        public static bool IsCustom(this UIBaseStyle style)
-        {
-            return style.Name.IsCustom();
-        }
-
-        public static bool IsValid(this UIBaseStyle style)
-        {
-            return !style.IsCustom();
+            return (int)style > 0;
         }
 
         public static void SetChildUIStyle(Control ctrl, UIStyle style)
@@ -481,11 +399,19 @@ namespace Sunny.UI
             List<Control> controls = ctrl.GetUIStyleControls("IStyleInterface");
             foreach (var control in controls)
             {
-                if (control is IStyleInterface item)
+                if (control is IStyleInterface item && item.Style == UIStyle.Inherited)
                 {
-                    if (!item.StyleCustomMode)
+                    if (item is UIPage uipage && uipage.Parent is TabPage tabpage)
                     {
-                        item.Style = style;
+                        TabControl tabControl = tabpage.Parent as TabControl;
+                        if (tabControl.SelectedTab == tabpage)
+                        {
+                            item.SetInheritedStyle(style);
+                        }
+                    }
+                    else
+                    {
+                        item.SetInheritedStyle(style);
                     }
                 }
             }
@@ -496,9 +422,9 @@ namespace Sunny.UI
                 if (info.FieldType.Name == "UIContextMenuStrip")
                 {
                     UIContextMenuStrip context = (UIContextMenuStrip)info.GetValue(ctrl);
-                    if (context != null && !context.StyleCustomMode)
+                    if (context != null && context.Style == UIStyle.Inherited)
                     {
-                        context.SetStyle(style);
+                        context.SetInheritedStyle(style);
                     }
                 }
             }
@@ -522,11 +448,10 @@ namespace Sunny.UI
                 }
 
                 if (obj is UIPage) continue;
-                if (obj is UITableLayoutPanel) continue;
-                if (obj is UIFlowLayoutPanel) continue;
-                if (obj is UIUserControl) continue;
-
-                if (obj is TableLayoutPanel) continue;
+                //if (obj is UITableLayoutPanel) continue;
+                //if (obj is UIFlowLayoutPanel) continue;
+                //if (obj is UIUserControl) continue;
+                //if (obj is TableLayoutPanel) continue;
 
                 if (obj.Controls.Count > 0)
                 {
@@ -537,7 +462,7 @@ namespace Sunny.UI
             return values;
         }
 
-        public static List<Control> GetTranslateControls(this Control ctrl, string interfaceName)
+        public static List<Control> GetInterfaceControls(this Control ctrl, string interfaceName)
         {
             List<Control> values = new List<Control>();
 
@@ -550,57 +475,11 @@ namespace Sunny.UI
 
                 if (obj.Controls.Count > 0)
                 {
-                    values.AddRange(obj.GetTranslateControls(interfaceName));
+                    values.AddRange(obj.GetInterfaceControls(interfaceName));
                 }
             }
 
             return values;
-        }
-
-        public static void SetRawControlStyle(ControlEventArgs e, UIStyle style)
-        {
-            if (e.Control is TableLayoutPanel)
-            {
-                List<Control> controls = e.Control.GetUIStyleControls("IStyleInterface");
-                foreach (var control in controls)
-                {
-                    if (control is IStyleInterface item)
-                    {
-                        if (!item.StyleCustomMode)
-                            item.Style = style;
-                    }
-                }
-
-                return;
-            }
-
-            if (e.Control is FlowLayoutPanel)
-            {
-                List<Control> controls = e.Control.GetUIStyleControls("IStyleInterface");
-                foreach (var control in controls)
-                {
-                    if (control is IStyleInterface item)
-                    {
-                        if (!item.StyleCustomMode)
-                            item.Style = style;
-                    }
-                }
-
-                return;
-            }
-
-            if (e.Control is Panel)
-            {
-                List<Control> controls = e.Control.GetUIStyleControls("IStyleInterface");
-                foreach (var control in controls)
-                {
-                    if (control is IStyleInterface item)
-                    {
-                        if (!item.StyleCustomMode)
-                            item.Style = style;
-                    }
-                }
-            }
         }
     }
 }

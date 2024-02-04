@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -51,78 +51,9 @@ namespace Sunny.UI
         /// <returns>是否在区域内</returns>
         public static bool InRegion(this Point point, Point[] points)
         {
-            using (GraphicsPath path = points.Path())
-            {
-                using (Region region = path.Region())
-                {
-                    return region.IsVisible(point);
-                }
-            }
-        }
-
-        /// <summary>
-        /// 颜色是否是浅色
-        /// </summary>
-        /// <param name="color">颜色</param>
-        /// <returns>是否是浅色</returns>
-        public static bool IsLightColor(this Color color)
-        {
-            return (0.299 * color.R + 0.587 * color.G + 0.114 * color.B) / 255 > 0.5;
-        }
-
-        /// <summary>
-        /// 根据背景色判断前景色
-        /// </summary>
-        /// <param name="backColor">背景色</param>
-        /// <returns>前景色</returns>
-        public static Color ForeColor(Color backColor)
-        {
-            return backColor.IsLightColor() ? Color.Black : Color.White;
-        }
-
-        /// <summary>
-        /// SizeF转Size
-        /// </summary>
-        /// <param name="size">SizeF</param>
-        /// <returns>Size</returns>
-        public static Size Size(this SizeF size)
-        {
-            return new Size(size.Width.RoundEx(), size.Height.RoundEx());
-        }
-
-        /// <summary>
-        /// PointF转Point
-        /// </summary>
-        /// <param name="point">PointF</param>
-        /// <returns>Point</returns>
-        public static Point Point(this PointF point)
-        {
-            return new Point(point.X.RoundEx(), point.Y.RoundEx());
-        }
-
-        /// <summary>
-        /// Size增加长宽
-        /// </summary>
-        /// <param name="size">Size</param>
-        /// <param name="width">宽</param>
-        /// <param name="height">长</param>
-        /// <returns>结果</returns>
-        public static Size Add(this Size size, int width, int height)
-        {
-            return new Size(size.Width + width, size.Height + height);
-        }
-
-
-        /// <summary>
-        /// SizeF增加长宽
-        /// </summary>
-        /// <param name="size">SizeF</param>
-        /// <param name="width">宽</param>
-        /// <param name="height">长</param>
-        /// <returns>结果</returns>
-        public static SizeF Add(this SizeF size, float width, float height)
-        {
-            return new SizeF(size.Width + width, size.Height + height);
+            using GraphicsPath path = points.Path();
+            using Region region = path.Region();
+            return region.IsVisible(point);
         }
 
         /// <summary>
@@ -133,13 +64,9 @@ namespace Sunny.UI
         /// <returns>是否在区域内</returns>
         public static bool InRegion(this PointF point, PointF[] points)
         {
-            using (GraphicsPath path = points.Path())
-            {
-                using (Region region = path.Region())
-                {
-                    return region.IsVisible(point);
-                }
-            }
+            using GraphicsPath path = points.Path();
+            using Region region = path.Region();
+            return region.IsVisible(point);
         }
 
         /// <summary>
@@ -181,34 +108,6 @@ namespace Sunny.UI
             return region;
         }
 
-        private static Graphics TempGraphics;
-
-        /// <summary>
-        /// 提供一个Graphics，常用于需要计算文字大小时
-        /// </summary>
-        /// <returns>大小</returns>
-        public static Graphics Graphics()
-        {
-            if (TempGraphics == null)
-            {
-                Bitmap bmp = new Bitmap(1, 1);
-                TempGraphics = bmp.Graphics();
-            }
-
-            return TempGraphics;
-        }
-
-        /// <summary>
-        /// 计算文字大小
-        /// </summary>
-        /// <param name="text">文字</param>
-        /// <param name="font">字体</param>
-        /// <returns>大小</returns>
-        public static SizeF MeasureString(this string text, Font font)
-        {
-            return Graphics().MeasureString(text, font);
-        }
-
         /// <summary>
         /// 获取起始颜色到终止颜色之间的渐变颜色
         /// </summary>
@@ -219,12 +118,10 @@ namespace Sunny.UI
         public static Color[] GradientColors(this Color startColor, Color endColor, int count)
         {
             count = Math.Max(count, 2);
-            Bitmap image = new Bitmap(1024, 3);
-            Graphics g = image.Graphics();
-            Brush br = new LinearGradientBrush(image.Bounds(), startColor, endColor, 0.0F);
+            using Bitmap image = new Bitmap(1024, 3);
+            using Graphics g = image.Graphics();
+            using Brush br = new LinearGradientBrush(image.Bounds(), startColor, endColor, 0.0F);
             g.FillRectangle(br, image.Bounds());
-            br.Dispose();
-            g.Dispose();
 
             Color[] colors = new Color[count];
             colors[0] = startColor;
@@ -243,7 +140,6 @@ namespace Sunny.UI
                 fb.Dispose();
             }
 
-            image.Dispose();
             return colors;
         }
 
@@ -323,6 +219,83 @@ namespace Sunny.UI
                 //IsRadius为True时，显示右下圆角
                 bool RadiusRightBottom = radiusSides.GetValue(UICornerRadiusSides.RightBottom);
                 path = rect.CreateRoundedRectanglePath(radius, RadiusLeftTop, RadiusRightTop, RadiusRightBottom, RadiusLeftBottom, lineSize);
+            }
+
+            return path;
+        }
+
+        /// <summary>
+        /// 创建圆角路径
+        /// </summary>
+        /// <param name="rect">区域</param>
+        /// <param name="radius">圆角大小</param>
+        /// <param name="radiusSides">圆角的方位</param>
+        /// <param name="lineSize">线宽</param>
+        /// <returns></returns>
+        internal static GraphicsPath CreateRoundedRectanglePathWithoutTop(this Rectangle rect, int radius, UICornerRadiusSides radiusSides, int lineSize = 1)
+        {
+            GraphicsPath path;
+
+            if (UIStyles.GlobalRectangle || radiusSides == UICornerRadiusSides.None || radius == 0)
+            {
+                path = new GraphicsPath();
+                path.AddLine(new Point(rect.X, rect.Y), new Point(rect.X, rect.Y + rect.Height));
+                path.AddLine(new Point(rect.X, rect.Y + rect.Height), new Point(rect.X + rect.Width, rect.Y + rect.Height));
+                path.AddLine(new Point(rect.X + rect.Width, rect.Y + rect.Height), new Point(rect.X + rect.Width, rect.Y));
+            }
+            else
+            {
+                //IsRadius为True时，显示左上圆角
+                bool RadiusLeftTop = radiusSides.GetValue(UICornerRadiusSides.LeftTop);
+                //IsRadius为True时，显示左下圆角
+                bool RadiusLeftBottom = radiusSides.GetValue(UICornerRadiusSides.LeftBottom);
+                //IsRadius为True时，显示右上圆角
+                bool RadiusRightTop = radiusSides.GetValue(UICornerRadiusSides.RightTop);
+                //IsRadius为True时，显示右下圆角
+                bool RadiusRightBottom = radiusSides.GetValue(UICornerRadiusSides.RightBottom);
+                path = rect.CreateRoundedRectanglePathWithoutTop(radius, RadiusLeftTop, RadiusRightTop, RadiusRightBottom, RadiusLeftBottom, lineSize);
+            }
+
+            return path;
+        }
+
+        internal static GraphicsPath CreateRoundedRectanglePathWithoutTop(this Rectangle rect, int radius,
+    bool cornerLeftTop = true, bool cornerRightTop = true, bool cornerRightBottom = true, bool cornerLeftBottom = true,
+    int lineSize = 1)
+        {
+            GraphicsPath path = new GraphicsPath();
+
+            if (UIStyles.GlobalRectangle || (!cornerLeftTop && !cornerRightTop && !cornerRightBottom && !cornerLeftBottom) || radius <= 0)
+            {
+                path.AddLine(new Point(rect.X, rect.Y), new Point(rect.X, rect.Y + rect.Height));
+                path.AddLine(new Point(rect.X, rect.Y + rect.Height), new Point(rect.X + rect.Width, rect.Y + rect.Height));
+                path.AddLine(new Point(rect.X + rect.Width, rect.Y + rect.Height), new Point(rect.X + rect.Width, rect.Y));
+            }
+            else
+            {
+                radius *= lineSize;
+
+                if (cornerRightTop)
+                    path.AddArc(rect.X + rect.Width - radius, rect.Y, radius, radius, 270, 90);
+                else
+                    path.AddLine(new Point(rect.X + rect.Width - 1, rect.Y), new Point(rect.X + rect.Width, rect.Y));
+
+                if (cornerRightBottom)
+                    path.AddArc(rect.X + rect.Width - radius, rect.Y + rect.Height - radius, radius, radius, 0, 90);
+                else
+                    path.AddLine(new Point(rect.X + rect.Width, rect.Y + rect.Height), new Point(rect.X + rect.Width, rect.Y + rect.Height));
+
+                if (cornerLeftBottom)
+                    path.AddArc(rect.X, rect.Bottom - radius, radius, radius, 90, 90);
+                else
+                    path.AddLine(new Point(rect.X + 1, rect.Y + rect.Height), new Point(rect.X, rect.Y + rect.Height));
+
+                if (cornerLeftTop)
+                    path.AddArc(rect.X, rect.Y, radius, radius, 180, 90);
+                else
+                    path.AddLine(new Point(rect.X, rect.Y + 1), new Point(rect.X, rect.Y));
+
+                //path.CloseFigure();
             }
 
             return path;
@@ -424,7 +397,7 @@ namespace Sunny.UI
         {
             GraphicsPath path = new GraphicsPath();
 
-            if ((!cornerLeftTop && !cornerRightTop && !cornerRightBottom && !cornerLeftBottom) || radius <= 0)
+            if (UIStyles.GlobalRectangle || (!cornerLeftTop && !cornerRightTop && !cornerRightBottom && !cornerLeftBottom) || radius <= 0)
             {
                 path = rect.GraphicsPath();
             }
@@ -458,6 +431,18 @@ namespace Sunny.UI
             return path;
         }
 
+        public static GraphicsPath CreateTrueRoundedRectanglePath(this Rectangle rect, int radius, int lineSize = 1)
+        {
+            GraphicsPath path = new GraphicsPath();
+            radius *= lineSize;
+            path.AddArc(rect.X, rect.Y, radius, radius, 180, 90);
+            path.AddArc(rect.X + rect.Width - radius, rect.Y, radius, radius, 270, 90);
+            path.AddArc(rect.X + rect.Width - radius, rect.Y + rect.Height - radius, radius, radius, 0, 90);
+            path.AddArc(rect.X, rect.Bottom - radius, radius, radius, 90, 90);
+            path.CloseFigure();
+            return path;
+        }
+
         /// <summary>
         /// 设置GDI高质量模式抗锯齿
         /// </summary>
@@ -480,27 +465,6 @@ namespace Sunny.UI
             g.InterpolationMode = InterpolationMode.Default;
             g.CompositingQuality = CompositingQuality.Default;
             return g;
-        }
-
-        /// <summary>
-        /// Color转HTML
-        /// </summary>
-        /// <param name="color">Color</param>
-        /// <returns>HTML</returns>
-        public static string ToHTML(this Color color)
-        {
-            return ColorTranslator.ToHtml(color);
-        }
-
-        /// <summary>
-        /// HTML转Color
-        /// </summary>
-        /// <param name="htmlColor">HTML</param>
-        /// <param name="alpha">透明度</param>
-        /// <returns>Color</returns>
-        public static Color ToColor(this string htmlColor, int alpha = 255)
-        {
-            return Color.FromArgb(alpha > 255 ? 255 : alpha, ColorTranslator.FromHtml(htmlColor));
         }
 
         /// <summary>
@@ -592,7 +556,7 @@ namespace Sunny.UI
         /// <param name="horizontalAlignment">水平方向</param>
         /// <param name="verticalAlignment">垂直方向</param>
         /// <returns>文本布局</returns>
-        public static StringFormat SetAlignment(StringAlignment horizontalAlignment = StringAlignment.Center, StringAlignment verticalAlignment = StringAlignment.Center)
+        public static StringFormat SetCenterAlignment(StringAlignment horizontalAlignment = StringAlignment.Center, StringAlignment verticalAlignment = StringAlignment.Center)
         {
             return new StringFormat { Alignment = horizontalAlignment, LineAlignment = verticalAlignment };
         }

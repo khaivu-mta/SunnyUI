@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -18,9 +18,11 @@
  *
  * 2020-01-01: V2.2.0 增加文件说明
  * 2021-10-16: V3.0.8 增加系统DPI缩放自适应
+ * 2023-11-05: V3.5.2 重构主题
 ******************************************************************************/
 
 using System.ComponentModel;
+using static System.Drawing.FontConverter;
 
 namespace Sunny.UI
 {
@@ -29,30 +31,6 @@ namespace Sunny.UI
     /// </summary>
     public class UIStyleManager : Component
     {
-        /// <summary>
-        /// 主题样式
-        /// </summary>
-        [DefaultValue(UIStyle.Blue), Description("主题样式"), Category("SunnyUI")]
-        public UIStyle Style
-        {
-            get => UIStyles.Style;
-            set
-            {
-                if (UIStyles.Style != value && value != UIStyle.Custom)
-                {
-                    UIStyles.SetStyle(value);
-                }
-            }
-        }
-
-        public void Render()
-        {
-            if (Style != UIStyle.Custom)
-            {
-                UIStyles.SetStyle(Style);
-            }
-        }
-
         /// <summary>
         /// 构造函数
         /// </summary>
@@ -71,6 +49,17 @@ namespace Sunny.UI
             Version = UIGlobal.Version;
         }
 
+        /// <summary>
+        /// 主题样式
+        /// </summary>
+        [DefaultValue(UIStyle.Inherited), Description("主题样式"), Category("SunnyUI")]
+        [Browsable(false)]
+        public UIStyle Style
+        {
+            get => UIStyles.Style;
+            set => UIStyles.SetStyle(value);
+        }
+
         [DefaultValue(false), Description("DPI缩放"), Category("SunnyUI")]
         public bool DPIScale
         {
@@ -78,11 +67,38 @@ namespace Sunny.UI
             set => UIStyles.DPIScale = value;
         }
 
-        [DefaultValue(12f), Description("DPI缩放开启后，可调字体大小，默认12"), Category("SunnyUI")]
-        public float FontSize
+        [Editor("System.Drawing.Design.FontNameEditor", "System.Drawing.Design.UITypeEditor")]
+        [TypeConverter(typeof(FontNameConverter))]
+        [DefaultValue("宋体")]
+        [Description("全局字体设置开启后，可调字体名称"), Category("SunnyUI")]
+        public string GlobalFontName
         {
-            get => UIStyles.FontSize;
-            set => UIStyles.FontSize = value;
+            get => UIStyles.GlobalFontName;
+            set => UIStyles.GlobalFontName = value;
+        }
+
+        [DefaultValue(100)]
+        [Description("全局字体设置开启后，可调字体大小缩放百分比，默认100%"), Category("SunnyUI")]
+        public int GlobalFontScale
+        {
+            get => UIStyles.GlobalFontScale;
+            set => UIStyles.GlobalFontScale = value;
+        }
+
+        [DefaultValue(false)]
+        [Description("全局字体设置"), Category("SunnyUI")]
+        public bool GlobalFont
+        {
+            get => UIStyles.GlobalFont;
+            set => UIStyles.GlobalFont = value;
+        }
+
+        [DefaultValue(false)]
+        [Description("全局矩形设置，开启后所有控件都关闭圆角效果"), Category("SunnyUI")]
+        public bool GlobalRectangle
+        {
+            get => UIStyles.GlobalRectangle;
+            set => UIStyles.GlobalRectangle = value;
         }
 
         /// <summary>

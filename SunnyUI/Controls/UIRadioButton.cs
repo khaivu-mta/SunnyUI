@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -21,6 +21,10 @@
  * 2020-04-25: V2.2.4 更新主题配置类
  * 2021-04-26: V3.0.3 增加默认事件CheckedChanged
  * 2022-03-19: V3.1.1 重构主题配色
+ * 2022-12-21: V3.3.0 修复CheckedChanged事件
+ * 2023-05-12: V3.3.6 重构DrawString函数
+ * 2023-11-07: V3.5.2 增加修改图标大小
+ * 2023-12-04: V3.6.1 增加属性可修改图标大小
 ******************************************************************************/
 
 using System;
@@ -63,9 +67,9 @@ namespace Sunny.UI
             base.OnPaint(e);
             if (AutoSize && Dock == DockStyle.None)
             {
-                SizeF sf = Text.MeasureString(Font);
-                int w = (int)sf.Width + ImageSize + 3;
-                int h = Math.Max(ImageSize, (int)sf.Height) + 2;
+                Size sf = TextRenderer.MeasureText(Text, Font);
+                int w = sf.Width + RadioButtonSize + 3;
+                int h = Math.Max(RadioButtonSize, sf.Height) + 2;
                 if (Width != w) Width = w;
                 if (Height != h) Height = h;
             }
@@ -104,8 +108,9 @@ namespace Sunny.UI
         private int _imageInterval = 3;
 
         [DefaultValue(16)]
-        [Description("按钮图片大小"), Category("SunnyUI")]
-        public int ImageSize
+        [Description("图标大小"), Category("SunnyUI")]
+        [Browsable(true)]
+        public int RadioButtonSize
         {
             get => _imageSize;
             set
@@ -137,30 +142,33 @@ namespace Sunny.UI
             get => _checked;
             set
             {
-                _checked = value;
-
-                if (value)
+                if (_checked != value)
                 {
-                    try
+                    _checked = value;
+
+                    if (value)
                     {
-                        if (Parent == null) return;
-                        List<UIRadioButton> buttons = Parent.GetControls<UIRadioButton>();
-                        foreach (var box in buttons)
+                        try
                         {
-                            if (box == this) continue;
-                            if (box.GroupIndex != GroupIndex) continue;
-                            if (box.Checked) box.Checked = false;
+                            if (Parent == null) return;
+                            List<UIRadioButton> buttons = Parent.GetControls<UIRadioButton>();
+                            foreach (var box in buttons)
+                            {
+                                if (box == this) continue;
+                                if (box.GroupIndex != GroupIndex) continue;
+                                if (box.Checked) box.Checked = false;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(@"UIRadioBox click error." + ex.Message);
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine(@"UIRadioBox click error." + ex.Message);
-                    }
-                }
 
-                ValueChanged?.Invoke(this, _checked);
-                CheckedChanged?.Invoke(this, new EventArgs());
-                Invalidate();
+                    ValueChanged?.Invoke(this, _checked);
+                    CheckedChanged?.Invoke(this, new EventArgs());
+                    Invalidate();
+                }
             }
         }
 
@@ -171,14 +179,11 @@ namespace Sunny.UI
         /// <param name="path">绘图路径</param>
         protected override void OnPaintFore(Graphics g, GraphicsPath path)
         {
-            //设置按钮标题位置
-            Padding = new Padding(_imageSize + _imageInterval * 2, Padding.Top, Padding.Right, Padding.Bottom);
-
             //填充文字
-            Color color = ForeColor;
+            Color color = foreColor;
             color = Enabled ? color : UIDisableColor.Fore;
-
-            g.DrawString(Text, Font, color, Size, Padding, ContentAlignment.MiddleLeft);
+            Rectangle rect = new Rectangle(_imageSize + _imageInterval * 2, 0, Width - _imageSize + _imageInterval * 2, Height);
+            g.DrawString(Text, Font, color, rect, ContentAlignment.MiddleLeft);
         }
 
         /// <summary>
@@ -188,8 +193,9 @@ namespace Sunny.UI
         /// <param name="path">绘图路径</param>
         protected override void OnPaintFill(Graphics g, GraphicsPath path)
         {
+            int ImageSize = RadioButtonSize;
             //图标
-            float top = Padding.Top - 1 + (Height - Padding.Top - Padding.Bottom - ImageSize) / 2.0f;
+            float top = (Height - ImageSize) / 2.0f;
             float left = Text.IsValid() ? ImageInterval : (Width - ImageSize) / 2.0f;
 
             Color color = Enabled ? fillColor : foreDisableColor;
@@ -210,12 +216,10 @@ namespace Sunny.UI
             }
             else
             {
-                using (Pen pn = new Pen(color, 2))
-                {
-                    g.SetHighQuality();
-                    g.DrawEllipse(pn, left + 1, top + 1, ImageSize - 2, ImageSize - 2);
-                    g.SetDefaultQuality();
-                }
+                using Pen pn = new Pen(color, 2);
+                g.SetHighQuality();
+                g.DrawEllipse(pn, left + 1, top + 1, ImageSize - 2, ImageSize - 2);
+                g.SetDefaultQuality();
             }
         }
 
@@ -231,7 +235,7 @@ namespace Sunny.UI
         /// <param name="e">参数</param>
         protected override void OnClick(EventArgs e)
         {
-            if (!ReadOnly)
+            if (!ReadOnly && !Checked)
             {
                 Checked = true;
             }

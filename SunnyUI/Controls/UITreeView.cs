@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -27,6 +27,16 @@
  * 2022-04-01: V3.1.2 自定义行颜色，可通过代码给颜色值，SetNodePainter
  * 2022-05-15: V3.1.8 修复了一个设计期显示错误
  * 2022-05-15: V3.1.8 增加了点击文字改变CheckBox状态的NodeClickChangeCheckBoxes
+ * 2022-10-28: V3.2.6 TreeNode支持imagekey绑定图标
+ * 2022-11-03: V3.2.6 增加了可设置垂直滚动条宽度的属性
+ * 2022-12-06: V3.3.0 增加了可自定义行的颜色
+ * 2023-03-13: V3.3.3 增加MouseDoubleClick和MouseClick事件
+ * 2023-03-26: V3.3.4 修改LabelEdit属性
+ * 2023-05-13: V3.3.6 重构DrawString函数
+ * 2023-07-02: V3.3.9 屏蔽DrawMode属性，默认为OwnerDrawAll
+ * 2023-11-13: V3.5.2 重构主题
+ * 2024-01-01: V3.6.2 增加可修改滚动条颜色
+ * 2024-01-20: V3.6.3 自定义行颜色，可通过代码给颜色值，SetNodePainter，增加选中颜色
 ******************************************************************************/
 
 using System;
@@ -84,6 +94,167 @@ namespace Sunny.UI
             view.KeyDown += View_KeyDown;
             view.KeyUp += View_KeyUp;
             view.AfterLabelEdit += View_AfterLabelEdit;
+            view.MouseDoubleClick += View_MouseDoubleClick;
+            view.MouseClick += View_MouseClick;
+        }
+
+        private Color scrollBarColor = Color.FromArgb(80, 160, 255);
+
+        /// <summary>
+        /// 填充颜色，当值为背景色或透明色或空值则不填充
+        /// </summary>
+        [Description("滚动条填充颜色"), Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "80, 160, 255")]
+        public Color ScrollBarColor
+        {
+            get => scrollBarColor;
+            set
+            {
+                scrollBarColor = value;
+                HBar.HoverColor = HBar.PressColor = HBar.ForeColor = value;
+                Bar.HoverColor = Bar.PressColor = Bar.ForeColor = value;
+                HBar.Style = Bar.Style = UIStyle.Custom;
+                Invalidate();
+            }
+        }
+
+        private Color scrollBarRectColor = Color.FromArgb(80, 160, 255);
+
+        /// <summary>
+        /// 填充颜色，当值为背景色或透明色或空值则不填充
+        /// </summary>
+        [Description("滚动条边框颜色"), Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "80, 160, 255")]
+        public Color ScrollBarRectColor
+        {
+            get => scrollBarRectColor;
+            set
+            {
+                scrollBarRectColor = value;
+                Bar.RectColor = value;
+                HBar.Style = Bar.Style = UIStyle.Custom;
+                Invalidate();
+            }
+        }
+
+        private Color scrollBarBackColor = Color.FromArgb(243, 249, 255);
+
+        /// <summary>
+        /// 填充颜色，当值为背景色或透明色或空值则不填充
+        /// </summary>
+        [Description("滚动条背景颜色"), Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "243, 249, 255")]
+        public Color ScrollBarBackColor
+        {
+            get => scrollBarBackColor;
+            set
+            {
+                scrollBarBackColor = value;
+                HBar.FillColor = value;
+                Bar.FillColor = value;
+                HBar.Style = Bar.Style = UIStyle.Custom;
+                Invalidate();
+            }
+        }
+
+        /// <summary>
+        /// 滚动条主题样式
+        /// </summary>
+        [DefaultValue(true), Description("滚动条主题样式"), Category("SunnyUI")]
+        public bool ScrollBarStyleInherited
+        {
+            get => HBar != null && HBar.Style == UIStyle.Inherited;
+            set
+            {
+                if (value)
+                {
+                    if (HBar != null) HBar.Style = UIStyle.Inherited;
+                    if (Bar != null) Bar.Style = UIStyle.Inherited;
+
+                    scrollBarColor = UIStyles.Blue.GridBarForeColor;
+                    scrollBarBackColor = UIStyles.Blue.GridBarFillColor;
+                    scrollBarRectColor = Bar.RectColor = UIStyles.Blue.RectColor;
+                }
+
+            }
+        }
+
+        public override void SetDPIScale()
+        {
+            base.SetDPIScale();
+            view.SetDPIScale();
+        }
+
+        public void CheckedAll()
+        {
+            view.CheckedAll();
+        }
+
+        public void UnCheckedAll()
+        {
+            view.UnCheckedAll();
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            view?.Dispose();
+            Bar?.Dispose();
+            HBar?.Dispose();
+        }
+
+        public event NodeLabelEditEventHandler AfterLabelEdit;
+        public new event EventHandler MouseLeave;
+        public new event EventHandler MouseEnter;
+        public new event MouseEventHandler MouseMove;
+        public new event MouseEventHandler MouseDown;
+        public new event MouseEventHandler MouseUp;
+        public new event KeyPressEventHandler KeyPress;
+        public new event KeyEventHandler KeyDown;
+        public new event KeyEventHandler KeyUp;
+        public new event MouseEventHandler MouseDoubleClick;
+        public new event MouseEventHandler MouseClick;
+
+        private void View_MouseClick(object sender, MouseEventArgs e)
+        {
+            MouseClick?.Invoke(this, e);
+        }
+
+        private void View_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+            MouseDoubleClick?.Invoke(this, e);
+        }
+
+        private int scrollBarWidth = 0;
+
+        [DefaultValue(0), Category("SunnyUI"), Description("垂直滚动条宽度，最小为原生滚动条宽度")]
+        public int ScrollBarWidth
+        {
+            get => scrollBarWidth;
+            set
+            {
+                scrollBarWidth = value;
+                SetScrollInfo();
+            }
+        }
+
+        private int scrollBarHandleWidth = 6;
+
+        [DefaultValue(6), Category("SunnyUI"), Description("垂直滚动条滑块宽度，最小为原生滚动条宽度")]
+        public int ScrollBarHandleWidth
+        {
+            get => scrollBarHandleWidth;
+            set
+            {
+                scrollBarHandleWidth = value;
+                if (Bar != null) Bar.FillWidth = value;
+            }
+        }
+
+        protected override void OnContextMenuStripChanged(EventArgs e)
+        {
+            base.OnContextMenuStripChanged(e);
+            if (view != null) view.ContextMenuStrip = ContextMenuStrip;
         }
 
         public int DrawLeft(TreeNode node)
@@ -95,16 +266,31 @@ namespace Sunny.UI
         public void SetNodePainter(TreeNode node, Color backColor, Color foreColor)
         {
             if (view.IsNull()) return;
-            if (view.Painter.ContainsKey(node))
+            if (view.Painter.NotContainsKey(node))
             {
-                view.Painter[node].BackColor = backColor;
-                view.Painter[node].ForeColor = foreColor;
-            }
-            else
-            {
-                view.Painter.TryAdd(node, new UITreeNodePainter() { BackColor = backColor, ForeColor = foreColor });
+                view.Painter.TryAdd(node, new UITreeNodePainter());
             }
 
+            view.Painter[node].BackColor = backColor;
+            view.Painter[node].ForeColor = foreColor;
+            view.Painter[node].HaveHoveColor = false;
+            view.Invalidate();
+        }
+
+        public void SetNodePainter(TreeNode node, Color backColor, Color foreColor, Color hoverColor, Color selectedColor, Color selectedForeColor)
+        {
+            if (view.IsNull()) return;
+            if (view.Painter.NotContainsKey(node))
+            {
+                view.Painter.TryAdd(node, new UITreeNodePainter());
+            }
+
+            view.Painter[node].BackColor = backColor;
+            view.Painter[node].ForeColor = foreColor;
+            view.Painter[node].HoverColor = hoverColor;
+            view.Painter[node].SelectedColor = selectedColor;
+            view.Painter[node].SelectedForeColor = selectedForeColor;
+            view.Painter[node].HaveHoveColor = true;
             view.Invalidate();
         }
 
@@ -155,21 +341,11 @@ namespace Sunny.UI
             return view;
         }
 
-        public event NodeLabelEditEventHandler AfterLabelEdit;
-        public new event EventHandler MouseLeave;
-        public new event EventHandler MouseEnter;
-        public new event MouseEventHandler MouseMove;
-        public new event MouseEventHandler MouseDown;
-        public new event MouseEventHandler MouseUp;
-        public new event KeyPressEventHandler KeyPress;
-        public new event KeyEventHandler KeyDown;
-        public new event KeyEventHandler KeyUp;
-
         [DefaultValue(false)]
         public bool LabelEdit
         {
             get => view.LabelEdit;
-            set => view.LabelEdit = true;
+            set => view.LabelEdit = value;
         }
 
         private void View_KeyUp(object sender, KeyEventArgs e)
@@ -224,13 +400,13 @@ namespace Sunny.UI
             base.SetStyleColor(uiColor);
             if (view != null)
             {
-                view.SelectedForeColor = uiColor.TreeViewForeColor;
+                selectedForeColor = view.SelectedForeColor = uiColor.TreeViewSelectedForeColor;
                 view.FillColor = view.BackColor = fillColor = uiColor.TreeViewBackColor;
 
                 rectColor = uiColor.RectColor;
-                view.SelectedColor = uiColor.TreeViewSelectedColor;
+                view.SelectedColor = selectedColor = uiColor.TreeViewSelectedColor;
                 view.ForeColor = foreColor = uiColor.TreeViewForeColor;
-                view.HoverColor = uiColor.TreeViewHoverColor;
+                hoverColor = view.HoverColor = uiColor.TreeViewHoverColor;
                 LineColor = uiColor.TreeViewLineColor;
             }
 
@@ -240,6 +416,10 @@ namespace Sunny.UI
                 Bar.ForeColor = uiColor.TreeViewBarForeColor;
                 Bar.HoverColor = uiColor.ButtonFillHoverColor;
                 Bar.PressColor = uiColor.ButtonFillPressColor;
+
+                scrollBarRectColor = Bar.RectColor = uiColor.RectColor;
+                scrollBarColor = uiColor.GridBarForeColor;
+                scrollBarBackColor = uiColor.GridBarFillColor;
             }
 
             if (HBar != null)
@@ -248,6 +428,44 @@ namespace Sunny.UI
                 HBar.ForeColor = uiColor.TreeViewBarForeColor;
                 HBar.HoverColor = uiColor.ButtonFillHoverColor;
                 HBar.PressColor = uiColor.ButtonFillPressColor;
+                scrollBarColor = uiColor.GridBarForeColor;
+                scrollBarBackColor = uiColor.GridBarFillColor;
+            }
+        }
+
+        private Color hoverColor = Color.FromArgb(220, 236, 255);
+        [DefaultValue(typeof(Color), "220, 236, 255")]
+        public Color HoverColor
+        {
+            get => hoverColor;
+            set
+            {
+                view.HoverColor = hoverColor = value;
+                Invalidate();
+            }
+        }
+
+        private Color selectedColor = Color.FromArgb(80, 160, 255);
+        [DefaultValue(typeof(Color), "80, 160, 255")]
+        public Color SelectedColor
+        {
+            get => selectedColor;
+            set
+            {
+                view.SelectedColor = selectedColor = value;
+                Invalidate();
+            }
+        }
+
+        public Color selectedForeColor = Color.White;
+        [DefaultValue(typeof(Color), "White")]
+        public Color SelectedForeColor
+        {
+            get => selectedForeColor;
+            set
+            {
+                view.SelectedForeColor = selectedForeColor = value;
+                Invalidate();
             }
         }
 
@@ -277,6 +495,7 @@ namespace Sunny.UI
             view.ForeColor = color;
         }
 
+        [Browsable(false)]
         [DefaultValue(TreeViewDrawMode.OwnerDrawAll)]
         public TreeViewDrawMode DrawMode
         {
@@ -610,11 +829,13 @@ namespace Sunny.UI
             view.Width = Width - 4;
             view.Height = Height - 4;
 
+            int barWidth = Math.Max(ScrollBarInfo.VerticalScrollBarWidth(), ScrollBarWidth);
+
             if (Bar != null)
             {
                 Bar.Top = 2;
-                Bar.Left = Width - ScrollBarInfo.VerticalScrollBarWidth() - 2;
-                Bar.Width = ScrollBarInfo.VerticalScrollBarWidth();
+                Bar.Left = Width - barWidth - 2;
+                Bar.Width = barWidth;
                 Bar.Height = Height - 4;
             }
 
@@ -634,11 +855,7 @@ namespace Sunny.UI
         protected override void OnFontChanged(EventArgs e)
         {
             base.OnFontChanged(e);
-            if (view != null)
-            {
-                view.IsScaled = true;
-                view.Font = Font;
-            }
+            if (DefaultFontSize < 0 && view != null) view.Font = this.Font;
         }
 
         protected override void OnMouseWheel(MouseEventArgs e)
@@ -729,7 +946,7 @@ namespace Sunny.UI
             //
             // Bar
             //
-            Bar.Font = new Font("微软雅黑", 12F);
+            Bar.Font = new Font("宋体", 12F);
             Bar.Location = new Point(247, 3);
             Bar.Name = "Bar";
             Bar.Size = new Size(19, 173);
@@ -741,7 +958,7 @@ namespace Sunny.UI
             //
             // HBar
             //
-            HBar.Font = new Font("微软雅黑", 12F);
+            HBar.Font = new Font("宋体", 12F);
             HBar.Location = new Point(247, 3);
             HBar.Name = "HBar";
             HBar.Size = new Size(173, 19);
@@ -757,7 +974,6 @@ namespace Sunny.UI
             Controls.Add(HBar);
             Controls.Add(view);
             FillColor = Color.White;
-            Style = UIStyle.Custom;
             ResumeLayout(false);
         }
 
@@ -808,16 +1024,14 @@ namespace Sunny.UI
                 base.DoubleBuffered = true;
             }
 
-            [Browsable(false), DefaultValue(false)]
-            public bool IsScaled { get; set; }
+            private float DefaultFontSize = -1;
 
             public void SetDPIScale()
             {
-                if (!IsScaled)
-                {
-                    this.SetDPIScaleFont();
-                    IsScaled = true;
-                }
+                if (DesignMode) return;
+                if (!UIDPIScale.NeedSetDPIFont()) return;
+                if (DefaultFontSize < 0) DefaultFontSize = this.Font.Size;
+                this.Font = UIDPIScale.DPIScaleFont(this.Font, DefaultFontSize);
             }
 
             [DefaultValue(typeof(Color), "155, 200, 255")]
@@ -849,7 +1063,7 @@ namespace Sunny.UI
                 var node = GetNodeAt(e.Location);
                 if (node == null || CurrentNode == node) return;
 
-                var g = CreateGraphics();
+                using var g = CreateGraphics();
                 if (CurrentNode != null && CurrentNode != SelectedNode)
                 {
                     ClearCurrentNode(g);
@@ -860,8 +1074,6 @@ namespace Sunny.UI
                     CurrentNode = node;
                     OnDrawNode(new DrawTreeNodeEventArgs(g, CurrentNode, new Rectangle(0, CurrentNode.Bounds.Y, Width, CurrentNode.Bounds.Height), TreeNodeStates.Hot));
                 }
-
-                g.Dispose();
             }
 
             /// <summary>
@@ -870,9 +1082,8 @@ namespace Sunny.UI
             /// <param name="e">鼠标参数</param>
             protected override void OnMouseLeave(EventArgs e)
             {
-                var g = CreateGraphics();
+                using var g = CreateGraphics();
                 ClearCurrentNode(g);
-                g.Dispose();
             }
 
             private void ClearCurrentNode(Graphics g)
@@ -937,7 +1148,7 @@ namespace Sunny.UI
                         var checkBoxLeft = drawLeft - 2;
                         var imageLeft = drawLeft;
                         var haveImage = false;
-                        var sf = e.Graphics.MeasureString(e.Node.Text, Font);
+                        var sf = TextRenderer.MeasureText(e.Node.Text, Font);
 
                         if (CheckBoxes)
                         {
@@ -945,7 +1156,13 @@ namespace Sunny.UI
                             imageLeft += 16;
                         }
 
-                        if (ImageList != null && ImageList.Images.Count > 0 && e.Node.ImageIndex >= 0 && e.Node.ImageIndex < ImageList.Images.Count)
+                        if (ImageList != null && ImageList.Images.Count > 0 && ImageList.Images.ContainsIndex(e.Node.ImageIndex))
+                        {
+                            haveImage = true;
+                            drawLeft += ImageList.ImageSize.Width + 6;
+                        }
+
+                        if (!haveImage && ImageList != null && ImageList.Images.Count > 0 && ImageList.Images.ContainsKey(e.Node.ImageKey))
                         {
                             haveImage = true;
                             drawLeft += ImageList.ImageSize.Width + 6;
@@ -954,50 +1171,63 @@ namespace Sunny.UI
                         var checkboxColor = ForeColor;
                         if (e.Node != null)
                         {
-                            if (Painter.ContainsKey(e.Node))
+                            if (e.Node == SelectedNode)
                             {
-                                e.Graphics.FillRectangle(Painter[e.Node].BackColor,
-                                       new Rectangle(new Point(0, e.Node.Bounds.Y), new Size(Width, e.Node.Bounds.Height)));
-                                e.Graphics.DrawString(e.Node.Text, Font, Painter[e.Node].ForeColor, drawLeft,
-                                       e.Bounds.Y + (ItemHeight - sf.Height) / 2.0f);
+                                Color sc = SelectedColor;
+                                Color scf = SelectedForeColor;
+                                if (Painter.ContainsKey(e.Node) && Painter[e.Node].HaveHoveColor)
+                                {
+                                    sc = Painter[e.Node].SelectedColor;
+                                    scf = Painter[e.Node].SelectedForeColor;
+                                }
+
+                                e.Graphics.FillRectangle(sc, new Rectangle(new Point(0, e.Node.Bounds.Y), new Size(Width, e.Node.Bounds.Height)));
+                                e.Graphics.DrawString(e.Node.Text, Font, scf, new Rectangle(drawLeft, e.Bounds.Y, e.Bounds.Width, e.Bounds.Height), ContentAlignment.MiddleLeft);
+                                checkboxColor = SelectedForeColor;
+                            }
+                            else if (e.Node == CurrentNode && (e.State & TreeNodeStates.Hot) != 0)
+                            {
+                                Color hc = HoverColor;
+                                if (Painter.ContainsKey(e.Node) && Painter[e.Node].HaveHoveColor)
+                                {
+                                    hc = Painter[e.Node].HoverColor;
+                                }
+
+                                e.Graphics.FillRectangle(hc, new Rectangle(new Point(0, e.Node.Bounds.Y), new Size(Width, e.Node.Bounds.Height)));
+                                e.Graphics.DrawString(e.Node.Text, Font, ForeColor, new Rectangle(drawLeft, e.Bounds.Y, e.Bounds.Width, e.Bounds.Height), ContentAlignment.MiddleLeft);
                             }
                             else
                             {
-                                if (e.Node == SelectedNode)
+                                Color fc = FillColor;
+                                Color fcf = ForeColor;
+                                if (Painter.ContainsKey(e.Node))
                                 {
-                                    e.Graphics.FillRectangle(SelectedColor,
-                                        new Rectangle(new Point(0, e.Node.Bounds.Y), new Size(Width, e.Node.Bounds.Height)));
+                                    fc = Painter[e.Node].BackColor;
+                                    fcf = Painter[e.Node].ForeColor;
+                                }
 
-                                    e.Graphics.DrawString(e.Node.Text, Font, SelectedForeColor, drawLeft,
-                                        e.Bounds.Y + (ItemHeight - sf.Height) / 2.0f);
-
-                                    checkboxColor = SelectedForeColor;
-                                }
-                                else if (e.Node == CurrentNode && (e.State & TreeNodeStates.Hot) != 0)
-                                {
-                                    e.Graphics.FillRectangle(HoverColor,
-                                        new Rectangle(new Point(0, e.Node.Bounds.Y), new Size(Width, e.Node.Bounds.Height)));
-                                    e.Graphics.DrawString(e.Node.Text, Font, ForeColor, drawLeft,
-                                        e.Bounds.Y + (ItemHeight - sf.Height) / 2.0f);
-                                }
-                                else
-                                {
-                                    e.Graphics.FillRectangle(FillColor,
-                                        new Rectangle(new Point(0, e.Node.Bounds.Y), new Size(Width, e.Node.Bounds.Height)));
-                                    e.Graphics.DrawString(e.Node.Text, Font, ForeColor, drawLeft,
-                                        e.Bounds.Y + (ItemHeight - sf.Height) / 2.0f);
-                                }
+                                e.Graphics.FillRectangle(fc, new Rectangle(new Point(0, e.Node.Bounds.Y), new Size(Width, e.Node.Bounds.Height)));
+                                e.Graphics.DrawString(e.Node.Text, Font, fcf, new Rectangle(drawLeft, e.Bounds.Y, e.Bounds.Width, e.Bounds.Height), ContentAlignment.MiddleLeft);
                             }
 
                             if (haveImage)
                             {
-                                if (e.Node == SelectedNode && e.Node.SelectedImageIndex >= 0 &&
-                                    e.Node.SelectedImageIndex < ImageList.Images.Count)
-                                    e.Graphics.DrawImage(ImageList.Images[e.Node.SelectedImageIndex], imageLeft,
-                                        e.Bounds.Y + (e.Bounds.Height - ImageList.ImageSize.Height) / 2);
-                                else
-                                    e.Graphics.DrawImage(ImageList.Images[e.Node.ImageIndex], imageLeft,
-                                        e.Bounds.Y + (e.Bounds.Height - ImageList.ImageSize.Height) / 2);
+                                Image image = null;
+                                if (ImageList.Images.ContainsIndex(e.Node.ImageIndex))
+                                    image = ImageList.Images[e.Node.ImageIndex];
+                                if (image == null && ImageList.Images.ContainsKey(e.Node.ImageKey))
+                                    image = ImageList.Images[e.Node.ImageKey];
+
+                                if (e.Node == SelectedNode)
+                                {
+                                    if (ImageList.Images.ContainsIndex(e.Node.SelectedImageIndex))
+                                        image = ImageList.Images[e.Node.SelectedImageIndex];
+                                    if (image == null && ImageList.Images.ContainsKey(e.Node.SelectedImageKey))
+                                        image = ImageList.Images[e.Node.SelectedImageKey];
+                                }
+
+                                if (image != null)
+                                    e.Graphics.DrawImage(image, imageLeft, e.Bounds.Y + (e.Bounds.Height - ImageList.ImageSize.Height) / 2);
                             }
 
                             if (CheckBoxes)
@@ -1009,20 +1239,17 @@ namespace Sunny.UI
                                 }
                                 else
                                 {
-                                    using (var pn = new Pen(checkboxColor, 2))
-                                    {
-                                        var pt1 = new Point(checkBoxLeft + 2 + 2, e.Bounds.Y + (ItemHeight - 12) / 2 - 1 + 5);
-                                        var pt2 = new Point(pt1.X + 3, pt1.Y + 3);
-                                        var pt3 = new Point(pt2.X + 5, pt2.Y - 5);
+                                    using var pn = new Pen(checkboxColor, 2);
+                                    var pt1 = new Point(checkBoxLeft + 2 + 2, e.Bounds.Y + (ItemHeight - 12) / 2 - 1 + 5);
+                                    var pt2 = new Point(pt1.X + 3, pt1.Y + 3);
+                                    var pt3 = new Point(pt2.X + 5, pt2.Y - 5);
 
-                                        PointF[] CheckMarkLine = { pt1, pt2, pt3 };
+                                    PointF[] CheckMarkLine = { pt1, pt2, pt3 };
 
-                                        e.Graphics.SetHighQuality();
-                                        e.Graphics.DrawLines(pn, CheckMarkLine);
-                                        e.Graphics.SetDefaultQuality();
-                                        e.Graphics.DrawRectangle(checkboxColor,
-                                            new Rectangle(checkBoxLeft + 2, e.Bounds.Y + (ItemHeight - 12) / 2 - 1, 12, 12));
-                                    }
+                                    e.Graphics.SetHighQuality();
+                                    e.Graphics.DrawLines(pn, CheckMarkLine);
+                                    e.Graphics.SetDefaultQuality();
+                                    e.Graphics.DrawRectangle(checkboxColor, new Rectangle(checkBoxLeft + 2, e.Bounds.Y + (ItemHeight - 12) / 2 - 1, 12, 12));
                                 }
 
                                 if (DicNodeStatus[e.Node.GetHashCode()])
@@ -1049,7 +1276,7 @@ namespace Sunny.UI
                             try
                             {
                                 //绘制虚线
-                                var pn = new Pen(LineColor);
+                                using var pn = new Pen(LineColor);
                                 pn.DashStyle = DashStyle.Dot;
                                 e.Graphics.DrawLine(pn, lineX, lineY, lineX + 10, lineY);
 
@@ -1087,8 +1314,6 @@ namespace Sunny.UI
                                             e.Graphics.DrawLine(pn, lineX, lineY, lineX, e.Node.Bounds.Bottom);
                                     }
                                 }
-
-                                pn.Dispose();
                             }
                             catch (Exception exception)
                             {
@@ -1191,10 +1416,8 @@ namespace Sunny.UI
 
                 if (ByMouse)
                 {
-                    var g = CreateGraphics();
-                    OnDrawNode(new DrawTreeNodeEventArgs(g, parentNode,
-                        new Rectangle(0, parentNode.Bounds.Y, Width, parentNode.Bounds.Height), TreeNodeStates.Hot));
-                    g.Dispose();
+                    using var g = CreateGraphics();
+                    OnDrawNode(new DrawTreeNodeEventArgs(g, parentNode, new Rectangle(0, parentNode.Bounds.Y, Width, parentNode.Bounds.Height), TreeNodeStates.Hot));
 
                     if (parentNode.Parent != null) //如果父节点之上还有父节点
                     {
@@ -1236,6 +1459,24 @@ namespace Sunny.UI
                         SetChildNodeCheckedState(e.Node, e.Node.Checked);
                         SetParentNodeCheckedState(e.Node, true);
                     }
+                }
+            }
+
+            public void CheckedAll()
+            {
+                foreach (TreeNode node in Nodes)
+                {
+                    node.Checked = true;
+                    SetChildNodeCheckedState(node, true);
+                }
+            }
+
+            public void UnCheckedAll()
+            {
+                foreach (TreeNode node in Nodes)
+                {
+                    node.Checked = false;
+                    SetChildNodeCheckedState(node, false);
                 }
             }
         }

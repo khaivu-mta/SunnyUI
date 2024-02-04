@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -26,15 +26,19 @@
  * 2022-02-26: V3.1.1 增加了AutoSize属性
  * 2022-03-19: V3.1.1 重构主题配色
  * 2022-03-31: V3.1.2 是否显示浅色背景
+ * 2022-08-25: V3.2.3 增加同一个容器的相同GroupIndex的按钮控件的Selected单选
+ * 2023-05-12: V3.3.6 重构DrawString函数
+ * 2023-07-02: V3.3.9 渐变色增加方向选择
+ * 2023-11-24: V3.6.2 修复LightStyle的文字颜色
+ * 2023-12-06: V3.6.2 修复LightStyle的背景颜色
 ******************************************************************************/
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
-
-// ReSharper disable All
 
 namespace Sunny.UI
 {
@@ -56,6 +60,8 @@ namespace Sunny.UI
             Width = 100;
             Height = 35;
             Cursor = Cursors.Hand;
+
+            plainColor = UIStyles.Blue.PlainColor;
 
             foreHoverColor = UIStyles.Blue.ButtonForeHoverColor;
             forePressColor = UIStyles.Blue.ButtonForePressColor;
@@ -87,6 +93,14 @@ namespace Sunny.UI
                     Invalidate();
                 }
             }
+        }
+
+        [DefaultValue(typeof(Color), "243, 249, 255")]
+        [Description("浅色背景"), Category("SunnyUI")]
+        public Color LightColor
+        {
+            get => plainColor;
+            set => SetPlainColor(value);
         }
 
         private bool autoSize;
@@ -192,13 +206,13 @@ namespace Sunny.UI
             }
         }
 
-        private Font tipsFont = UIFontColor.SubFont();
+        private Font tipsFont = UIStyles.SubFont();
 
         /// <summary>
         /// 角标文字字体
         /// </summary>
         [Description("角标文字字体"), Category("SunnyUI")]
-        [DefaultValue(typeof(Font), "微软雅黑, 9pt")]
+        [DefaultValue(typeof(Font), "宋体, 9pt")]
         public Font TipsFont
         {
             get { return tipsFont; }
@@ -227,10 +241,29 @@ namespace Sunny.UI
                 }
                 else
                 {
-                    LinearGradientBrush br = new LinearGradientBrush(new Point(0, 0), new Point(0, Height), FillColor, FillColor2);
+                    LinearGradientBrush br;
+                    switch (fillColorGradientDirection)
+                    {
+                        case FlowDirection.LeftToRight:
+                            br = new LinearGradientBrush(new Point(0, 0), new Point(Width, y: 0), FillColor, FillColor2);
+                            break;
+                        case FlowDirection.TopDown:
+                            br = new LinearGradientBrush(new Point(0, 0), new Point(0, Height), FillColor, FillColor2);
+                            break;
+                        case FlowDirection.RightToLeft:
+                            br = new LinearGradientBrush(new Point(Width, 0), new Point(0, y: 0), FillColor, FillColor2);
+                            break;
+                        case FlowDirection.BottomUp:
+                            br = new LinearGradientBrush(new Point(0, Height), new Point(0, 0), FillColor, FillColor2);
+                            break;
+                        default:
+                            br = new LinearGradientBrush(new Point(0, 0), new Point(0, Height), FillColor, FillColor2);
+                            break;
+                    }
+
                     br.GammaCorrection = true;
                     g.FillPath(br, path);
-                    br.Dispose();
+                    br?.Dispose();
                 }
             }
             else
@@ -272,32 +305,6 @@ namespace Sunny.UI
             }
         }
 
-        Font tmpFont;
-
-        private Font TempFont
-        {
-            get
-            {
-                if (tmpFont == null || !tmpFont.Size.EqualsFloat(TipsFont.DPIScaleFontSize()))
-                {
-                    tmpFont?.Dispose();
-                    tmpFont = TipsFont.DPIScaleFont();
-                }
-
-                return tmpFont;
-            }
-        }
-
-        /// <summary>
-        /// 析构函数
-        /// </summary>
-        /// <param name="disposing">释放参数</param>
-        protected override void Dispose(bool disposing)
-        {
-            base.Dispose(disposing);
-            tmpFont?.Dispose();
-        }
-
         /// <summary>
         /// 重载绘图
         /// </summary>
@@ -308,33 +315,30 @@ namespace Sunny.UI
 
             if (autoSize && Dock == DockStyle.None)
             {
-                SizeF sf = e.Graphics.MeasureString(Text, Font);
-                if (Width != (int)(sf.Width) + 6) Width = (int)(sf.Width) + 6;
-                if (Height != (int)(sf.Height) + 6) Height = (int)(sf.Height) + 6;
+                Size sf = TextRenderer.MeasureText(Text, Font);
+                if (Width != sf.Width + 6) Width = sf.Width + 6;
+                if (Height != sf.Height + 6) Height = sf.Height + 6;
             }
 
             if (Enabled && ShowTips && !string.IsNullOrEmpty(TipsText))
             {
                 e.Graphics.SetHighQuality();
-                SizeF sf = e.Graphics.MeasureString(TipsText, TempFont);
-                float sfMax = Math.Max(sf.Width, sf.Height);
-                float x = Width - 1 - 2 - sfMax;
-                float y = 1 + 1;
-                e.Graphics.FillEllipse(TipsColor, x, y, sfMax, sfMax);
-                e.Graphics.DrawString(TipsText, TempFont, TipsForeColor, x + sfMax / 2.0f - sf.Width / 2.0f, y + sfMax / 2.0f - sf.Height / 2.0f);
+                using var TempFont = TipsFont.DPIScaleFont(TipsFont.Size);
+                Size sf = TextRenderer.MeasureText(TipsText, TempFont);
+                int sfMax = Math.Max(sf.Width, sf.Height);
+                int x = Width - 1 - 2 - sfMax;
+                int y = 1 + 1;
+                e.Graphics.FillEllipse(TipsColor, x - 1, y, sfMax, sfMax);
+                e.Graphics.DrawString(TipsText, TempFont, TipsForeColor, new Rectangle(x, y, sfMax, sfMax), ContentAlignment.MiddleCenter);
             }
 
             if (Focused && ShowFocusLine)
             {
                 Rectangle rect = new Rectangle(2, 2, Width - 5, Height - 5);
-                var path = rect.CreateRoundedRectanglePath(Radius);
-                using (Pen pn = new Pen(ForeColor))
-                {
-                    pn.DashStyle = DashStyle.Dot;
-                    e.Graphics.DrawPath(pn, path);
-                }
-
-                path.Dispose();
+                using var path = rect.CreateRoundedRectanglePath(Radius);
+                using Pen pn = new Pen(ForeColor);
+                pn.DashStyle = DashStyle.Dot;
+                e.Graphics.DrawPath(pn, path);
             }
         }
 
@@ -352,6 +356,38 @@ namespace Sunny.UI
                 {
                     selected = value;
                     Invalidate();
+
+                    if (value && Parent != null)
+                    {
+                        if (this is UISymbolButton)
+                        {
+                            List<UISymbolButton> buttons = Parent.GetControls<UISymbolButton>();
+
+                            foreach (var box in buttons)
+                            {
+                                if (box == this) continue;
+                                if (box.GroupIndex != GroupIndex) continue;
+                                if (box.Selected) box.Selected = false;
+                            }
+
+                            return;
+                        }
+
+                        if (this is UIButton)
+                        {
+                            List<UIButton> buttons = Parent.GetControls<UIButton>();
+
+                            foreach (var box in buttons)
+                            {
+                                if (box is UISymbolButton) continue;
+                                if (box == this) continue;
+                                if (box.GroupIndex != GroupIndex) continue;
+                                if (box.Selected) box.Selected = false;
+                            }
+
+                            return;
+                        }
+                    }
                 }
             }
         }
@@ -363,6 +399,8 @@ namespace Sunny.UI
         public override void SetStyleColor(UIBaseStyle uiColor)
         {
             base.SetStyleColor(uiColor);
+
+            plainColor = uiColor.PlainColor;
 
             fillHoverColor = uiColor.ButtonFillHoverColor;
             rectHoverColor = uiColor.ButtonRectHoverColor;
@@ -412,6 +450,23 @@ namespace Sunny.UI
                 if (fillColorGradient != value)
                 {
                     fillColorGradient = value;
+                    Invalidate();
+                }
+            }
+        }
+
+        private FlowDirection fillColorGradientDirection = FlowDirection.TopDown;
+
+        [Description("填充颜色渐变方向"), Category("SunnyUI")]
+        [DefaultValue(FlowDirection.TopDown)]
+        public FlowDirection FillColorGradientDirection
+        {
+            get => fillColorGradientDirection;
+            set
+            {
+                if (fillColorGradientDirection != value)
+                {
+                    fillColorGradientDirection = value;
                     Invalidate();
                 }
             }
@@ -665,5 +720,9 @@ namespace Sunny.UI
         [DefaultValue(false)]
         [Description("显示激活时边框线"), Category("SunnyUI")]
         public bool ShowFocusLine { get; set; }
+
+        [DefaultValue(0)]
+        [Description("分组编号"), Category("SunnyUI")]
+        public int GroupIndex { get; set; }
     }
 }

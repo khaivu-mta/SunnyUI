@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -18,6 +18,8 @@
  *
  * 2020-01-01: V2.2.0 增加文件说明
  * 2022-03-19: V3.1.1 重构主题配色
+ * 2023-05-04: V3.3.6 增加调用点击事件PerformClick
+ * 2023-05-13: V3.3.6 重构DrawString函数
 ******************************************************************************/
 
 using System;
@@ -44,6 +46,22 @@ namespace Sunny.UI
         private ContentAlignment textAlign = ContentAlignment.MiddleCenter;
         private Color foreColor = UIFontColor.Primary;
 
+        private bool isClick;
+
+        /// <summary>
+        /// 调用点击事件
+        /// </summary>
+        public void PerformClick()
+        {
+            if (isClick) return;
+            if (Enabled)
+            {
+                isClick = true;
+                OnClick(EventArgs.Empty);
+                isClick = false;
+            }
+        }
+
         /// <summary>
         /// 禁止控件跟随窗体缩放
         /// </summary>
@@ -53,7 +71,7 @@ namespace Sunny.UI
         /// <summary>
         /// 控件缩放前在其容器里的位置
         /// </summary>
-        [Browsable(false)]
+        [Browsable(false), DefaultValue(typeof(Rectangle), "0, 0, 0, 0")]
         public Rectangle ZoomScaleRect { get; set; }
 
         /// <summary>
@@ -68,7 +86,7 @@ namespace Sunny.UI
         /// <summary>
         /// 主题样式
         /// </summary>
-        [DefaultValue(UIStyle.Blue), Description("主题样式"), Category("SunnyUI")]
+        [DefaultValue(UIStyle.Inherited), Description("主题样式"), Category("SunnyUI")]
         public UIStyle Style
         {
             get => _style;
@@ -87,7 +105,11 @@ namespace Sunny.UI
             foreColor = uiColor.ImageButtonForeColor;
         }
 
-        public void SetStyle(UIStyle style)
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="style">主题样式</param>
+        private void SetStyle(UIStyle style)
         {
             if (!style.IsCustom())
             {
@@ -95,19 +117,23 @@ namespace Sunny.UI
                 Invalidate();
             }
 
-            _style = style;
+            _style = style == UIStyle.Inherited ? UIStyle.Inherited : UIStyle.Custom;
         }
 
-        private UIStyle _style = UIStyle.Blue;
-        public bool IsScaled { get; private set; }
+        public void SetInheritedStyle(UIStyle style)
+        {
+            SetStyle(style);
+            _style = UIStyle.Inherited;
+        }
+
+        private UIStyle _style = UIStyle.Inherited;
+        private float DefaultFontSize = -1;
 
         public void SetDPIScale()
         {
-            if (!IsScaled)
-            {
-                this.SetDPIScaleFont();
-                IsScaled = true;
-            }
+            if (!UIDPIScale.NeedSetDPIFont()) return;
+            if (DefaultFontSize < 0) DefaultFontSize = this.Font.Size;
+            this.SetDPIScaleFont(DefaultFontSize);
         }
 
         [Category("SunnyUI")]
@@ -191,13 +217,13 @@ namespace Sunny.UI
             Height = 35;
             Version = UIGlobal.Version;
             Cursor = Cursors.Hand;
-            base.Font = UIFontColor.Font();
+            base.Font = UIStyles.Font();
         }
 
         /// <summary>
         /// 自定义主题风格
         /// </summary>
-        [DefaultValue(false)]
+        [DefaultValue(false), Browsable(false)]
         [Description("获取或设置可以自定义主题风格"), Category("SunnyUI")]
         public bool StyleCustomMode { get; set; }
 
@@ -418,45 +444,7 @@ namespace Sunny.UI
                 base.OnPaint(pe);
             }
 
-            SizeF sf = pe.Graphics.MeasureString(Text, Font);
-            switch (TextAlign)
-            {
-                case ContentAlignment.TopLeft:
-                    pe.Graphics.DrawString(text, Font, ForeColor, Padding.Left, Padding.Top);
-                    break;
-
-                case ContentAlignment.TopCenter:
-                    pe.Graphics.DrawString(text, Font, ForeColor, (Width - sf.Width) / 2, Padding.Top);
-                    break;
-
-                case ContentAlignment.TopRight:
-                    pe.Graphics.DrawString(text, Font, ForeColor, Width - Padding.Right - sf.Width, Padding.Top);
-                    break;
-
-                case ContentAlignment.MiddleLeft:
-                    pe.Graphics.DrawString(text, Font, ForeColor, Padding.Left, (Height - sf.Height) / 2);
-                    break;
-
-                case ContentAlignment.MiddleCenter:
-                    pe.Graphics.DrawString(text, Font, ForeColor, (Width - sf.Width) / 2, (Height - sf.Height) / 2);
-                    break;
-
-                case ContentAlignment.MiddleRight:
-                    pe.Graphics.DrawString(text, Font, ForeColor, Width - Padding.Right - sf.Width, (Height - sf.Height) / 2);
-                    break;
-
-                case ContentAlignment.BottomLeft:
-                    pe.Graphics.DrawString(text, Font, ForeColor, Padding.Left, Height - Padding.Bottom - sf.Height);
-                    break;
-
-                case ContentAlignment.BottomCenter:
-                    pe.Graphics.DrawString(text, Font, ForeColor, (Width - sf.Width) / 2, Height - Padding.Bottom - sf.Height);
-                    break;
-
-                case ContentAlignment.BottomRight:
-                    pe.Graphics.DrawString(text, Font, ForeColor, Width - Padding.Right - sf.Width, Height - Padding.Bottom - sf.Height);
-                    break;
-            }
+            pe.Graphics.DrawString(text, Font, ForeColor, new Rectangle(Padding.Left, Padding.Top, Width - Padding.Left - Padding.Right, Height - Padding.Top - Padding.Bottom), TextAlign);
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -27,78 +27,78 @@ namespace Sunny.UI
 {
     public static class UIDPIScale
     {
-        public static float DPIScale()
+        private static float dpiScale = -1;
+
+        public static float DPIScale => UIStyles.GlobalFont ? SystemDPIScale * 100.0f / UIStyles.GlobalFontScale : SystemDPIScale;
+
+        private static float SystemDPIScale
         {
-            return GDI.Graphics().DpiX / 96.0f / (UIStyles.FontSize / 12.0f);
+            get
+            {
+                if (dpiScale < 0)
+                {
+                    using Bitmap bmp = new Bitmap(1, 1);
+                    using Graphics g = bmp.Graphics();
+                    dpiScale = g.DpiX / 96.0f;
+                }
+
+                return dpiScale;
+            }
         }
 
-        public static bool DPIScaleIsOne()
-        {
-            return DPIScale().EqualsFloat(1);
-        }
-
-        internal static float DPIScaleFontSize(this Font font)
-        {
-            if (UIStyles.DPIScale)
-                return font.Size / DPIScale();
-            else
-                return font.Size;
-        }
-
-        internal static Font DPIScaleFont(this Font font)
-        {
-            return DPIScaleFont(font, font.Size);
-        }
+        public static bool NeedSetDPIFont() => UIStyles.DPIScale && (SystemDPIScale > 1 || UIStyles.GlobalFont);
 
         internal static Font DPIScaleFont(this Font font, float fontSize)
         {
+            if (fontSize <= 0) return font;
             if (UIStyles.DPIScale)
             {
-                if (font.GdiCharSet == 134)
-                    return new Font(font.FontFamily, fontSize / DPIScale(), font.Style, font.Unit, font.GdiCharSet);
+                if (UIStyles.GlobalFont)
+                {
+                    byte gdiCharSet = UIStyles.GetGdiCharSet(UIStyles.GlobalFontName);
+                    return new Font(UIStyles.GlobalFontName, fontSize / DPIScale, font.Style, font.Unit, gdiCharSet);
+                }
                 else
-                    return new Font(font.FontFamily, fontSize / DPIScale());
+                {
+                    return new Font(font.FontFamily, fontSize / DPIScale, font.Style, font.Unit, font.GdiCharSet);
+                }
             }
             else
             {
-                if (font.GdiCharSet == 134)
-                    return new Font(font.FontFamily, fontSize, font.Style, font.Unit, font.GdiCharSet);
-                else
-                    return new Font(font.FontFamily, fontSize);
+                return new Font(font.FontFamily, fontSize, font.Style, font.Unit, font.GdiCharSet);
             }
         }
 
-        internal static void SetDPIScaleFont(this Control control)
+        internal static Font Clone(this Font font, float fontSize)
         {
-            if (!UIStyles.DPIScale) return;
-            if (!UIDPIScale.DPIScaleIsOne())
-            {
-                if (control is IStyleInterface ctrl)
-                {
-                    if (!ctrl.IsScaled)
-                        control.Font = control.Font.DPIScaleFont();
-                }
-            }
+            return new Font(font.FontFamily, fontSize, font.Style, font.Unit, font.GdiCharSet);
         }
 
-        internal static List<Control> GetAllDPIScaleControls(this Control control)
+        internal static void SetDPIScaleFont<T>(this T control, float fontSize) where T : Control, IStyleInterface
         {
-            var list = new List<Control>();
-            foreach (Control con in control.Controls)
+            if (!UIDPIScale.NeedSetDPIFont()) return;
+            control.Font = DPIScaleFont(control.Font, fontSize);
+        }
+
+        internal static List<IStyleInterface> GetAllDPIScaleControls(this Control control)
+        {
+            var list = new List<IStyleInterface>();
+            foreach (Control ctrl in control.Controls)
             {
-                list.Add(con);
+                if (ctrl is IStyleInterface istyleCtrl) list.Add(istyleCtrl);
 
-                if (con is UITextBox) continue;
-                if (con is UIDropControl) continue;
-                if (con is UIListBox) continue;
-                if (con is UIImageListBox) continue;
-                if (con is UIPagination) continue;
-                if (con is UIRichTextBox) continue;
-                if (con is UITreeView) continue;
+                if (ctrl is UITextBox) continue;
+                if (ctrl is UIDropControl) continue;
+                if (ctrl is UIListBox) continue;
+                if (ctrl is UIImageListBox) continue;
+                if (ctrl is UIPagination) continue;
+                if (ctrl is UIRichTextBox) continue;
+                if (ctrl is UITreeView) continue;
+                if (ctrl is UITransfer) continue;
 
-                if (con.Controls.Count > 0)
+                if (ctrl.Controls.Count > 0)
                 {
-                    list.AddRange(GetAllDPIScaleControls(con));
+                    list.AddRange(GetAllDPIScaleControls(ctrl));
                 }
             }
 

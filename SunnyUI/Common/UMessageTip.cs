@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -12,7 +12,15 @@
  * 如果您使用此代码，请保留此说明。
  ******************************************************************************
  * 文件名称: UMessageTip.cs
- * 文件说明: UIMessageTip，轻快型消息提示窗
+ * 文件说明: 轻快型消息提示窗
+ * 当前版本: V3.1
+ * 创建日期: 2020-01-01
+ *
+ * 2020-01-01: V2.2.0 增加文件说明
+ * 2023-03-28: V3.3.4 解决了Release模式下GDI位图未释放的Bug
+******************************************************************************
+ * 文件名称: MessageTip.cs
+ * 文件说明: 轻快型消息提示窗
  * 文件作者: AhDung
  * 引用地址: https://www.cnblogs.com/ahdung/p/UIMessageTip.html
  * 当前版本: V2.0.0.2
@@ -20,7 +28,6 @@
 
 using System;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
@@ -40,7 +47,8 @@ namespace Sunny.UI
     public static class UIMessageTip
     {
         //默认字体。当样式中的Font==null时用该字体替换
-        static readonly Font DefaultFont = UIFontColor.Font();
+        static readonly Font DefaultFont = UIStyles.Font();
+
         //文本格式。用于测量和绘制
         static readonly StringFormat DefStringFormat = StringFormat.GenericTypographic;
 
@@ -171,6 +179,7 @@ namespace Sunny.UI
             {
                 throw new ArgumentNullException(nameof(controlOrItem));
             }
+
             Show(text, style, delay, floating, GetCenterPosition(controlOrItem), centerInControl ?? IsContainerLike(controlOrItem));
         }
 
@@ -296,8 +305,6 @@ namespace Sunny.UI
             return point;
         }
 
-        static Font tmpFont;
-
         /// <summary>
         /// 创建消息窗图像，同时输出内容区，用于外部定位
         /// </summary>
@@ -308,8 +315,7 @@ namespace Sunny.UI
             var iconBounds = Rectangle.Empty;
             var textBounds = Rectangle.Empty;
             Font font = style.TextFont ?? DefaultFont;
-            if (tmpFont == null || !tmpFont.Size.EqualsFloat(font.DPIScaleFontSize()))
-                tmpFont = font.DPIScaleFont();
+            using Font tmpFont = font.DPIScaleFont(font.Size);
 
             if (style.Icon != null)
             {
@@ -627,7 +633,7 @@ namespace Sunny.UI
                 Width = 2
             };
             IconSpacing = 5;
-            TextFont = UIFontColor.Font();
+            TextFont = UIStyles.Font();
             var fontName = TextFont.Name;
             if (fontName == "宋体") { TextOffset = new Point(1, 1); }
             TextColor = Color.Black;
@@ -1406,7 +1412,7 @@ namespace Sunny.UI
                 }
 
                 //销毁窗体
-                Debug.WriteLineIf(!DestroyWindow(_hWnd), "Failed", "DestroyWindow");
+                DestroyWindow(_hWnd);
                 _hWnd = IntPtr.Zero;
 
                 //注销窗口类
@@ -1421,13 +1427,12 @@ namespace Sunny.UI
                     _wndClass = 0;
                 }
 
-                Debug.WriteLineIf(SelectObject(_dcMemory, _oldObj) == IntPtr.Zero, "Failed", "Restore _oldObj");
-                Debug.WriteLineIf(!DeleteDC(_dcMemory), "Failed", "Delete _dcMemory");
-                Debug.WriteLineIf(!DeleteObject(_hBmp), "Failed", "Delete _hBmp");
+                SelectObject(_dcMemory, _oldObj);
+                DeleteDC(_dcMemory);
+                DeleteObject(_hBmp);
                 _oldObj = IntPtr.Zero;
                 _dcMemory = IntPtr.Zero;
                 _hBmp = IntPtr.Zero;
-
                 _disposed = true;
             }
         }
@@ -1496,10 +1501,6 @@ namespace Sunny.UI
         [DllImport("user32.dll", SetLastError = true)]
         private static extern bool DestroyWindow(IntPtr hWnd);
 
-        // ReSharper disable NotAccessedField.Local
-        // ReSharper disable FieldCanBeMadeReadOnly.Local
-        // ReSharper disable MemberCanBePrivate.Local
-        // ReSharper disable UnusedField.Compiler
 #pragma warning disable 414
 #pragma warning disable 649
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
@@ -1554,10 +1555,6 @@ namespace Sunny.UI
             }
         }
 
-        // ReSharper restore UnusedField.Compiler
-        // ReSharper restore MemberCanBePrivate.Local
-        // ReSharper restore FieldCanBeMadeReadOnly.Local
-        // ReSharper restore NotAccessedField.Local
 #pragma warning restore 649
 #pragma warning restore 414
         #endregion
@@ -1688,10 +1685,8 @@ namespace Sunny.UI
         /// <param name="radius">圆角半径</param>
         public static void DrawRectangle(Graphics g, Rectangle rectangle, Brush brush = null, Border border = null, int radius = 0)
         {
-            using (var path = GetRoundedRectangle(rectangle, radius))
-            {
-                DrawPath(g, path, brush, border);
-            }
+            using var path = GetRoundedRectangle(rectangle, radius);
+            DrawPath(g, path, brush, border);
         }
 
         /// <summary>

@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -29,6 +29,17 @@
  * 2022-04-20: V3.1.5 过滤文字为空时，下拉框显示所有数据列表
  * 2022-05-04: V3.1.8 过滤时修复ValueMember绑定值的显示
  * 2022-05-24: V3.1.9 Selceted=-1，清除文本
+ * 2022-08-25: V3.2.3 下拉框边框可设置颜色
+ * 2022-11-03: V3.2.6 过滤时删除字符串前面、后面的空格
+ * 2022-11-13: V3.2.8 增加不显示过滤可以自动调整下拉框宽度
+ * 2022-11-30: V3.3.0 增加Clear方法
+ * 2023-02-04: V3.3.1 增加清除按钮
+ * 2023-03-15: V3.3.3 修改失去焦点自动关闭过滤下拉框
+ * 2023-06-28: V3.3.9 增加过滤时忽略大小写
+ * 2023-07-03: V3.3.9 修改了几个对象的释放
+ * 2023-08-11: V3.4.1 Items.Clear后，DropDownStyle为DropDown时，不清空Text
+ * 2023-12-26: V3.6.2 增加下拉界面的滚动条设置
+ * 2024-01-27: V3.6.3 修复在窗体构造函数设置SelectedIndex报错
 ******************************************************************************/
 
 using System;
@@ -47,7 +58,7 @@ namespace Sunny.UI
     [DefaultEvent("SelectedIndexChanged")]
     [ToolboxItem(true)]
     [LookupBindingProperties("DataSource", "DisplayMember", "ValueMember", "SelectedValue")]
-    public sealed partial class UIComboBox : UIDropControl, IToolTip
+    public sealed partial class UIComboBox : UIDropControl, IToolTip, IHideDropDown
     {
         /// <summary>
         /// 构造函数
@@ -71,6 +82,73 @@ namespace Sunny.UI
             CreateInstance();
         }
 
+        [DefaultValue(0), Category("SunnyUI"), Description("垂直滚动条宽度，最小为原生滚动条宽度")]
+        public int ScrollBarWidth
+        {
+            get => ListBox.ScrollBarWidth;
+            set => ListBox.ScrollBarWidth = value;
+        }
+
+        [DefaultValue(6), Category("SunnyUI"), Description("垂直滚动条滑块宽度，最小为原生滚动条宽度")]
+        public int ScrollBarHandleWidth
+        {
+            get => ListBox.ScrollBarHandleWidth;
+            set => ListBox.ScrollBarHandleWidth = value;
+        }
+
+        /// <summary>
+        /// 填充颜色，当值为背景色或透明色或空值则不填充
+        /// </summary>
+        [Description("滚动条填充颜色"), Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "80, 160, 255")]
+        public Color ScrollBarColor
+        {
+            get => ListBox.ScrollBarColor;
+            set => ListBox.ScrollBarColor = value;
+        }
+
+        /// <summary>
+        /// 填充颜色，当值为背景色或透明色或空值则不填充
+        /// </summary>
+        [Description("滚动条背景颜色"), Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "243, 249, 255")]
+        public Color ScrollBarBackColor
+        {
+            get => ListBox.ScrollBarBackColor;
+            set => ListBox.ScrollBarBackColor = value;
+        }
+
+        /// <summary>
+        /// 滚动条主题样式
+        /// </summary>
+        [DefaultValue(true), Description("滚动条主题样式"), Category("SunnyUI")]
+        public bool ScrollBarStyleInherited
+        {
+            get => ListBox.ScrollBarStyleInherited;
+            set => ListBox.ScrollBarStyleInherited = value;
+        }
+
+        [DefaultValue(false)]
+        [Description("显示清除按钮"), Category("SunnyUI")]
+        public bool ShowClearButton
+        {
+            get => showClearButton;
+            set => showClearButton = value;
+        }
+
+        public override void Clear()
+        {
+            base.Clear();
+            if (DataSource != null)
+            {
+                DataSource = null;
+            }
+            else
+            {
+                ListBox.Items.Clear();
+            }
+        }
+
         private void ListBox_Click(object sender, EventArgs e)
         {
             SelectTextChange = true;
@@ -86,12 +164,6 @@ namespace Sunny.UI
         {
             if (Text.IsNullOrEmpty() && ShowFilter)
                 FillFilterTextEmpty();
-
-            foreach (var item in Parent.GetControls<UIComboBox>())
-            {
-                if (!item.Equals(this))
-                    item.HideFilterForm();
-            }
 
             FilterItemForm.AutoClose = false;
             if (!FilterItemForm.Visible)
@@ -285,7 +357,7 @@ namespace Sunny.UI
 
         private void ListBox_ItemsRemove(object sender, EventArgs e)
         {
-            if (ListBox.Count == 0)
+            if (ListBox.Count == 0 && DropDownStyle == UIDropDownStyle.DropDownList)
             {
                 Text = "";
                 edit.Text = "";
@@ -294,8 +366,11 @@ namespace Sunny.UI
 
         private void ListBox_ItemsClear(object sender, EventArgs e)
         {
-            Text = "";
-            edit.Text = "";
+            if (DropDownStyle == UIDropDownStyle.DropDownList)
+            {
+                Text = "";
+                edit.Text = "";
+            }
         }
 
         public new event EventHandler TextChanged;
@@ -303,7 +378,6 @@ namespace Sunny.UI
         private void Edit_TextChanged(object sender, EventArgs e)
         {
             TextChanged?.Invoke(this, e);
-            if (DropDownStyle == UIDropDownStyle.DropDownList) return;
 
             if (!ShowFilter)
             {
@@ -322,6 +396,7 @@ namespace Sunny.UI
             }
             else
             {
+                if (DropDownStyle == UIDropDownStyle.DropDownList) return;
                 if (edit.Focused && Text.IsValid())
                 {
                     ShowDropDownFilter();
@@ -329,6 +404,10 @@ namespace Sunny.UI
 
                 if (Text.IsValid())
                 {
+                    string filterText = Text;
+                    if (TrimFilter)
+                        filterText = filterText.Trim();
+
                     filterForm.ListBox.Items.Clear();
                     filterList.Clear();
 
@@ -336,10 +415,21 @@ namespace Sunny.UI
                     {
                         foreach (var item in Items)
                         {
-                            if (item.ToString().Contains(Text))
+                            if (FilterIgnoreCase)
                             {
-                                filterList.Add(item.ToString());
-                                if (filterList.Count > FilterMaxCount) break;
+                                if (item.ToString().ToUpper().Contains(filterText.ToUpper()))
+                                {
+                                    filterList.Add(item.ToString());
+                                    if (filterList.Count > FilterMaxCount) break;
+                                }
+                            }
+                            else
+                            {
+                                if (item.ToString().Contains(filterText))
+                                {
+                                    filterList.Add(item.ToString());
+                                    if (filterList.Count > FilterMaxCount) break;
+                                }
                             }
                         }
                     }
@@ -349,10 +439,21 @@ namespace Sunny.UI
                         {
                             for (int i = 0; i < Items.Count; i++)
                             {
-                                if (GetItemText(dataManager.List[i]).ToString().Contains(Text))
+                                if (FilterIgnoreCase)
                                 {
-                                    filterList.Add(dataManager.List[i]);
-                                    if (filterList.Count > FilterMaxCount) break;
+                                    if (GetItemText(dataManager.List[i]).ToString().ToUpper().Contains(filterText.ToUpper()))
+                                    {
+                                        filterList.Add(dataManager.List[i]);
+                                        if (filterList.Count > FilterMaxCount) break;
+                                    }
+                                }
+                                else
+                                {
+                                    if (GetItemText(dataManager.List[i]).ToString().Contains(filterText))
+                                    {
+                                        filterList.Add(dataManager.List[i]);
+                                        if (filterList.Count > FilterMaxCount) break;
+                                    }
                                 }
                             }
                         }
@@ -373,11 +474,13 @@ namespace Sunny.UI
             }
         }
 
-        public void HideFilterForm()
-        {
-            if (FilterItemForm.Visible)
-                FilterItemForm.Close();
-        }
+        [DefaultValue(false)]
+        [Description("过滤时删除字符串前面、后面的空格"), Category("SunnyUI")]
+        public bool TrimFilter { get; set; }
+
+        [DefaultValue(false)]
+        [Description("过滤时忽略大小写"), Category("SunnyUI")]
+        public bool FilterIgnoreCase { get; set; }
 
         private void FillFilterTextEmpty()
         {
@@ -560,13 +663,83 @@ namespace Sunny.UI
             UIComboBox_ButtonClick(this, EventArgs.Empty);
         }
 
+        public void HideDropDown()
+        {
+            try
+            {
+                if (!ShowFilter)
+                {
+                    if (ItemForm != null && ItemForm.Visible)
+                        ItemForm.Close();
+                }
+                else
+                {
+                    if (FilterItemForm != null && FilterItemForm.Visible)
+                        FilterItemForm.Close();
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        [DefaultValue(false)]
+        [Description("不显示过滤可以自动调整下拉框宽度"), Category("SunnyUI")]
+        public bool DropDownAutoWidth { get; set; }
+
         private void UIComboBox_ButtonClick(object sender, EventArgs e)
         {
+            if (NeedDrawClearButton)
+            {
+                NeedDrawClearButton = false;
+                Text = "";
+
+                if (!showFilter)
+                {
+                    while (dropForm.ListBox.SelectedIndex != -1)
+                        dropForm.ListBox.SelectedIndex = -1;
+                }
+                else
+                {
+                    while (filterForm.ListBox.SelectedIndex != -1)
+                        filterForm.ListBox.SelectedIndex = -1;
+                }
+
+                Invalidate();
+                return;
+            }
+
             if (!ShowFilter)
             {
                 if (Items.Count > 0)
                 {
-                    ItemForm.Show(this, new Size(DropDownWidth < Width ? Width : DropDownWidth, CalcItemFormHeight()));
+                    int dropWidth = Width;
+
+                    if (DropDownAutoWidth)
+                    {
+                        if (DataSource == null)
+                        {
+                            for (int i = 0; i < Items.Count; i++)
+                            {
+                                Size sf = TextRenderer.MeasureText(Items[i].ToString(), Font);
+                                dropWidth = Math.Max((int)sf.Width + ScrollBarInfo.VerticalScrollBarWidth() + 6, dropWidth);
+                            }
+                        }
+                        else
+                        {
+                            for (int i = 0; i < Items.Count; i++)
+                            {
+                                Size sf = TextRenderer.MeasureText(dropForm.ListBox.GetItemText(Items[i]), Font);
+                                dropWidth = Math.Max((int)sf.Width + ScrollBarInfo.VerticalScrollBarWidth() + 6, dropWidth);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        dropWidth = Math.Max(DropDownWidth, dropWidth);
+                    }
+
+                    ItemForm.Show(this, new Size(dropWidth, CalcItemFormHeight()));
                 }
             }
             else
@@ -748,6 +921,11 @@ namespace Sunny.UI
             }
         }
 
+        private void edit_Leave(object sender, EventArgs e)
+        {
+            HideDropDown();
+        }
+
         [DefaultValue(typeof(Color), "White")]
         public Color ItemFillColor
         {
@@ -781,6 +959,13 @@ namespace Sunny.UI
         {
             get => ListBox.HoverColor;
             set => FilterListBox.HoverColor = ListBox.HoverColor = value;
+        }
+
+        [DefaultValue(typeof(Color), "80, 160, 255")]
+        public Color ItemRectColor
+        {
+            get => ListBox.RectColor;
+            set => ListBox.RectColor = value;
         }
     }
 }

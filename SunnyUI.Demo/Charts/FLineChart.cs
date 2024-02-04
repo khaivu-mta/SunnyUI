@@ -53,6 +53,7 @@ namespace Sunny.UI.Demo
             series.ShowLine = !cbPoints.Checked;
             //数据点显示小数位数
             series.YAxisDecimalPlaces = 1;
+            series.Smooth = true;
 
             option.GreaterWarningArea = new UILineWarningArea(3.5);
             option.LessWarningArea = new UILineWarningArea(2.2, Color.Gold);
@@ -111,6 +112,9 @@ namespace Sunny.UI.Demo
             option.Title.Text = "SunnyUI";
             option.Title.SubText = "LineChart";
             var series = option.AddSeries(new UILineSeries("Line1"));
+
+            //设置曲线显示最大点数，超过后自动清理
+            series.SetMaxCount(50);
 
             //坐标轴显示小数位数
             option.XAxis.AxisLabel.DecimalPlaces = 1;

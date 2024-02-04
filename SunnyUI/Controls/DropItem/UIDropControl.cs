@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -18,29 +18,32 @@
  *
  * 2020-01-01: V2.2.0 增加文件说明
  * 2020-04-25: V2.2.4 更新主题配置类
- * 2020-07-05: V2.2.6 更新KeyDown、KeyUp、KeyPress事件。
+ * 2020-07-05: V2.2.6 更新KeyDown、KeyUp、KeyPress事件
+ * 2022-09-16: V3.2.4 支持自定义右键菜单
+ * 2023-02-07: V3.3.1 增加Tips小红点
+ * 2023-04-08: V3.3.4 DropDownList时，显示水印文字
+ * 2023-05-08: V3.3.6 最小高度限制，以防丢失边框
+ * 2023-05-12: V3.3.6 重构DrawString函数
+ * 2023-05-16: V3.3.6 重构DrawFontImage函数
+ * 2023-08-24: V3.4.2 修改背景色后编辑框颜色修复
+ * 2023-08-28: V3.4.2 下拉框按钮图标增加编辑器
+ * 2023-10-25: V3.5.1 修复在高DPI下，文字垂直不居中的问题
+ * 2023-10-25: V3.5.1 修复在某些字体不显示下划线的问题
+ * 2023-10-26: V3.5.1 字体图标增加旋转角度参数SymbolRotate
+ * 2023-12-18: V3.6.2 修复高度不随字体改变
+ * 2024-01-19: V3.6.3 下拉按钮可修改大小及位置
+ * 2024-01-27: V3.6.3 修改按钮大小调整时，清除按钮的位置
 ******************************************************************************/
 
 using System;
 using System.ComponentModel;
 using System.Drawing;
+using System.Drawing.Design;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
 namespace Sunny.UI
 {
-    public enum UIDropDownStyle
-    {
-        /// <summary>
-        /// 通过单击下箭头指定显示列表，并指定文本部分可编辑。 这表示用户可以输入新的值，而不仅限于选择列表中现有的值。
-        /// </summary>
-        DropDown,
-        /// <summary>
-        /// 通过单击下箭头指定显示列表，并指定文本部分不可编辑。 这表示用户不能输入新的值。 只能选择列表中已有的值。
-        /// </summary>
-        DropDownList
-    }
-
     [ToolboxItem(false)]
     public partial class UIDropControl : UIPanel
     {
@@ -50,8 +53,8 @@ namespace Sunny.UI
             SetStyleFlags();
             Padding = new Padding(0, 0, 30, 2);
 
-            edit.Font = UIFontColor.Font();
-            edit.Left = 3;
+            edit.AutoSize = true;
+            edit.Left = 4;
             edit.Top = 3;
             edit.Text = String.Empty;
             edit.ForeColor = UIFontColor.Primary;
@@ -61,13 +64,103 @@ namespace Sunny.UI
             edit.KeyUp += EditOnKeyUp;
             edit.KeyPress += EditOnKeyPress;
             edit.LostFocus += Edit_LostFocus;
+            edit.SizeChanged += Edit_SizeChanged;
             edit.Invalidate();
             Controls.Add(edit);
+
+            lastEditHeight = edit.Height;
+            Width = 150;
+            Height = 29;
 
             TextAlignment = ContentAlignment.MiddleLeft;
             fillColor = Color.White;
             edit.BackColor = Color.White;
             MouseMove += UIDropControl_MouseMove;
+        }
+
+        int lastEditHeight = -1;
+        private void Edit_SizeChanged(object sender, EventArgs e)
+        {
+            if (lastEditHeight != edit.Height)
+            {
+                lastEditHeight = edit.Height;
+                SizeChange();
+            }
+        }
+
+        public override void SetDPIScale()
+        {
+            base.SetDPIScale();
+            if (DesignMode) return;
+            if (!UIDPIScale.NeedSetDPIFont()) return;
+
+            edit.SetDPIScale();
+        }
+
+        /// <summary>
+        /// 重载字体变更
+        /// </summary>
+        /// <param name="e">参数</param>
+        protected override void OnFontChanged(EventArgs e)
+        {
+            base.OnFontChanged(e);
+            if (DefaultFontSize < 0 && edit != null)
+            {
+                edit.Font = this.Font;
+            }
+
+            Invalidate();
+        }
+
+        [Description("开启后可响应某些触屏的点击事件"), Category("SunnyUI")]
+        [DefaultValue(false)]
+        public bool TouchPressClick
+        {
+            get => edit.TouchPressClick;
+            set => edit.TouchPressClick = value;
+        }
+
+        private UIButton tipsBtn;
+        public void SetTipsText(ToolTip toolTip, string text)
+        {
+            if (tipsBtn == null)
+            {
+                tipsBtn = new UIButton();
+                tipsBtn.Cursor = System.Windows.Forms.Cursors.Hand;
+                tipsBtn.Size = new System.Drawing.Size(6, 6);
+                tipsBtn.Style = Sunny.UI.UIStyle.Red;
+                tipsBtn.StyleCustomMode = true;
+                tipsBtn.Text = "";
+                tipsBtn.Click += TipsBtn_Click;
+
+                Controls.Add(tipsBtn);
+                tipsBtn.Location = new System.Drawing.Point(Width - 8, 2);
+                tipsBtn.BringToFront();
+            }
+
+            toolTip.SetToolTip(tipsBtn, text);
+        }
+
+        public event EventHandler TipsClick;
+        private void TipsBtn_Click(object sender, EventArgs e)
+        {
+            TipsClick?.Invoke(this, EventArgs.Empty);
+        }
+
+        public void CloseTips()
+        {
+            if (tipsBtn != null)
+            {
+                tipsBtn.Click -= TipsBtn_Click;
+                tipsBtn.Dispose();
+                tipsBtn = null;
+            }
+        }
+
+        protected override void OnContextMenuStripChanged(EventArgs e)
+        {
+            base.OnContextMenuStripChanged(e);
+            if (edit != null) edit.ContextMenuStrip = ContextMenuStrip;
         }
 
         [Browsable(false)]
@@ -83,7 +176,8 @@ namespace Sunny.UI
         protected override void OnEnabledChanged(EventArgs e)
         {
             base.OnEnabledChanged(e);
-            edit.BackColor = Enabled ? Color.White : GetFillColor();
+            //edit.BackColor = Enabled ? Color.White : GetFillColor();
+            edit.BackColor = GetFillColor();
         }
 
         private void Edit_LostFocus(object sender, EventArgs e)
@@ -206,6 +300,7 @@ namespace Sunny.UI
 
         [DefaultValue(61703)]
         [Description("正常显示时字体图标"), Category("SunnyUI")]
+        [Editor("Sunny.UI.UIImagePropertyEditor, " + AssemblyRefEx.SystemDesign, typeof(UITypeEditor))]
         public int SymbolNormal
         {
             get => symbolNormal;
@@ -218,6 +313,7 @@ namespace Sunny.UI
 
         [DefaultValue(61702)]
         [Description("下拉框显示时字体图标"), Category("SunnyUI")]
+        [Editor("Sunny.UI.UIImagePropertyEditor, " + AssemblyRefEx.SystemDesign, typeof(UITypeEditor))]
         public int SymbolDropDown { get; set; } = 61702;
 
         protected virtual void CreateInstance()
@@ -280,23 +376,13 @@ namespace Sunny.UI
             Invalidate();
         }
 
-        /// <summary>
-        /// 重载字体变更
-        /// </summary>
-        /// <param name="e">参数</param>
-        protected override void OnFontChanged(EventArgs e)
-        {
-            base.OnFontChanged(e);
-            edit.Font = Font;
-            Invalidate();
-        }
-
         protected override void OnPaddingChanged(EventArgs e)
         {
             if (Padding.Right < 30 || Padding.Bottom < 2)
             {
                 Padding = new Padding(Padding.Left, Padding.Top, Padding.Right < 30 ? 30 : Padding.Right, Padding.Bottom < 2 ? 2 : Padding.Bottom);
             }
+
             base.OnPaddingChanged(e);
             SizeChange();
         }
@@ -307,14 +393,38 @@ namespace Sunny.UI
         /// <param name="e">参数</param>
         protected override void OnSizeChanged(EventArgs e)
         {
+            base.OnSizeChanged(e);
+
+            //if (!NoNeedChange)
+            //{
             SizeChange();
+            //}
+
+            if (tipsBtn != null)
+            {
+                tipsBtn.Location = new System.Drawing.Point(Width - 8, 2);
+            }
         }
+
+        //private bool NoNeedChange = false;
 
         private void SizeChange()
         {
-            edit.Top = (Height - edit.Height) / 2;
-            edit.Left = 3 + Padding.Left;
-            edit.Width = Width - Padding.Left - Padding.Right;
+            //if (Height < edit.Height + RectSize * 2 + 2)
+            //{
+            //    NoNeedChange = true;
+            //    Height = edit.Height + RectSize * 2 + 2;
+            //    edit.Top = (Height - edit.Height) / 2;
+            //    NoNeedChange = false;
+            //}
+
+            if (edit.Top != (Height - edit.Height) / 2 + 1)
+            {
+                edit.Top = (Height - edit.Height) / 2 + 1;
+            }
+
+            edit.Left = 4 + Padding.Left;
+            edit.Width = Width - Padding.Left - Padding.Right - 4;
         }
 
         /// <summary>
@@ -328,15 +438,66 @@ namespace Sunny.UI
 
             if (!edit.Visible)
             {
-                g.DrawString(Text, Font, GetForeColor(), Size, Padding, TextAlignment);
+                if (Text.IsValid())
+                    g.DrawString(Text, Font, GetForeColor(), ClientRectangle, TextAlignment);
+                else if (Watermark.IsValid())
+                    g.DrawString(Watermark, Font, WatermarkColor, ClientRectangle, TextAlignment, 5);
             }
 
-            g.FillRectangle(GetFillColor(), new Rectangle(Width - 27, Radius / 2, 26, Height - Radius));
+            g.FillRectangle(GetFillColor(), new Rectangle(Width - Padding.Right, 2, Padding.Right - 1, Height - 4));
             Color color = GetRectColor();
-            SizeF sf = g.GetFontImageSize(dropSymbol, 24);
-            g.DrawFontImage(dropSymbol, 24, color, Width - 28 + (12 - sf.Width / 2.0f), (Height - sf.Height) / 2.0f);
-            //g.DrawLine(RectColor, Width - 1, Radius / 2, Width - 1, Height - Radius);
+            int symbol = dropSymbol;
+            if (NeedDrawClearButton)
+            {
+                g.DrawFontImage(261527, SymbolSize, color, new Rectangle(Width - Padding.Right, 0, Padding.Right, Height), -1, 1);
+            }
+            else
+            {
+                g.DrawFontImage(symbol, SymbolSize, color, new Rectangle(Width - Padding.Right, 0, Padding.Right, Height), 1, 0);
+            }
         }
+
+        private int symbolSize = 24;
+        public int SymbolSize
+        {
+            get => symbolSize;
+            set
+            {
+                symbolSize = value;
+                Invalidate();
+            }
+        }
+
+        protected bool NeedDrawClearButton;
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            base.OnMouseMove(e);
+
+            if (!showClearButton)
+            {
+                NeedDrawClearButton = false;
+                return;
+            }
+
+            bool inControlBox = e.Location.X > Width - Padding.Right;
+            if (inControlBox != NeedDrawClearButton && Text.IsValid())
+            {
+                NeedDrawClearButton = inControlBox;
+                Invalidate();
+            }
+        }
+
+        protected override void OnMouseLeave(EventArgs e)
+        {
+            base.OnMouseLeave(e);
+            if (NeedDrawClearButton)
+            {
+                NeedDrawClearButton = false;
+                Invalidate();
+            }
+        }
+
+        protected bool showClearButton;
 
         protected override void OnGotFocus(EventArgs e)
         {
@@ -344,7 +505,7 @@ namespace Sunny.UI
             edit.Focus();
         }
 
-        public void Clear()
+        public virtual void Clear()
         {
             edit.Clear();
         }
@@ -453,8 +614,7 @@ namespace Sunny.UI
 
                 DropDown?.Invoke(this, e);
 
-
-                if (fullControlSelect || MouseLocation.X > Width - 30)
+                if (fullControlSelect || MouseLocation.X > Width - Padding.Right)
                 {
                     ButtonClick?.Invoke(this, e);
                 }

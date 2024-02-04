@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -18,6 +18,7 @@
  *
  * 2022-07-01: V3.2.0 增加文件说明
  * 2022-07-25: V3.2.2 重写图片刷新流程，减少内存及GC
+ * 2023-11-12: V3.5.2 重构主题
 ******************************************************************************/
 
 using System;
@@ -54,49 +55,30 @@ namespace Sunny.UI
         /// <summary>
         /// 填充颜色，当值为背景色或透明色或空值则不填充
         /// </summary>
-        [Description("填充颜色，当值为背景色或透明色或空值则不填充"), Category("SunnyUI")]
-        [DefaultValue(typeof(Color), "243, 249, 255")]
+        [Description("填充颜色"), Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "80, 160, 255")]
         public Color FillColor
         {
-            get
-            {
-                return fillColor;
-            }
-            set
-            {
-                if (fillColor != value)
-                {
-                    fillColor = value;
-                    SetStyleCustom();
-                }
-            }
+            get => fillColor;
+            set => SetFillColor(value);
         }
 
         /// <summary>
         /// 边框颜色
         /// </summary>
         [Description("边框颜色"), Category("SunnyUI")]
-        [DefaultValue(typeof(Color), "243, 249, 255")]
+        [DefaultValue(typeof(Color), "80, 160, 255")]
         public Color RectColor
         {
-            get
-            {
-                return rectColor;
-            }
-            set
-            {
-                if (rectColor != value)
-                {
-                    rectColor = value;
-                    SetStyleCustom();
-                }
-            }
+            get => rectColor;
+            set => SetRectColor(value);
         }
 
         public override void SetStyleColor(UIBaseStyle uiColor)
         {
             fillColor = uiColor.PanelFillColor;
             rectColor = uiColor.PanelFillColor;
+            CalcImages();
         }
 
         [DefaultValue(null)]
@@ -222,7 +204,7 @@ namespace Sunny.UI
             }
 
             var img = new Bitmap(Width, Height);
-            Graphics g = img.Graphics();
+            using Graphics g = img.Graphics();
             g.Clear(FillColor);
 
             float size = avatarSize;
@@ -241,12 +223,11 @@ namespace Sunny.UI
             {
                 FrameDimension fd = new FrameDimension(Image.FrameDimensionsList[0]);
                 Image.SelectActiveFrame(fd, frameIndex);
-                Bitmap imageEx = new Bitmap(Image.Width, Image.Height);
+                using Bitmap imageEx = new Bitmap(Image.Width, Image.Height);
                 Graphics gx = Graphics.FromImage(imageEx);
                 gx.DrawImage(Image, new Point(0, 0));
                 scaleImage = imageEx.ResizeImage((int)(Image.Width * 1.0 / size + 0.5), (int)(Image.Height * 1.0 / size + 0.5));
                 result = scaleImage.Split(avatarSize, UIShape.Circle);
-                imageEx.Dispose();
             }
 
             int drawSize = Math.Min(Width, Height);

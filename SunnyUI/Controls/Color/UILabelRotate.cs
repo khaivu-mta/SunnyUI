@@ -21,7 +21,7 @@ namespace Sunny.UI
         /// <summary>
         /// 控件缩放前在其容器里的位置
         /// </summary>
-        [Browsable(false)]
+        [Browsable(false), DefaultValue(typeof(Rectangle), "0, 0, 0, 0")]
         public Rectangle ZoomScaleRect { get; set; }
 
         /// <summary>
@@ -33,16 +33,14 @@ namespace Sunny.UI
 
         }
 
-        [Browsable(false)]
-        public bool IsScaled { get; private set; }
+        private float DefaultFontSize = -1;
 
         public void SetDPIScale()
         {
-            if (!IsScaled)
-            {
-                this.SetDPIScaleFont();
-                IsScaled = true;
-            }
+            if (DesignMode) return;
+            if (!UIDPIScale.NeedSetDPIFont()) return;
+            if (DefaultFontSize < 0) DefaultFontSize = this.Font.Size;
+            this.SetDPIScaleFont(DefaultFontSize);
         }
 
         public new string Text
@@ -145,67 +143,66 @@ namespace Sunny.UI
                 r.Width -= Padding.Right;
                 r.Height -= Padding.Bottom;
 
-                using (SolidBrush b = new SolidBrush(ForeColor))
+                using SolidBrush b = new SolidBrush(ForeColor);
+                if (TextAngle.EqualsFloat(0))
                 {
-                    if (TextAngle.EqualsFloat(0))
+                    e.Graphics.DrawString(Text, Font, ForeColor, r, TextAlign);
+                }
+                else
+                {
+                    PointF center = UIColorUtil.Center(ClientRectangle);
+                    switch (RotatePointAlignment)
                     {
-                        e.Graphics.DrawString(Text, Font, ForeColor, r, format);
+                        case ContentAlignment.TopLeft:
+                            center.X = r.Left;
+                            center.Y = r.Top;
+                            break;
+
+                        case ContentAlignment.TopCenter:
+                            center.Y = r.Top;
+                            break;
+
+                        case ContentAlignment.TopRight:
+                            center.X = r.Right;
+                            center.Y = r.Top;
+                            break;
+
+                        case ContentAlignment.MiddleLeft:
+                            center.X = r.Left;
+                            break;
+
+                        case ContentAlignment.MiddleCenter:
+                            break;
+
+                        case ContentAlignment.MiddleRight:
+                            center.X = r.Right;
+                            break;
+
+                        case ContentAlignment.BottomLeft:
+                            center.X = r.Left;
+                            center.Y = r.Bottom;
+                            break;
+
+                        case ContentAlignment.BottomCenter:
+                            center.Y = r.Bottom;
+                            break;
+
+                        case ContentAlignment.BottomRight:
+                            center.X = r.Right;
+                            center.Y = r.Bottom;
+                            break;
                     }
-                    else
-                    {
-                        PointF center = UIColorUtil.Center(ClientRectangle);
-                        switch (RotatePointAlignment)
-                        {
-                            case ContentAlignment.TopLeft:
-                                center.X = r.Left;
-                                center.Y = r.Top;
-                                break;
 
-                            case ContentAlignment.TopCenter:
-                                center.Y = r.Top;
-                                break;
+                    center.X += Padding.Left;
+                    center.Y += Padding.Top;
+                    center.X -= Padding.Right;
+                    center.Y -= Padding.Bottom;
 
-                            case ContentAlignment.TopRight:
-                                center.X = r.Right;
-                                center.Y = r.Top;
-                                break;
+                    e.Graphics.TranslateTransform(center.X, center.Y);
+                    e.Graphics.RotateTransform(TextAngle);
 
-                            case ContentAlignment.MiddleLeft:
-                                center.X = r.Left;
-                                break;
-
-                            case ContentAlignment.MiddleCenter:
-                                break;
-
-                            case ContentAlignment.MiddleRight:
-                                center.X = r.Right;
-                                break;
-
-                            case ContentAlignment.BottomLeft:
-                                center.X = r.Left;
-                                center.Y = r.Bottom;
-                                break;
-
-                            case ContentAlignment.BottomCenter:
-                                center.Y = r.Bottom;
-                                break;
-
-                            case ContentAlignment.BottomRight:
-                                center.X = r.Right;
-                                center.Y = r.Bottom;
-                                break;
-                        }
-                        center.X += Padding.Left;
-                        center.Y += Padding.Top;
-                        center.X -= Padding.Right;
-                        center.Y -= Padding.Bottom;
-
-                        e.Graphics.TranslateTransform(center.X, center.Y);
-                        e.Graphics.RotateTransform(TextAngle);
-
-                        e.Graphics.DrawString(Text, Font, b, new PointF(0, 0), format);
-                        e.Graphics.ResetTransform();
-                    }
+                    e.Graphics.DrawString(Text, Font, b, new PointF(0, 0), format);
+                    e.Graphics.ResetTransform();
                 }
             }
 
@@ -223,12 +220,12 @@ namespace Sunny.UI
             }
         }
 
-        private UIStyle _style = UIStyle.Blue;
+        private UIStyle _style = UIStyle.Inherited;
 
         /// <summary>
         /// 主题样式
         /// </summary>
-        [DefaultValue(UIStyle.Blue), Description("主题样式"), Category("SunnyUI")]
+        [DefaultValue(UIStyle.Inherited), Description("主题样式"), Category("SunnyUI")]
         public UIStyle Style
         {
             get => _style;
@@ -239,7 +236,7 @@ namespace Sunny.UI
         /// 设置主题样式
         /// </summary>
         /// <param name="style">主题样式</param>
-        public void SetStyle(UIStyle style)
+        private void SetStyle(UIStyle style)
         {
             if (!style.IsCustom())
             {
@@ -247,7 +244,13 @@ namespace Sunny.UI
                 Invalidate();
             }
 
-            _style = style;
+            _style = style == UIStyle.Inherited ? UIStyle.Inherited : UIStyle.Custom;
+        }
+
+        public void SetInheritedStyle(UIStyle style)
+        {
+            SetStyle(style);
+            _style = UIStyle.Inherited;
         }
 
         /// <summary>
@@ -263,7 +266,7 @@ namespace Sunny.UI
         /// <summary>
         /// 自定义主题风格
         /// </summary>
-        [DefaultValue(false)]
+        [DefaultValue(false), Browsable(false)]
         [Description("获取或设置可以自定义主题风格"), Category("SunnyUI")]
         public bool StyleCustomMode { get; set; }
 

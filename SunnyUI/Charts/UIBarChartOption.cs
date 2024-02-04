@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -17,6 +17,7 @@
  * 创建日期: 2020-06-06
  *
  * 2020-06-06: V2.2.5 增加文件说明
+ * 2022-11-25: V3.2.2 重构对象
 ******************************************************************************/
 
 using System;
@@ -33,7 +34,7 @@ namespace Sunny.UI
         /// <summary>
         /// X轴
         /// </summary>
-        public UIAxis XAxis { get; set; } = new UIAxis(UIAxisType.Category);
+        public UIAxis XAxis { get; private set; } = new UIAxis(UIAxisType.Category);
 
         /// <summary>
         /// 工具提示
@@ -43,17 +44,17 @@ namespace Sunny.UI
         /// <summary>
         /// Y轴
         /// </summary>
-        public UIAxis YAxis { get; set; } = new UIAxis(UIAxisType.Value);
+        public UIAxis YAxis { get; private set; } = new UIAxis(UIAxisType.Value);
 
         /// <summary>
         /// 序列
         /// </summary>
-        public List<UIBarSeries> Series = new List<UIBarSeries>();
+        public readonly List<UIBarSeries> Series = new List<UIBarSeries>();
 
         /// <summary>
         /// 绘图表格
         /// </summary>
-        public UIChartGrid Grid = new UIChartGrid();
+        public readonly UIChartGrid Grid = new UIChartGrid();
 
         /// <summary>
         /// X轴自定义刻度线
@@ -84,8 +85,20 @@ namespace Sunny.UI
 
         public float AutoSizeBarsCompactValue { get; set; } = 1.0f;
 
+        public int BarInterval { get; set; } = -1;
+
         public void AddSeries(UIBarSeries series)
         {
+            if (series == null)
+            {
+                throw new NullReferenceException("series 不能为空");
+            }
+
+            if (series.Name.IsNullOrEmpty())
+            {
+                throw new NullReferenceException("series.Name 不能为空");
+            }
+
             Series.Add(series);
         }
 
@@ -116,6 +129,8 @@ namespace Sunny.UI
                 return null;
             }
         }
+
+        public bool ShowFullRect { get; set; }
     }
 
     public class UIBarToolTip : UIChartToolTip
@@ -151,11 +166,11 @@ namespace Sunny.UI
 
         public UISeriesType Type => UISeriesType.Bar;
 
-        public readonly List<string> BarName = new List<string>();
+        internal readonly List<string> BarName = new List<string>();
 
-        public readonly List<double> Data = new List<double>();
+        internal readonly List<double> Data = new List<double>();
 
-        public readonly List<Color> Colors = new List<Color>();
+        internal readonly List<Color> Colors = new List<Color>();
 
         private int _decimalPlaces = 0;
         public int DecimalPlaces
@@ -188,12 +203,22 @@ namespace Sunny.UI
 
         public void AddData(string name, double value)
         {
+            if (name.IsNullOrEmpty())
+            {
+                throw new NullReferenceException("name 不能为空");
+            }
+
             BarName.Add(name);
             AddData(value);
         }
 
         public void AddData(string name, double value, Color color)
         {
+            if (name.IsNullOrEmpty())
+            {
+                throw new NullReferenceException("name 不能为空");
+            }
+
             BarName.Add(name);
             AddData(value, color);
         }
@@ -203,8 +228,7 @@ namespace Sunny.UI
         /// </summary>
         public void Dispose()
         {
-            Data.Clear();
-            Colors.Clear();
+            Clear();
         }
 
         public void Update(int index, double value)

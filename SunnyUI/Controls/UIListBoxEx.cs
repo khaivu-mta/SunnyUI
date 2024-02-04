@@ -1,4 +1,26 @@
-﻿using System;
+﻿/******************************************************************************
+ * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
+ * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
+ *
+ * Blog:   https://www.cnblogs.com/yhuse
+ * Gitee:  https://gitee.com/yhuse/SunnyUI
+ * GitHub: https://github.com/yhuse/SunnyUI
+ *
+ * SunnyUI.dll can be used for free under the GPL-3.0 license.
+ * If you use this code, please keep this note.
+ * 如果您使用此代码，请保留此说明。
+ ******************************************************************************
+ * 文件名称: ListBoxEx.cs
+ * 文件说明: 列表框基类
+ * 当前版本: V3.1
+ * 创建日期: 2022-05-12
+ *
+ * 2023-05-12: V3.3.6 增加文件说明
+ * 2023-05-12: V3.3.6 重构DrawString函数
+******************************************************************************/
+
+using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
@@ -9,7 +31,7 @@ namespace Sunny.UI
     /// ListBox
     /// </summary>
     [ToolboxItem(false)]
-    internal sealed class ListBoxEx : ListBox
+    internal sealed class ListBoxEx : ListBox, IStyleInterface
     {
         private UIScrollBar bar;
 
@@ -20,16 +42,13 @@ namespace Sunny.UI
         [Description("获取或设置包含有关控件的数据的对象字符串"), Category("SunnyUI")]
         public string TagString { get; set; }
 
-        [Browsable(false), DefaultValue(false)]
-        public bool IsScaled { get; set; }
+        private float DefaultFontSize = -1;
 
         public void SetDPIScale()
         {
-            if (!IsScaled)
-            {
-                this.SetDPIScaleFont();
-                IsScaled = true;
-            }
+            if (!UIDPIScale.NeedSetDPIFont()) return;
+            if (DefaultFontSize < 0) DefaultFontSize = this.Font.Size;
+            this.SetDPIScaleFont(DefaultFontSize);
         }
 
         public UIScrollBar Bar
@@ -151,7 +170,7 @@ namespace Sunny.UI
         /// <summary>
         /// 自定义主题风格
         /// </summary>
-        [DefaultValue(false)]
+        [DefaultValue(false), Browsable(false)]
         [Description("获取或设置可以自定义主题风格"), Category("SunnyUI")]
         public bool StyleCustomMode { get; set; }
 
@@ -169,7 +188,7 @@ namespace Sunny.UI
             //
             BorderStyle = BorderStyle.FixedSingle;
             DrawMode = DrawMode.OwnerDrawFixed;
-            Font = UIFontColor.Font();
+            base.Font = UIStyles.Font();
             IntegralHeight = false;
             ItemHeight = 25;
             Size = new Size(150, 200);
@@ -178,14 +197,14 @@ namespace Sunny.UI
 
         #endregion 组件设计器生成的代码
 
-        private UIStyle _style = UIStyle.Blue;
+        private UIStyle _style = UIStyle.Inherited;
         private Color _itemSelectBackColor = UIColor.Blue;
         private Color _itemSelectForeColor = Color.White;
 
         /// <summary>
         /// 主题样式
         /// </summary>
-        [DefaultValue(UIStyle.Blue), Description("主题样式"), Category("SunnyUI")]
+        [DefaultValue(UIStyle.Inherited), Description("主题样式"), Category("SunnyUI")]
         public UIStyle Style
         {
             get => _style;
@@ -214,7 +233,11 @@ namespace Sunny.UI
             }
         }
 
-        public void SetStyle(UIStyle style)
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="style">主题样式</param>
+        private void SetStyle(UIStyle style)
         {
             if (!style.IsCustom())
             {
@@ -222,7 +245,13 @@ namespace Sunny.UI
                 Invalidate();
             }
 
-            _style = style;
+            _style = style == UIStyle.Inherited ? UIStyle.Inherited : UIStyle.Custom;
+        }
+
+        public void SetInheritedStyle(UIStyle style)
+        {
+            SetStyle(style);
+            _style = UIStyle.Inherited;
         }
 
         public void SetStyleColor(UIBaseStyle uiColor)
@@ -240,9 +269,7 @@ namespace Sunny.UI
                 if (_itemSelectBackColor != value)
                 {
                     _itemSelectBackColor = value;
-                    _style = UIStyle.Custom;
-                    if (DesignMode)
-                        Invalidate();
+                    if (DesignMode) Invalidate();
                 }
             }
         }
@@ -256,9 +283,7 @@ namespace Sunny.UI
                 if (_itemSelectForeColor != value)
                 {
                     _itemSelectForeColor = value;
-                    _style = UIStyle.Custom;
-                    if (DesignMode)
-                        Invalidate();
+                    if (DesignMode) Invalidate();
                 }
             }
         }
@@ -300,10 +325,6 @@ namespace Sunny.UI
                 return;
             }
 
-            StringFormat sStringFormat = new StringFormat();
-            sStringFormat.LineAlignment = StringAlignment.Center;
-            sStringFormat.Alignment = textAlignment;
-
             bool isSelected = (e.State & DrawItemState.Selected) == DrawItemState.Selected;
             Color backColor = isSelected ? ItemSelectBackColor : BackColor;
             Color foreColor = isSelected ? ItemSelectForeColor : ForeColor;
@@ -315,7 +336,7 @@ namespace Sunny.UI
             {
                 e.Graphics.FillRectangle(BackColor, e.Bounds);
                 e.Graphics.FillRectangle(backColor, rect);
-                e.Graphics.DrawString(showText, e.Font, foreColor, e.Bounds, sStringFormat);
+                e.Graphics.DrawString(showText, e.Font, foreColor, e.Bounds, textAlignment, StringAlignment.Center);
             }
             else
             {
@@ -333,7 +354,7 @@ namespace Sunny.UI
 
                 e.Graphics.FillRectangle(BackColor, e.Bounds);
                 e.Graphics.FillRectangle(backColor, rect);
-                e.Graphics.DrawString(showText, e.Font, foreColor, e.Bounds, sStringFormat);
+                e.Graphics.DrawString(showText, e.Font, foreColor, e.Bounds, textAlignment, StringAlignment.Center);
             }
 
             AfterDrawItem?.Invoke(this, Items, e);
@@ -347,11 +368,8 @@ namespace Sunny.UI
         public Color HoverColor
         {
             get => hoverColor;
-            set
-            {
-                hoverColor = value;
-                _style = UIStyle.Custom;
-            }
+            set => hoverColor = value;
+
         }
 
         protected override void OnMeasureItem(MeasureItemEventArgs e)
@@ -381,13 +399,15 @@ namespace Sunny.UI
                 {
                     if (lastIndex >= 0 && lastIndex >= 0 && lastIndex < Items.Count && lastIndex != SelectedIndex)
                     {
-                        OnDrawItem(new DrawItemEventArgs(CreateGraphics(), Font, GetItemRectangle(lastIndex), lastIndex, DrawItemState.Grayed));
+                        using var g = CreateGraphics();
+                        OnDrawItem(new DrawItemEventArgs(g, Font, GetItemRectangle(lastIndex), lastIndex, DrawItemState.Grayed));
                     }
 
                     mouseIndex = value;
                     if (mouseIndex >= 0 && mouseIndex >= 0 && mouseIndex < Items.Count && mouseIndex != SelectedIndex)
                     {
-                        OnDrawItem(new DrawItemEventArgs(CreateGraphics(), Font, GetItemRectangle(value), value, DrawItemState.HotLight));
+                        using var g = CreateGraphics();
+                        OnDrawItem(new DrawItemEventArgs(g, Font, GetItemRectangle(value), value, DrawItemState.HotLight));
                     }
 
                     lastIndex = mouseIndex;

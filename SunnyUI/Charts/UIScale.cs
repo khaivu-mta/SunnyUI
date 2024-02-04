@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -56,14 +56,20 @@ namespace Sunny.UI
             return (float)(_min + (value - origin) * (_max - _min) * 1.0f / width);
         }
 
-        public float CalcYPixel(double value, int origin, int height)
+        public float CalcYPixel(double value, int origin, int height, UIYDataOrder order = UIYDataOrder.Asc)
         {
-            return origin - (float)((value - _min) * 1.0f * height / (_max - _min));
+            if (order == UIYDataOrder.Asc)
+                return origin - (float)((value - _min) * 1.0f * height / (_max - _min));
+            else
+                return origin + (float)((value - _min) * 1.0f * height / (_max - _min));
         }
 
-        public double CalcYPos(double value, int origin, int height)
+        public double CalcYPos(double value, int origin, int height, UIYDataOrder order)
         {
-            return (float)(_min + (origin - value) * (_max - _min) * 1.0f / height);
+            if (order == UIYDataOrder.Asc)
+                return (float)(_min + (origin - value) * (_max - _min) * 1.0f / height);
+            else
+                return (float)(_min + (value - origin) * (_max - _min) * 1.0f / height);
         }
 
         public float[] CalcXPixels(double[] labels, int origin, int width)
@@ -81,7 +87,7 @@ namespace Sunny.UI
             return result;
         }
 
-        public float[] CalcYPixels(double[] labels, int origin, int height)
+        public float[] CalcYPixels(double[] labels, int origin, int height, UIYDataOrder order = UIYDataOrder.Asc)
         {
             if (labels == null) return null;
             float[] result = new float[labels.Length];
@@ -90,7 +96,7 @@ namespace Sunny.UI
                 if (labels[i].IsInfinity() || labels[i].IsNan())
                     result[i] = float.NaN;
                 else
-                    result[i] = CalcYPixel(labels[i], origin, height);
+                    result[i] = CalcYPixel(labels[i], origin, height, order);
             }
 
             return result;

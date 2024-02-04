@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -21,6 +21,9 @@
  * 2020-04-25: V2.2.4 更新主题配置类
  * 2021-04-26: V3.0.3 增加默认事件CheckedChanged
  * 2022-03-19: V3.1.1 重构主题配色
+ * 2023-05-12: V3.3.6 重构DrawString函数
+ * 2023-11-07: V3.5.2 增加修改图标大小
+ * 2023-12-04: V3.6.1 增加属性可修改图标大小
 ******************************************************************************/
 
 using System;
@@ -50,7 +53,7 @@ namespace Sunny.UI
             Size = new Size(150, 29);
             SetStyle(ControlStyles.StandardDoubleClick, UseDoubleClick);
 
-            foreColor = UIStyles.Blue.CheckBoxForeColor;
+            ForeColor = UIStyles.Blue.CheckBoxForeColor;
             fillColor = UIStyles.Blue.CheckBoxColor;
         }
 
@@ -63,9 +66,9 @@ namespace Sunny.UI
             base.OnPaint(e);
             if (AutoSize && Dock == DockStyle.None)
             {
-                SizeF sf = Text.MeasureString(Font);
-                int w = (int)sf.Width + ImageSize + 3;
-                int h = Math.Max(ImageSize, (int)sf.Height) + 2;
+                Size sf = TextRenderer.MeasureText(Text, Font);
+                int w = sf.Width + CheckBoxSize + 3;
+                int h = Math.Max(CheckBoxSize, sf.Height) + 2;
                 if (Width != w) Width = w;
                 if (Height != h) Height = h;
             }
@@ -103,18 +106,16 @@ namespace Sunny.UI
         private int _imageSize = 16;
         private int _imageInterval = 3;
 
-        /// <summary>
-        /// 图标大小
-        /// </summary>
         [DefaultValue(16)]
         [Description("图标大小"), Category("SunnyUI")]
-        public int ImageSize
+        [Browsable(true)]
+        public int CheckBoxSize
         {
             get => _imageSize;
             set
             {
                 _imageSize = Math.Max(value, 16);
-                _imageSize = Math.Min(value, 128);
+                _imageSize = Math.Min(value, 64);
                 Invalidate();
             }
         }
@@ -125,17 +126,6 @@ namespace Sunny.UI
         [DefaultValue(false)]
         [Description("是否只读"), Category("SunnyUI")]
         public bool ReadOnly { get; set; }
-
-        /// <summary>
-        /// 字体颜色
-        /// </summary>
-        [Description("字体颜色"), Category("SunnyUI")]
-        [DefaultValue(typeof(Color), "48, 48, 48")]
-        public override Color ForeColor
-        {
-            get => foreColor;
-            set => SetForeColor(value);
-        }
 
         /// <summary>
         /// 图标与文字之间间隔
@@ -187,14 +177,11 @@ namespace Sunny.UI
         /// <param name="path">绘图路径</param>
         protected override void OnPaintFore(Graphics g, GraphicsPath path)
         {
-            //设置按钮标题位置
-            Padding = new Padding(_imageSize + _imageInterval * 2, Padding.Top, Padding.Right, Padding.Bottom);
-
             //填充文字
-            Color color = foreColor;
+            Color color = ForeColor;
             color = Enabled ? color : UIDisableColor.Fore;
-
-            g.DrawString(Text, Font, color, Size, Padding, ContentAlignment.MiddleLeft);
+            Rectangle rect = new Rectangle(_imageSize + _imageInterval * 2, 0, Width - _imageSize + _imageInterval * 2, Height);
+            g.DrawString(Text, Font, color, rect, ContentAlignment.MiddleLeft);
         }
 
         /// <summary>
@@ -204,36 +191,30 @@ namespace Sunny.UI
         /// <param name="path">绘图路径</param>
         protected override void OnPaintFill(Graphics g, GraphicsPath path)
         {
+            int ImageSize = CheckBoxSize;
             //图标
-            float top = Padding.Top - 1 + (Height - Padding.Top - Padding.Bottom - ImageSize) / 2.0f;
+            float top = (Height - ImageSize) / 2.0f;
             float left = Text.IsValid() ? ImageInterval : (Width - ImageSize) / 2.0f;
-
             Color color = Enabled ? fillColor : foreDisableColor;
-
             if (Checked)
             {
                 g.FillRoundRectangle(color, new Rectangle((int)left, (int)top, ImageSize, ImageSize), 1);
-
                 color = BackColor.IsValid() ? BackColor : Color.White;
                 Point pt2 = new Point((int)(left + ImageSize * 2 / 5.0f), (int)(top + ImageSize * 3 / 4.0f) - (ImageSize.Div(10)));
                 Point pt1 = new Point((int)left + 2 + ImageSize.Div(10), pt2.Y - (pt2.X - 2 - ImageSize.Div(10) - (int)left));
                 Point pt3 = new Point((int)left + ImageSize - 2 - ImageSize.Div(10), pt2.Y - (ImageSize - pt2.X - 2 - ImageSize.Div(10)) - (int)left);
 
                 PointF[] CheckMarkLine = { pt1, pt2, pt3 };
-                using (Pen pn = new Pen(color, 2))
-                {
-                    g.SetHighQuality();
-                    g.DrawLines(pn, CheckMarkLine);
-                    g.SetDefaultQuality();
-                }
+                using Pen pn = new Pen(color, 2);
+                g.SetHighQuality();
+                g.DrawLines(pn, CheckMarkLine);
+                g.SetDefaultQuality();
             }
             else
             {
-                using (Pen pn = new Pen(color, 1))
-                {
-                    g.DrawRoundRectangle(pn, new Rectangle((int)left + 1, (int)top + 1, ImageSize - 2, ImageSize - 2), 1);
-                    g.DrawRectangle(pn, new Rectangle((int)left + 2, (int)top + 2, ImageSize - 4, ImageSize - 4));
-                }
+                using Pen pn = new Pen(color, 1);
+                g.DrawRoundRectangle(pn, new Rectangle((int)left + 1, (int)top + 1, ImageSize - 2, ImageSize - 2), 1);
+                g.DrawRectangle(pn, new Rectangle((int)left + 2, (int)top + 2, ImageSize - 4, ImageSize - 4));
             }
         }
 
@@ -259,7 +240,7 @@ namespace Sunny.UI
         {
             base.SetStyleColor(uiColor);
             fillColor = uiColor.CheckBoxColor;
-            foreColor = uiColor.CheckBoxForeColor;
+            ForeColor = uiColor.CheckBoxForeColor;
         }
 
         /// <summary>

@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -234,10 +234,15 @@ namespace Sunny.UI
         ///// </summary>
         //public static string December = "十二月";
 
-        ///// <summary>
-        ///// 今天
-        ///// </summary>
-        //public static string Today = "今天";
+        /// <summary>
+        /// 搜索
+        /// </summary>
+        public static string Search = "Tìm kiếm";
+
+        /// <summary>
+        /// 清除
+        /// </summary>
+        public static string Clear = "Làm sạch";
     }
 
     /// <summary>
@@ -341,6 +346,9 @@ namespace Sunny.UI
 
             UILocalize.Today = "Today";
 
+            UILocalize.Search = "Search";
+            UILocalize.Clear = "Clear";
+
             UIStyles.Translate();
         }
 
@@ -392,6 +400,9 @@ namespace Sunny.UI
             UILocalize.December = "十二月";
 
             UILocalize.Today = "今天";
+
+            UILocalize.Search = "搜索";
+            UILocalize.Clear = "清除";
 
             UIStyles.Translate();
         }

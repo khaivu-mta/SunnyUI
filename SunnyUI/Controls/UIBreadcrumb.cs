@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -20,6 +20,8 @@
  * 2022-01-26: V3.1.0 增加两端对齐，AlignBothEnds
  * 2022-01-26: V3.1.0 增加未选中步骤文字颜色
  * 2022-03-19: V3.1.1 重构主题配色
+ * 2023-05-12: V3.3.6 重构DrawString函数
+ * 2023-09-17: V3.4.2 增加Readonly，禁用鼠标点击，可通过代码设置ItemIndex
 ******************************************************************************/
 
 using System;
@@ -151,7 +153,7 @@ namespace Sunny.UI
             float width = 0;
             if (Items.Count == 0)
             {
-                SizeF sf = g.MeasureString(Text, Font);
+                Size sf = TextRenderer.MeasureText(Text, Font);
                 width = sf.Width + Height + 6;
                 if (itemWidth < width) itemWidth = (int)width;
                 List<PointF> points = new List<PointF>();
@@ -163,29 +165,25 @@ namespace Sunny.UI
                 points.Add(new PointF(3 + Height / 2.0f, Height / 2.0f));
                 points.Add(new PointF(3, 0));
 
-                using (Brush br = new SolidBrush(SelectedColor))
-                {
-                    g.FillPolygon(br, points.ToArray());
-                }
-
-                g.DrawString(Text, Font, ForeColor, (Width - sf.Width) / 2.0f, (Height - sf.Height) / 2.0f);
+                using Brush br = new SolidBrush(SelectedColor);
+                g.FillPolygon(br, points.ToArray());
+                g.DrawString(Text, Font, ForeColor, ClientRectangle, ContentAlignment.MiddleCenter);
             }
             else
             {
                 foreach (var item in Items)
                 {
-                    SizeF sf = g.MeasureString(item.ToString(), Font);
+                    Size sf = TextRenderer.MeasureText(item.ToString(), Font);
                     width = Math.Max(width, sf.Width);
                 }
 
                 width = width + Height + 6;
                 if (itemWidth < width) itemWidth = (int)width;
 
-                float begin = 0;
+                int begin = 0;
                 int index = 0;
                 foreach (var item in Items)
                 {
-                    SizeF sf = g.MeasureString(item.ToString(), Font);
                     List<PointF> points = new List<PointF>();
 
                     if (index == 0 && AlignBothEnds)
@@ -232,14 +230,12 @@ namespace Sunny.UI
                         ClickArea[index] = pts;
                     }
 
-                    using (Brush br = new SolidBrush(index <= ItemIndex ? SelectedColor : UnSelectedColor))
-                    {
-                        g.FillPolygon(br, points.ToArray());
-                    }
+                    using Brush br = new SolidBrush(index <= ItemIndex ? SelectedColor : UnSelectedColor);
+                    g.FillPolygon(br, points.ToArray());
 
-                    g.DrawString(item.ToString(), Font, index <= ItemIndex ? ForeColor : UnSelectedForeColor, begin + (itemWidth - sf.Width) / 2.0f, (Height - sf.Height) / 2.0f);
-
-                    begin = begin + itemWidth - 3 - Height / 2.0f + Interval;
+                    g.DrawString(item.ToString(), Font, index <= ItemIndex ? ForeColor : UnSelectedForeColor,
+                        new Rectangle(begin, 0, itemWidth, Height), ContentAlignment.MiddleCenter);
+                    begin = begin + itemWidth - 3 - Height / 2 + Interval;
                     index++;
                 }
             }
@@ -319,7 +315,7 @@ namespace Sunny.UI
                 if (unSelectedForeColor != value)
                 {
                     unSelectedForeColor = value;
-                    SetStyleCustom();
+                    Invalidate();
                 }
             }
         }
@@ -355,6 +351,7 @@ namespace Sunny.UI
         protected override void OnMouseClick(MouseEventArgs e)
         {
             base.OnMouseClick(e);
+            if (Readonly) return;
             foreach (var pair in ClickArea)
             {
                 if (e.Location.InRegion(pair.Value))
@@ -364,5 +361,10 @@ namespace Sunny.UI
                 }
             }
         }
+
+        [DefaultValue(false)]
+        [Description("禁用鼠标点击，可通过代码设置ItemIndex")]
+        [Category("SunnyUI")]
+        public bool Readonly { get; set; }
     }
 }

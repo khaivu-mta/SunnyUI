@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -19,6 +19,8 @@
  * 2020-06-29: V2.2.6 新增控件
  * 2021-07-16: V3.0.5 增加属性控制开启滚动
  * 2022-03-19: V3.1.1 重构主题配色
+ * 2023-02-23: V3.3.2 重写滚动逻辑
+ * 2023-05-12: V3.3.6 重构DrawString函数
 ******************************************************************************/
 
 using System;
@@ -33,10 +35,10 @@ namespace Sunny.UI
     public class UIScrollingText : UIControl
     {
         private readonly Timer timer;
-        private int XPos = int.MinValue;
-        private int XPos1 = int.MaxValue;
+        private int XPos = 0;
+        private int XPos1 = 0;
         private int interval = 200;
-        private int TextWidth = int.MinValue;
+        private int TextWidth = 0;
 
         public UIScrollingText()
         {
@@ -64,7 +66,7 @@ namespace Sunny.UI
             }
         }
 
-        [DefaultValue(false), Description("点击暂停滚动"), Category("SunnyUI")]
+        [Browsable(false), DefaultValue(false), Description("点击暂停滚动"), Category("SunnyUI")]
         public bool ClickPause
         {
             get; set;
@@ -72,8 +74,8 @@ namespace Sunny.UI
 
         private void Reset()
         {
-            XPos = int.MinValue;
-            XPos1 = int.MaxValue;
+            XPos = 0;
+            XPos1 = 0;
             Invalidate();
         }
 
@@ -118,44 +120,27 @@ namespace Sunny.UI
 
         private void Timer_Tick(object sender, EventArgs e)
         {
-            if (XPos == int.MinValue)
+            if (ScrollingType == UIScrollingType.RightToLeft)
             {
-                Invalidate();
-            }
-            else
-            {
-                if (ScrollingType == UIScrollingType.RightToLeft)
+                XPos -= Offset;
+                if (XPos + TextWidth < 0)
                 {
+                    XPos = XPos1;
                     XPos -= Offset;
-                    if (XPos + TextWidth < 0)
-                    {
-                        XPos = XPos1 - Offset;
-                        XPos1 = int.MaxValue;
-                    }
                 }
-
-                if (ScrollingType == UIScrollingType.LeftToRight)
-                {
-                    XPos += Offset;
-                    if (XPos > Width)
-                    {
-                        XPos = XPos1 + Offset;
-                        XPos1 = int.MaxValue;
-                    }
-                }
-
-                Invalidate();
             }
-        }
 
-        protected override void OnMouseDoubleClick(MouseEventArgs e)
-        {
-            if (ClickPause)
+            if (ScrollingType == UIScrollingType.LeftToRight)
             {
-                timer.Enabled = !timer.Enabled;
+                XPos += Offset;
+                if (XPos > Width)
+                {
+                    XPos = XPos1;
+                    XPos += Offset;
+                }
             }
 
-            base.OnMouseDoubleClick(e);
+            Invalidate();
         }
 
         /// <summary>
@@ -165,63 +150,41 @@ namespace Sunny.UI
         /// <param name="path">绘图路径</param>
         protected override void OnPaintFore(Graphics g, GraphicsPath path)
         {
-            SizeF sf = g.MeasureString(Text, Font);
-            int y = (int)((Height - sf.Height) / 2);
-
-            if (XPos == int.MinValue)
+            Size sf = TextRenderer.MeasureText(Text, Font);
+            if (TextWidth != sf.Width)
             {
-                XPos = (int)((Width - sf.Width) / 2);
-                TextWidth = (int)sf.Width;
+                XPos = 0;
+                TextWidth = sf.Width;
             }
-
-            g.DrawString(Text, Font, ForeColor, XPos, y);
 
             if (ScrollingType == UIScrollingType.LeftToRight)
             {
-                if (TextWidth <= Width)
+                if (XPos + TextWidth > Width && TextWidth < Width - offset)
                 {
-                    if (XPos + TextWidth > Width)
-                    {
-                        XPos1 = XPos - Width;
-                        g.DrawString(Text, Font, ForeColor, XPos1, y);
-                    }
+                    XPos1 = XPos - Width + offset;
+                    g.DrawString(Text, Font, ForeColor, new Rectangle(XPos1, 0, Width, Height), ContentAlignment.MiddleLeft);
                 }
                 else
                 {
-                    if (XPos > 0)
-                    {
-                        if (XPos1 == int.MaxValue)
-                            XPos1 = Offset - TextWidth;
-                        else
-                            XPos1 += Offset;
-
-                        g.DrawString(Text, Font, ForeColor, XPos1, y);
-                    }
+                    XPos1 = -TextWidth + offset;
                 }
+
+                g.DrawString(Text, Font, ForeColor, new Rectangle(XPos, 0, Width, Height), ContentAlignment.MiddleLeft);
             }
 
             if (ScrollingType == UIScrollingType.RightToLeft)
             {
-                if (TextWidth <= Width)
+                if (XPos < 0 && TextWidth < Width - offset)
                 {
-                    if (XPos < 0)
-                    {
-                        XPos1 = Width + XPos;
-                        g.DrawString(Text, Font, ForeColor, XPos1, y);
-                    }
+                    XPos1 = Width + XPos - offset;
+                    g.DrawString(Text, Font, ForeColor, new Rectangle(XPos1, 0, Width, Height), ContentAlignment.MiddleLeft);
                 }
                 else
                 {
-                    if (XPos + TextWidth < Width - Offset)
-                    {
-                        if (XPos1 == int.MaxValue)
-                            XPos1 = Width - Offset;
-                        else
-                            XPos1 -= Offset;
-
-                        g.DrawString(Text, Font, ForeColor, XPos1, y);
-                    }
+                    XPos1 = Width - offset;
                 }
+
+                g.DrawString(Text, Font, ForeColor, new Rectangle(XPos, 0, Width, Height), ContentAlignment.MiddleLeft);
             }
         }
 

@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -18,6 +18,7 @@
  *
  * 2022-01-22: V3.1.0 增加文件说明
  * 2022-03-19: V3.1.1 重构主题配色
+ * 2023-11-16: V3.5.2 重构主题
 ******************************************************************************/
 
 
@@ -34,39 +35,24 @@ namespace Sunny.UI
     [DefaultProperty("Text")]
     public sealed class UISmoothLabel : Label, IStyleInterface, IZoomScale
     {
+        private PointF point;
+        private SizeF drawSize;
+        private Pen drawPen;
+        private GraphicsPath drawPath;
+        private SolidBrush forecolorBrush;
+
         public UISmoothLabel()
         {
-            base.Font = UIFontColor.Font(36);
+            base.Font = UIStyles.Font();
             Version = UIGlobal.Version;
 
             foreColor = UIStyles.Blue.SmoothLabelForeColor;
             rectColor = UIStyles.Blue.SmoothLabelRectColor;
 
             drawPath = new GraphicsPath();
-            drawPen = new Pen(new SolidBrush(rectColor), rectSize);
+            drawPen = new Pen(rectColor, rectSize);
             forecolorBrush = new SolidBrush(ForeColor);
             Size = new Size(300, 60);
-        }
-
-        /// <summary>
-        /// 禁止控件跟随窗体缩放
-        /// </summary>
-        [DefaultValue(false), Category("SunnyUI"), Description("禁止控件跟随窗体缩放")]
-        public bool ZoomScaleDisabled { get; set; }
-
-        /// <summary>
-        /// 控件缩放前在其容器里的位置
-        /// </summary>
-        [Browsable(false)]
-        public Rectangle ZoomScaleRect { get; set; }
-
-        /// <summary>
-        /// 设置控件缩放比例
-        /// </summary>
-        /// <param name="scale">缩放比例</param>
-        public void SetZoomScale(float scale)
-        {
-
         }
 
         protected override void Dispose(bool disposing)
@@ -81,22 +67,34 @@ namespace Sunny.UI
             base.Dispose(disposing);
         }
 
-        private PointF point;
-        private SizeF drawSize;
-        private Pen drawPen;
-        private GraphicsPath drawPath;
-        private SolidBrush forecolorBrush;
+        /// <summary>
+        /// 禁止控件跟随窗体缩放
+        /// </summary>
+        [DefaultValue(false), Category("SunnyUI"), Description("禁止控件跟随窗体缩放")]
+        public bool ZoomScaleDisabled { get; set; }
 
-        [Browsable(false), DefaultValue(false)]
-        public bool IsScaled { get; set; }
+        /// <summary>
+        /// 控件缩放前在其容器里的位置
+        /// </summary>
+        [Browsable(false), DefaultValue(typeof(Rectangle), "0, 0, 0, 0")]
+        public Rectangle ZoomScaleRect { get; set; }
+
+        /// <summary>
+        /// 设置控件缩放比例
+        /// </summary>
+        /// <param name="scale">缩放比例</param>
+        public void SetZoomScale(float scale)
+        {
+
+        }
+
+        private float DefaultFontSize = -1;
 
         public void SetDPIScale()
         {
-            if (!IsScaled)
-            {
-                this.SetDPIScaleFont();
-                IsScaled = true;
-            }
+            if (!UIDPIScale.NeedSetDPIFont()) return;
+            if (DefaultFontSize < 0) DefaultFontSize = this.Font.Size;
+            this.SetDPIScaleFont(DefaultFontSize);
         }
 
         private Color foreColor;
@@ -120,19 +118,17 @@ namespace Sunny.UI
             {
                 foreColor = value;
                 forecolorBrush.Color = foreColor;
-                SetStyleCustom();
+                Invalidate();
             }
-        }
-
-        private void SetStyleCustom(bool needRefresh = true)
-        {
-            _style = UIStyle.Custom;
-            if (needRefresh) Invalidate();
         }
 
         public string Version { get; }
 
-        public void SetStyle(UIStyle style)
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="style">主题样式</param>
+        private void SetStyle(UIStyle style)
         {
             if (!style.IsCustom())
             {
@@ -140,13 +136,19 @@ namespace Sunny.UI
                 Invalidate();
             }
 
-            _style = style;
+            _style = style == UIStyle.Inherited ? UIStyle.Inherited : UIStyle.Custom;
+        }
+
+        public void SetInheritedStyle(UIStyle style)
+        {
+            SetStyle(style);
+            _style = UIStyle.Inherited;
         }
 
         /// <summary>
         /// 自定义主题风格
         /// </summary>
-        [DefaultValue(false)]
+        [DefaultValue(false), Browsable(false)]
         [Description("获取或设置可以自定义主题风格"), Category("SunnyUI")]
         public bool StyleCustomMode { get; set; }
 
@@ -160,12 +162,12 @@ namespace Sunny.UI
                 drawPen.Color = rectColor;
         }
 
-        private UIStyle _style = UIStyle.Blue;
+        private UIStyle _style = UIStyle.Inherited;
 
         /// <summary>
         /// 主题样式
         /// </summary>
-        [DefaultValue(UIStyle.Blue), Description("主题样式"), Category("SunnyUI")]
+        [DefaultValue(UIStyle.Inherited), Description("主题样式"), Category("SunnyUI")]
         public UIStyle Style
         {
             get => _style;
@@ -208,7 +210,7 @@ namespace Sunny.UI
                     rectColor = value;
                     if (rectSize != 0) drawPen.Color = rectColor;
                     RectColorChanged?.Invoke(this, null);
-                    SetStyleCustom();
+                    Invalidate();
                 }
             }
         }
@@ -258,8 +260,7 @@ namespace Sunny.UI
             e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
             e.Graphics.CompositingQuality = CompositingQuality.HighQuality;
 
-            drawSize = e.Graphics.MeasureString(Text, Font, new PointF(), StringFormat.GenericTypographic);
-
+            drawSize = TextRenderer.MeasureText(Text, Font);
             if (AutoSize)
             {
                 point.X = Padding.Left;
@@ -305,8 +306,7 @@ namespace Sunny.UI
             float fontSize = e.Graphics.DpiY * Font.SizeInPoints / 72;
 
             drawPath.Reset();
-            drawPath.AddString(Text, Font.FontFamily, (int)Font.Style, fontSize,
-                point, StringFormat.GenericTypographic);
+            drawPath.AddString(Text, Font.FontFamily, (int)Font.Style, fontSize, point, StringFormat.GenericTypographic);
 
             e.Graphics.FillPath(forecolorBrush, drawPath);
             e.Graphics.DrawPath(drawPen, drawPath);

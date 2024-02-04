@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -22,6 +22,9 @@
  * 2021-08-14: V3.0.6 修改不显示百分比时，显示数值
  * 2021-10-14: V3.0.8 调整最小高度为3
  * 2022-03-19: V3.1.1 重构主题配色
+ * 2022-09-05: V3.2.3 修改最大值至少为1
+ * 2023-05-12: V3.3.6 重构DrawString函数
+ * 2023-09-05: V3.4.2 修复值计算过程中的Int越界问题
 ******************************************************************************/
 
 using System;
@@ -76,7 +79,7 @@ namespace Sunny.UI
             get => maximum;
             set
             {
-                maximum = value;
+                maximum = Math.Max(1, value);
                 Invalidate();
             }
         }
@@ -139,21 +142,21 @@ namespace Sunny.UI
             string processText;
 
             if (Direction == UILine.LineDirection.Horizontal)
-                processSize = posValue * Width * 1.0f / Maximum;
+                processSize = posValue * 1.0f / Maximum * Width;
             else
-                processSize = posValue * Height * 1.0f / Maximum;
+                processSize = posValue * 1.0f / Maximum * Height;
 
             if (ShowPercent)
                 processText = (posValue * 100.0 / maximum).ToString("F" + decimalCount) + "%";
             else
                 processText = posValue.ToString();
 
-            SizeF sf = e.Graphics.MeasureString(processText, Font);
+            Size sf = TextRenderer.MeasureText(processText, Font);
             bool canShow = Height > sf.Height + 4;
 
             if (ShowValue && canShow)
             {
-                e.Graphics.DrawString(processText, Font, foreColor, Size, Padding, TextAlign);
+                DrawString(e.Graphics, processText, Font, foreColor, Size, Padding, TextAlign);
             }
 
             if (image == null || image.Width != Width || image.Height != Height || imageRadius != Radius)
@@ -163,7 +166,7 @@ namespace Sunny.UI
                 imageRadius = Radius;
             }
 
-            Graphics g = image.Graphics();
+            using Graphics g = image.Graphics();
             g.Clear(Color.Transparent);
             Rectangle rect = new Rectangle(0, 0, Width - 1, Height - 1);
 
@@ -172,10 +175,8 @@ namespace Sunny.UI
             g.DrawRoundRectangle(rectColor, rect, Radius);
             if (ShowValue && canShow)
             {
-                g.DrawString(processText, Font, fillColor, Size, Padding, TextAlign);
+                DrawString(g, processText, Font, fillColor, Size, Padding, TextAlign);
             }
-
-            g.Dispose();
 
             if (Direction == UILine.LineDirection.Horizontal)
             {
@@ -190,6 +191,52 @@ namespace Sunny.UI
                     new RectangleF(0, image.Height - processSize, image.Width, processSize),
                     new RectangleF(0, image.Height - processSize, image.Width, processSize),
                     GraphicsUnit.Pixel);
+            }
+        }
+
+        private void DrawString(Graphics g, string str, Font font, Color color, Size size, Padding padding, ContentAlignment align, int offsetX = 0, int offsetY = 0)
+        {
+            if (str.IsNullOrEmpty()) return;
+            Size sf = TextRenderer.MeasureText(str, font);
+            using Brush br = color.Brush();
+            switch (align)
+            {
+                case ContentAlignment.MiddleCenter:
+                    g.DrawString(str, font, br, padding.Left + (size.Width - sf.Width - padding.Left - padding.Right) / 2.0f + offsetX,
+                        padding.Top + (size.Height - sf.Height - padding.Top - padding.Bottom) / 2.0f + offsetY);
+                    break;
+
+                case ContentAlignment.TopLeft:
+                    g.DrawString(str, font, br, padding.Left + offsetX, padding.Top + offsetY);
+                    break;
+
+                case ContentAlignment.TopCenter:
+                    g.DrawString(str, font, br, padding.Left + (size.Width - sf.Width - padding.Left - padding.Right) / 2.0f + offsetX, padding.Top + offsetY);
+                    break;
+
+                case ContentAlignment.TopRight:
+                    g.DrawString(str, font, br, size.Width - sf.Width - padding.Right + offsetX, padding.Top + offsetY);
+                    break;
+
+                case ContentAlignment.MiddleLeft:
+                    g.DrawString(str, font, br, padding.Left + offsetX, padding.Top + (size.Height - sf.Height - padding.Top - padding.Bottom) / 2.0f + offsetY);
+                    break;
+
+                case ContentAlignment.MiddleRight:
+                    g.DrawString(str, font, br, size.Width - sf.Width - padding.Right + offsetX, padding.Top + (size.Height - sf.Height - padding.Top - padding.Bottom) / 2.0f + offsetY);
+                    break;
+
+                case ContentAlignment.BottomLeft:
+                    g.DrawString(str, font, br, padding.Left + offsetX, size.Height - sf.Height - padding.Bottom + offsetY);
+                    break;
+
+                case ContentAlignment.BottomCenter:
+                    g.DrawString(str, font, br, padding.Left + (size.Width - sf.Width - padding.Left - padding.Right) / 2.0f + offsetX, size.Height - sf.Height - padding.Bottom + offsetY);
+                    break;
+
+                case ContentAlignment.BottomRight:
+                    g.DrawString(str, font, br, size.Width - sf.Width - padding.Right + offsetX, size.Height - sf.Height - padding.Bottom + offsetY);
+                    break;
             }
         }
 

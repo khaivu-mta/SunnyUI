@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -16,7 +16,8 @@
  * 当前版本: V3.1
  * 创建日期: 2020-08-20
  *
- * 2021-08-20: V3.0.6 整理了一些GDI绘图的常用方法扩展 
+ * 2021-08-20: V3.0.6 整理了一些GDI绘图的常用方法扩展
+ * 2023-03-28: V3.3.4 重构了一遍绘图方法
 ******************************************************************************/
 
 using System;
@@ -32,70 +33,191 @@ namespace Sunny.UI
     /// </summary>
     public static class GraphicsEx
     {
-        /// <summary>
-        /// 绘制字符串
-        /// </summary>
-        /// <param name="g">绘图图元</param>
-        /// <param name="text">文字</param>
-        /// <param name="font">字体</param>
-        /// <param name="color">颜色</param>
-        /// <param name="rect">区域</param>
-        /// <param name="format">格式</param>
-        public static void DrawString(this Graphics g, string text, Font font, Color color, RectangleF rect, StringFormat format)
+        public static void DrawString(this Graphics g, string text, Font font, Color color, Rectangle rect, ContentAlignment alignment, int offsetX = 0, int offsetY = 0)
         {
-            using (Brush br = color.Brush())
+            if (text.IsNullOrEmpty()) return;
+            rect.Offset(offsetX, offsetY);
+            Size size = TextRenderer.MeasureText(text, font);
+            int left = 0, top = 0;
+
+            switch (alignment)
             {
-                g.DrawString(text, font, br, rect, format);
+                case ContentAlignment.TopLeft:
+                case ContentAlignment.MiddleLeft:
+                case ContentAlignment.BottomLeft:
+                    left = rect.Left + 1;
+                    break;
+                case ContentAlignment.TopCenter:
+                case ContentAlignment.MiddleCenter:
+                case ContentAlignment.BottomCenter:
+                    left = rect.Left + (rect.Width - size.Width) / 2;
+                    break;
+                case ContentAlignment.TopRight:
+                case ContentAlignment.MiddleRight:
+                case ContentAlignment.BottomRight:
+                    left = rect.Left + rect.Width - size.Width - 1;
+                    break;
             }
+
+            switch (alignment)
+            {
+                case ContentAlignment.TopLeft:
+                case ContentAlignment.TopCenter:
+                case ContentAlignment.TopRight:
+                    top = rect.Top + 1;
+                    break;
+                case ContentAlignment.MiddleLeft:
+                case ContentAlignment.MiddleCenter:
+                case ContentAlignment.MiddleRight:
+
+                    top = rect.Top + (rect.Height - size.Height) / 2;
+                    break;
+                case ContentAlignment.BottomCenter:
+                case ContentAlignment.BottomLeft:
+                case ContentAlignment.BottomRight:
+                    top = rect.Top + rect.Height - size.Height - 1;
+                    break;
+            }
+
+            TextRenderer.DrawText(g, text, font, new Point(left, top), color);
         }
 
-        /// <summary>
-        /// 绘制字符串
-        /// </summary>
-        /// <param name="g">绘图图元</param>
-        /// <param name="text">文字</param>
-        /// <param name="font">字体</param>
-        /// <param name="color">颜色</param>
-        /// <param name="rect">区域</param>
-        public static void DrawString(this Graphics g, string text, Font font, Color color, RectangleF rect)
+        public static void DrawString(this Graphics g, string text, Font font, Color color, Color backColor, Rectangle rect, ContentAlignment alignment, int offsetX = 0, int offsetY = 0)
         {
-            using (Brush br = color.Brush())
+            if (text.IsNullOrEmpty()) return;
+            rect.Offset(offsetX, offsetY);
+            Size size = TextRenderer.MeasureText(text, font);
+            int left = 0, top = 0;
+
+            switch (alignment)
             {
-                g.DrawString(text, font, br, rect);
+                case ContentAlignment.TopLeft:
+                case ContentAlignment.MiddleLeft:
+                case ContentAlignment.BottomLeft:
+                    left = rect.Left + 1;
+                    break;
+                case ContentAlignment.TopCenter:
+                case ContentAlignment.MiddleCenter:
+                case ContentAlignment.BottomCenter:
+                    left = rect.Left + (rect.Width - size.Width) / 2;
+                    break;
+                case ContentAlignment.TopRight:
+                case ContentAlignment.MiddleRight:
+                case ContentAlignment.BottomRight:
+                    left = rect.Left + rect.Width - size.Width - 1;
+                    break;
             }
+
+            switch (alignment)
+            {
+                case ContentAlignment.TopLeft:
+                case ContentAlignment.TopCenter:
+                case ContentAlignment.TopRight:
+                    top = rect.Top + 1;
+                    break;
+                case ContentAlignment.MiddleLeft:
+                case ContentAlignment.MiddleCenter:
+                case ContentAlignment.MiddleRight:
+
+                    top = rect.Top + (rect.Height - size.Height) / 2;
+                    break;
+                case ContentAlignment.BottomCenter:
+                case ContentAlignment.BottomLeft:
+                case ContentAlignment.BottomRight:
+                    top = rect.Top + rect.Height - size.Height - 1;
+                    break;
+            }
+
+            TextRenderer.DrawText(g, text, font, new Point(left, top), color, backColor);
         }
 
-        /// <summary>
-        /// 绘制字符串
-        /// </summary>
-        /// <param name="g">绘图图元</param>
-        /// <param name="text">文字</param>
-        /// <param name="font">字体</param>
-        /// <param name="color">颜色</param>
-        /// <param name="rect">区域</param>
-        /// <param name="format">格式</param>
-        public static void DrawString(this Graphics g, string text, Font font, Color color, Rectangle rect, StringFormat format)
+
+        public static void DrawString(this Graphics g, string text, Font font, Color color, Rectangle rect, StringAlignment alignment, StringAlignment lineAlignment, int offsetX = 0, int offsetY = 0)
         {
-            using (Brush br = color.Brush())
+            if (text.IsNullOrEmpty()) return;
+            rect.Offset(offsetX, offsetY);
+            Size size = TextRenderer.MeasureText(text, font);
+            int left = 0, top = 0;
+
+            switch (alignment)
             {
-                g.DrawString(text, font, br, rect, format);
+                case StringAlignment.Near:
+                    left = rect.Left + 1;
+                    break;
+                case StringAlignment.Center:
+                    left = rect.Left + (rect.Width - size.Width) / 2;
+                    break;
+                case StringAlignment.Far:
+                    left = rect.Left + rect.Width - size.Width - 1;
+                    break;
             }
+
+            switch (lineAlignment)
+            {
+                case StringAlignment.Near:
+                    top = rect.Top + 1;
+                    break;
+                case StringAlignment.Center:
+                    top = rect.Top + (rect.Height - size.Height) / 2;
+                    break;
+                case StringAlignment.Far:
+                    top = rect.Top + rect.Height - size.Height - 1;
+                    break;
+            }
+
+            TextRenderer.DrawText(g, text, font, new Point(left, top), color);
         }
 
-        /// <summary>
-        /// 绘制字符串
-        /// </summary>
-        /// <param name="g">绘图图元</param>
-        /// <param name="text">文字</param>
-        /// <param name="font">字体</param>
-        /// <param name="color">颜色</param>
-        /// <param name="rect">区域</param>
-        public static void DrawString(this Graphics g, string text, Font font, Color color, Rectangle rect)
+        public static void DrawString(this Graphics g, string text, Font font, Color color, Color backColor, Rectangle rect, StringAlignment alignment, StringAlignment lineAlignment, int offsetX = 0, int offsetY = 0)
         {
-            using (Brush br = color.Brush())
+            if (text.IsNullOrEmpty()) return;
+            rect.Offset(offsetX, offsetY);
+            Size size = TextRenderer.MeasureText(text, font);
+            int left = 0, top = 0;
+
+            switch (alignment)
             {
-                g.DrawString(text, font, br, rect);
+                case StringAlignment.Near:
+                    left = rect.Left + 1;
+                    break;
+                case StringAlignment.Center:
+                    left = rect.Left + (rect.Width - size.Width) / 2;
+                    break;
+                case StringAlignment.Far:
+                    left = rect.Left + rect.Width - size.Width - 1;
+                    break;
             }
+
+            switch (lineAlignment)
+            {
+                case StringAlignment.Near:
+                    top = rect.Top + 1;
+                    break;
+                case StringAlignment.Center:
+                    top = rect.Top + (rect.Height - size.Height) / 2;
+                    break;
+                case StringAlignment.Far:
+                    top = rect.Top + rect.Height - size.Height - 1;
+                    break;
+            }
+
+            TextRenderer.DrawText(g, text, font, new Point(left, top), color, backColor);
+        }
+
+        public static void DrawString(this Graphics g, string text, Font font, Color color, Rectangle rect, HorizontalAlignment horizontalAlignment, int offsetX = 0, int offsetY = 0)
+        {
+            StringAlignment alignment = StringAlignment.Center;
+            if (horizontalAlignment == HorizontalAlignment.Left) alignment = StringAlignment.Near;
+            if (horizontalAlignment == HorizontalAlignment.Right) alignment = StringAlignment.Far;
+            g.DrawString(text, font, color, rect, alignment, StringAlignment.Center, offsetX, offsetY);
+        }
+
+        public static void DrawString(this Graphics g, string text, Font font, Color color, Color backColor, Rectangle rect, HorizontalAlignment horizontalAlignment, int offsetX = 0, int offsetY = 0)
+        {
+            StringAlignment alignment = StringAlignment.Center;
+            if (horizontalAlignment == HorizontalAlignment.Left) alignment = StringAlignment.Near;
+            if (horizontalAlignment == HorizontalAlignment.Right) alignment = StringAlignment.Far;
+            g.DrawString(text, font, color, backColor, rect, alignment, StringAlignment.Center, offsetX, offsetY);
         }
 
         /// <summary>
@@ -109,10 +231,9 @@ namespace Sunny.UI
         /// <param name="y">垂直位置</param>
         public static void DrawString(this Graphics g, string text, Font font, Color color, float x, float y)
         {
-            using (Brush br = color.Brush())
-            {
-                g.DrawString(text, font, br, x, y);
-            }
+            if (text.IsNullOrEmpty()) return;
+            using Brush br = color.Brush();
+            g.DrawString(text, font, br, x, y);
         }
 
         /// <summary>
@@ -121,38 +242,91 @@ namespace Sunny.UI
         /// <param name="g">绘图图元</param>
         /// <param name="text">文字</param>
         /// <param name="font">字体</param>
-        /// <param name="color">颜色</param>
-        /// <param name="pt">位置</param>
-        public static void DrawString(this Graphics g, string text, Font font, Color color, Point pt)
-        => g.DrawString(text, font, color, pt.X, pt.Y);
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="g">绘图图元</param>
-        /// <param name="text">文字</param>
-        /// <param name="font">字体</param>
-        /// <param name="color">颜色</param>
-        /// <param name="pt">位置</param>
-        public static void DrawString(this Graphics g, string text, Font font, Color color, PointF pt)
-        => g.DrawString(text, font, color, pt.X, pt.Y);
-
-        /// <summary>
-        /// 绘制字符串
-        /// </summary>
-        /// <param name="g">绘图图元</param>
-        /// <param name="text">文字</param>
-        /// <param name="font">字体</param>
-        /// <param name="color">颜色</param>
+        /// <param name="color">颜色</param>   
+        /// <param name="borderColor">描边颜色</param>
         /// <param name="x">水平位置</param>
         /// <param name="y">垂直位置</param>
-        /// <param name="format">格式</param>
-        public static void DrawString(this Graphics g, string text, Font font, Color color, float x, float y, StringFormat format)
+        public static void DrawString(this Graphics g, string text, Font font, Color color, Color borderColor, float x, float y)
         {
-            using (Brush br = color.Brush())
-            {
-                g.DrawString(text, font, br, x, y, format);
-            }
+            g.DrawString(text, font, borderColor, x - 1, y - 1);
+            g.DrawString(text, font, borderColor, x - 1, y);
+            g.DrawString(text, font, borderColor, x - 1, y + 1);
+            g.DrawString(text, font, borderColor, x, y - 1);
+            g.DrawString(text, font, borderColor, x, y + 1);
+            g.DrawString(text, font, borderColor, x + 1, y - 1);
+            g.DrawString(text, font, borderColor, x + 1, y);
+            g.DrawString(text, font, borderColor, x + 1, y + 1);
+            g.DrawString(text, font, color, x, y);
+        }
+
+        /// <summary>
+        /// 以文字中心点为原点，旋转文字
+        /// </summary>
+        /// <param name="g">绘图图元</param>
+        /// <param name="text">文字</param>
+        /// <param name="font">字体</param>
+        /// <param name="color">颜色</param>
+        /// <param name="centerPoint">文字中心点</param>
+        /// <param name="angle">角度</param>
+        public static void DrawRotateString(this Graphics g, string text, Font font, Color color, PointF centerPoint, float angle, int offsetX = 0, int offsetY = 0)
+        {
+            if (text.IsNullOrEmpty()) return;
+            using Brush br = color.Brush();
+            g.DrawRotateString(text, font, br, centerPoint, angle, offsetX, offsetY);
+        }
+
+        /// <summary>
+        /// 以文字中心点为原点，旋转文字
+        /// </summary>
+        /// <param name="g">绘图图元</param>
+        /// <param name="text">文字</param>
+        /// <param name="font">字体</param>
+        /// <param name="brush">笔刷</param>
+        /// <param name="centerPoint">文字中心点</param>
+        /// <param name="angle">角度</param>
+        private static void DrawRotateString(this Graphics g, string text, Font font, Brush brush, PointF centerPoint, float angle, int offsetX = 0, int offsetY = 0)
+        {
+            if (text.IsNullOrEmpty()) return;
+            SizeF sf = TextRenderer.MeasureText(text, font);
+            float x1 = centerPoint.X - sf.Width / 2.0f + offsetX;
+            float y1 = centerPoint.Y - sf.Height / 2.0f + offsetY;
+
+            // 把画板的原点(默认是左上角)定位移到文字中心
+            g.TranslateTransform(x1 + sf.Width / 2.0f, y1 + sf.Height / 2.0f);
+            // 旋转画板
+            g.RotateTransform(angle);
+            // 回退画板x,y轴移动过的距离
+            g.TranslateTransform(-(x1 + sf.Width / 2.0f), -(y1 + sf.Height / 2.0f));
+            g.DrawString(text, font, brush, x1, y1);
+
+            //恢复
+            g.TranslateTransform(x1 + sf.Width / 2.0f, y1 + sf.Height / 2.0f);
+            g.RotateTransform(-angle);
+            g.TranslateTransform(-(x1 + sf.Width / 2.0f), -(y1 + sf.Height / 2.0f));
+        }
+
+        /// <summary>
+        /// 以旋转点为原点，旋转文字
+        /// </summary>
+        /// <param name="g">绘图图元</param>
+        /// <param name="text">文本</param>
+        /// <param name="font">字体</param>
+        /// <param name="brush">填充</param>
+        /// <param name="rotatePoint">旋转点</param>
+        /// <param name="format">布局方式</param>
+        /// <param name="angle">角度</param>
+        private static void DrawRotateString(this Graphics g, string text, Font font, Brush brush, PointF rotatePoint, StringFormat format, float angle)
+        {
+            if (text.IsNullOrEmpty()) return;
+            // Save the matrix
+            Matrix mtxSave = g.Transform;
+            Matrix mtxRotate = g.Transform;
+            mtxRotate.RotateAt(angle, rotatePoint);
+            g.Transform = mtxRotate;
+            g.DrawString(text, font, brush, rotatePoint, format);
+
+            // Reset the matrix
+            g.Transform = mtxSave;
         }
 
         /// <summary>
@@ -162,22 +336,15 @@ namespace Sunny.UI
         /// <param name="text">文字</param>
         /// <param name="font">字体</param>
         /// <param name="color">颜色</param>
-        /// <param name="pt">位置</param>
+        /// <param name="rotatePoint">旋转点</param>
         /// <param name="format">格式</param>
-        public static void DrawString(this Graphics g, string text, Font font, Color color, PointF pt, StringFormat format)
-        => g.DrawString(text, font, color, pt.X, pt.Y, format);
-
-        /// <summary>
-        /// 绘制字符串
-        /// </summary>
-        /// <param name="g">绘图图元</param>
-        /// <param name="text">文字</param>
-        /// <param name="font">字体</param>
-        /// <param name="color">颜色</param>
-        /// <param name="pt">位置</param>
-        /// <param name="format">格式</param>
-        public static void DrawString(this Graphics g, string text, Font font, Color color, Point pt, StringFormat format)
-        => g.DrawString(text, font, color, pt.X, pt.Y, format);
+        /// <param name="angle">角度</param>
+        public static void DrawRotateString(this Graphics g, string text, Font font, Color color, PointF rotatePoint, StringFormat format, float angle)
+        {
+            if (text.IsNullOrEmpty()) return;
+            using Brush br = color.Brush();
+            g.DrawRotateString(text, font, br, rotatePoint, format, angle);
+        }
 
         /// <summary>
         /// 绘制多条直线连接
@@ -189,12 +356,10 @@ namespace Sunny.UI
         /// <param name="penWidth">笔宽</param>
         public static void DrawLines(this Graphics g, Color color, Point[] points, bool smooth = false, float penWidth = 1)
         {
-            using (Pen pen = color.Pen(penWidth))
-            {
-                g.Smooth(smooth);
-                g.DrawLines(pen, points);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using Pen pen = color.Pen(penWidth);
+            g.DrawLines(pen, points);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -207,12 +372,10 @@ namespace Sunny.UI
         /// <param name="penWidth">笔宽</param>
         public static void DrawLines(this Graphics g, Color color, PointF[] points, bool smooth = false, float penWidth = 1)
         {
-            using (Pen pen = color.Pen(penWidth))
-            {
-                g.Smooth(smooth);
-                g.DrawLines(pen, points);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using Pen pen = color.Pen(penWidth);
+            g.DrawLines(pen, points);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -225,12 +388,10 @@ namespace Sunny.UI
         /// <param name="penWidth">笔宽</param>
         public static void DrawCurve(this Graphics g, Color color, Point[] points, bool smooth = false, float penWidth = 1)
         {
-            using (Pen pen = color.Pen(penWidth))
-            {
-                g.Smooth(smooth);
-                g.DrawCurve(pen, points);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using Pen pen = color.Pen(penWidth);
+            g.DrawCurve(pen, points);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -243,12 +404,10 @@ namespace Sunny.UI
         /// <param name="penWidth">笔宽</param>
         public static void DrawCurve(this Graphics g, Color color, PointF[] points, bool smooth = false, float penWidth = 1)
         {
-            using (Pen pen = color.Pen(penWidth))
-            {
-                g.Smooth(smooth);
-                g.DrawCurve(pen, points);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using Pen pen = color.Pen(penWidth);
+            g.DrawCurve(pen, points);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -264,12 +423,10 @@ namespace Sunny.UI
         /// <param name="penWidth">笔宽</param>
         public static void DrawLine(this Graphics g, Color color, int x1, int y1, int x2, int y2, bool smooth = false, float penWidth = 1)
         {
-            using (Pen pen = color.Pen(penWidth))
-            {
-                g.Smooth(smooth);
-                g.DrawLine(pen, x1, y1, x2, y2);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using Pen pen = color.Pen(penWidth);
+            g.DrawLine(pen, x1, y1, x2, y2);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -298,13 +455,10 @@ namespace Sunny.UI
         public static void DrawLine(this Graphics g, Color color, float x1, float y1, float x2, float y2, bool smooth = false, float penWidth = 1)
         {
             if (y1.IsNanOrInfinity() || y2.IsNanOrInfinity() || x1.IsNanOrInfinity() || x2.IsNanOrInfinity()) return;
-
-            using (Pen pen = color.Pen(penWidth))
-            {
-                g.Smooth(smooth);
-                g.DrawLine(pen, x1, y1, x2, y2);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using Pen pen = color.Pen(penWidth);
+            g.DrawLine(pen, x1, y1, x2, y2);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -334,12 +488,10 @@ namespace Sunny.UI
         /// <param name="penWidth">笔宽</param>
         public static void DrawArc(this Graphics g, Color color, int x, int y, int width, int height, int startAngle, int sweepAngle, bool smooth = true, float penWidth = 1)
         {
-            using (Pen pen = color.Pen(penWidth))
-            {
-                g.Smooth(smooth);
-                g.DrawArc(pen, x, y, width, height, startAngle, sweepAngle);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using Pen pen = color.Pen(penWidth);
+            g.DrawArc(pen, x, y, width, height, startAngle, sweepAngle);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -357,12 +509,10 @@ namespace Sunny.UI
         /// <param name="penWidth">笔宽</param>
         public static void DrawArc(this Graphics g, Color color, float x, float y, float width, float height, float startAngle, float sweepAngle, bool smooth = true, float penWidth = 1)
         {
-            using (Pen pen = color.Pen(penWidth))
-            {
-                g.Smooth(smooth);
-                g.DrawArc(pen, x, y, width, height, startAngle, sweepAngle);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using Pen pen = color.Pen(penWidth);
+            g.DrawArc(pen, x, y, width, height, startAngle, sweepAngle);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -408,12 +558,10 @@ namespace Sunny.UI
         /// <param name="penWidth">笔宽</param>
         public static void DrawBezier(this Graphics g, Color color, float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4, bool smooth = true, float penWidth = 1)
         {
-            using (Pen pen = color.Pen(penWidth))
-            {
-                g.Smooth(smooth);
-                g.DrawBezier(pen, x1, y1, x2, y2, x3, y3, x4, y4);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using Pen pen = color.Pen(penWidth);
+            g.DrawBezier(pen, x1, y1, x2, y2, x3, y3, x4, y4);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -454,12 +602,10 @@ namespace Sunny.UI
         /// <param name="penWidth">笔宽</param>
         public static void DrawBeziers(this Graphics g, Color color, PointF[] points, bool smooth = true, float penWidth = 1)
         {
-            using (Pen pen = color.Pen(penWidth))
-            {
-                g.Smooth(smooth);
-                g.DrawBeziers(pen, points);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using Pen pen = color.Pen(penWidth);
+            g.DrawBeziers(pen, points);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -472,12 +618,10 @@ namespace Sunny.UI
         /// <param name="penWidth">笔宽</param>
         public static void DrawBeziers(this Graphics g, Color color, Point[] points, bool smooth = true, float penWidth = 1)
         {
-            using (Pen pen = color.Pen(penWidth))
-            {
-                g.Smooth(smooth);
-                g.DrawBeziers(pen, points);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using Pen pen = color.Pen(penWidth);
+            g.DrawBeziers(pen, points);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -490,12 +634,10 @@ namespace Sunny.UI
         /// <param name="penWidth">笔宽</param>
         public static void DrawClosedCurve(this Graphics g, Color color, Point[] points, bool smooth = true, float penWidth = 1)
         {
-            using (Pen pen = color.Pen(penWidth))
-            {
-                g.Smooth(smooth);
-                g.DrawClosedCurve(pen, points);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using Pen pen = color.Pen(penWidth);
+            g.DrawClosedCurve(pen, points);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -510,12 +652,10 @@ namespace Sunny.UI
         /// <param name="penWidth">笔宽</param>
         public static void DrawClosedCurve(this Graphics g, Color color, Point[] points, float tension, FillMode fillmode, bool smooth = true, float penWidth = 1)
         {
-            using (Pen pen = color.Pen(penWidth))
-            {
-                g.Smooth(smooth);
-                g.DrawClosedCurve(pen, points, tension, fillmode);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using Pen pen = color.Pen(penWidth);
+            g.DrawClosedCurve(pen, points, tension, fillmode);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -527,12 +667,10 @@ namespace Sunny.UI
         /// <param name="smooth">平滑</param>
         public static void FillClosedCurve(this Graphics g, Color color, Point[] points, bool smooth = true)
         {
-            using (SolidBrush sb = color.Brush())
-            {
-                g.Smooth(smooth);
-                g.FillClosedCurve(sb, points);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using SolidBrush sb = color.Brush();
+            g.FillClosedCurve(sb, points);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -546,12 +684,10 @@ namespace Sunny.UI
         /// <param name="smooth">平滑</param>
         public static void FillClosedCurve(this Graphics g, Color color, Point[] points, FillMode fillmode, float tension, bool smooth = true)
         {
-            using (SolidBrush sb = color.Brush())
-            {
-                g.Smooth(smooth);
-                g.FillClosedCurve(sb, points, fillmode, tension);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using SolidBrush sb = color.Brush();
+            g.FillClosedCurve(sb, points, fillmode, tension);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -563,12 +699,10 @@ namespace Sunny.UI
         /// <param name="smooth">平滑</param>
         public static void FillPath(this Graphics g, Color color, GraphicsPath path, bool smooth = true)
         {
-            using (SolidBrush sb = color.Brush())
-            {
-                g.Smooth(smooth);
-                g.FillPath(sb, path);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using SolidBrush sb = color.Brush();
+            g.FillPath(sb, path);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -581,12 +715,10 @@ namespace Sunny.UI
         /// <param name="penWidth">笔宽</param>
         public static void DrawPath(this Graphics g, Color color, GraphicsPath path, bool smooth = true, float penWidth = 1)
         {
-            using (Pen pn = color.Pen(penWidth))
-            {
-                g.Smooth(smooth);
-                g.DrawPath(pn, path);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using Pen pn = color.Pen(penWidth);
+            g.DrawPath(pn, path);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -598,12 +730,10 @@ namespace Sunny.UI
         /// <param name="smooth">平滑</param>
         public static void FillPolygon(this Graphics g, Color color, PointF[] points, bool smooth = true)
         {
-            using (SolidBrush sb = color.Brush())
-            {
-                g.Smooth(smooth);
-                g.FillPolygon(sb, points);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using SolidBrush sb = color.Brush();
+            g.FillPolygon(sb, points);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -616,12 +746,10 @@ namespace Sunny.UI
         /// <param name="smooth">平滑</param>
         public static void FillPolygon(this Graphics g, Color color, PointF[] points, FillMode fillMode, bool smooth = true)
         {
-            using (SolidBrush sb = color.Brush())
-            {
-                g.Smooth(smooth);
-                g.FillPolygon(sb, points, fillMode);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using SolidBrush sb = color.Brush();
+            g.FillPolygon(sb, points, fillMode);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -633,12 +761,10 @@ namespace Sunny.UI
         /// <param name="smooth">平滑</param>
         public static void FillPolygon(this Graphics g, Color color, Point[] points, bool smooth = true)
         {
-            using (SolidBrush sb = color.Brush())
-            {
-                g.Smooth(smooth);
-                g.FillPolygon(sb, points);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using SolidBrush sb = color.Brush();
+            g.FillPolygon(sb, points);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -651,12 +777,10 @@ namespace Sunny.UI
         /// <param name="smooth">平滑</param>
         public static void FillPolygon(this Graphics g, Color color, Point[] points, FillMode fillMode, bool smooth = true)
         {
-            using (SolidBrush sb = color.Brush())
-            {
-                g.Smooth(smooth);
-                g.FillPolygon(sb, points, fillMode);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using SolidBrush sb = color.Brush();
+            g.FillPolygon(sb, points, fillMode);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -669,12 +793,10 @@ namespace Sunny.UI
         /// <param name="penWidth">笔宽</param>
         public static void DrawPolygon(this Graphics g, Color color, PointF[] points, bool smooth = true, float penWidth = 1)
         {
-            using (Pen pn = color.Pen(penWidth))
-            {
-                g.Smooth(smooth);
-                g.DrawPolygon(pn, points);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using Pen pn = color.Pen(penWidth);
+            g.DrawPolygon(pn, points);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -687,12 +809,10 @@ namespace Sunny.UI
         /// <param name="penWidth">笔宽</param>
         public static void DrawPolygon(this Graphics g, Color color, Point[] points, bool smooth = true, float penWidth = 1)
         {
-            using (Pen pn = color.Pen(penWidth))
-            {
-                g.Smooth(smooth);
-                g.DrawPolygon(pn, points);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using Pen pn = color.Pen(penWidth);
+            g.DrawPolygon(pn, points);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -704,12 +824,10 @@ namespace Sunny.UI
         /// <param name="smooth">平滑</param>
         public static void FillEllipse(this Graphics g, Color color, Rectangle rect, bool smooth = true)
         {
-            using (SolidBrush sb = color.Brush())
-            {
-                g.Smooth(smooth);
-                g.FillEllipse(sb, rect);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using SolidBrush sb = color.Brush();
+            g.FillEllipse(sb, rect);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -722,12 +840,10 @@ namespace Sunny.UI
         /// <param name="penWidth">笔宽</param>
         public static void DrawEllipse(this Graphics g, Color color, Rectangle rect, bool smooth = true, float penWidth = 1)
         {
-            using (Pen pn = color.Pen(penWidth))
-            {
-                g.Smooth(smooth);
-                g.DrawEllipse(pn, rect);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using Pen pn = color.Pen(penWidth);
+            g.DrawEllipse(pn, rect);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -739,12 +855,10 @@ namespace Sunny.UI
         /// <param name="smooth">平滑</param>
         public static void FillEllipse(this Graphics g, Color color, RectangleF rect, bool smooth = true)
         {
-            using (SolidBrush sb = color.Brush())
-            {
-                g.Smooth(smooth);
-                g.FillEllipse(sb, rect);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using SolidBrush sb = color.Brush();
+            g.FillEllipse(sb, rect);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -757,12 +871,10 @@ namespace Sunny.UI
         /// <param name="penWidth">笔宽</param>
         public static void DrawEllipse(this Graphics g, Color color, RectangleF rect, bool smooth = true, float penWidth = 1)
         {
-            using (Pen pn = color.Pen(penWidth))
-            {
-                g.Smooth(smooth);
-                g.DrawEllipse(pn, rect);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using Pen pn = color.Pen(penWidth);
+            g.DrawEllipse(pn, rect);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -828,12 +940,10 @@ namespace Sunny.UI
         /// <param name="smooth">平滑</param>
         public static void FillRectangle(this Graphics g, Color color, Rectangle rect, bool smooth = false)
         {
-            using (SolidBrush sb = color.Brush())
-            {
-                g.Smooth(smooth);
-                g.FillRectangle(sb, rect);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using SolidBrush sb = color.Brush();
+            g.FillRectangle(sb, rect);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -846,12 +956,10 @@ namespace Sunny.UI
         /// <param name="penWidth">笔宽</param>
         public static void DrawRectangle(this Graphics g, Color color, Rectangle rect, bool smooth = false, float penWidth = 1)
         {
-            using (Pen pn = color.Pen(penWidth))
-            {
-                g.Smooth(smooth);
-                g.DrawRectangle(pn, rect);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using Pen pn = color.Pen(penWidth);
+            g.DrawRectangle(pn, rect);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -863,12 +971,10 @@ namespace Sunny.UI
         /// <param name="smooth">平滑</param>
         public static void FillRectangle(this Graphics g, Color color, RectangleF rect, bool smooth = false)
         {
-            using (SolidBrush sb = color.Brush())
-            {
-                g.Smooth(smooth);
-                g.FillRectangle(sb, rect);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using SolidBrush sb = color.Brush();
+            g.FillRectangle(sb, rect);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -881,12 +987,10 @@ namespace Sunny.UI
         /// <param name="penWidth">笔宽</param>
         public static void DrawRectangle(this Graphics g, Color color, RectangleF rect, bool smooth = false, float penWidth = 1)
         {
-            using (Pen pn = color.Pen(penWidth))
-            {
-                g.Smooth(smooth);
-                g.DrawRectangle(pn, rect.X, rect.Y, rect.Width, rect.Height);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using Pen pn = color.Pen(penWidth);
+            g.DrawRectangle(pn, rect.X, rect.Y, rect.Width, rect.Height);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -952,12 +1056,10 @@ namespace Sunny.UI
         /// <param name="smooth">平滑</param>
         public static void FillRectangles(this Graphics g, Color color, Rectangle[] rects, bool smooth = false)
         {
-            using (SolidBrush sb = color.Brush())
-            {
-                g.Smooth(smooth);
-                g.FillRectangles(sb, rects);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using SolidBrush sb = color.Brush();
+            g.FillRectangles(sb, rects);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -969,12 +1071,10 @@ namespace Sunny.UI
         /// <param name="smooth">平滑</param>
         public static void FillRectangles(this Graphics g, Color color, RectangleF[] rects, bool smooth = false)
         {
-            using (SolidBrush sb = color.Brush())
-            {
-                g.Smooth(smooth);
-                g.FillRectangles(sb, rects);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using SolidBrush sb = color.Brush();
+            g.FillRectangles(sb, rects);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -986,12 +1086,10 @@ namespace Sunny.UI
         /// <param name="smooth">平滑</param>
         public static void FillRegion(this Graphics g, Color color, Region region, bool smooth = false)
         {
-            using (SolidBrush sb = color.Brush())
-            {
-                g.Smooth(smooth);
-                g.FillRegion(sb, region);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using SolidBrush sb = color.Brush();
+            g.FillRegion(sb, region);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -1004,12 +1102,10 @@ namespace Sunny.UI
         /// <param name="penWidth">笔宽</param>
         public static void DrawRectangles(this Graphics g, Color color, Rectangle[] rects, bool smooth = false, float penWidth = 1)
         {
-            using (Pen pn = color.Pen(penWidth))
-            {
-                g.Smooth(smooth);
-                g.DrawRectangles(pn, rects);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using Pen pn = color.Pen(penWidth);
+            g.DrawRectangles(pn, rects);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -1022,12 +1118,10 @@ namespace Sunny.UI
         /// <param name="penWidth">笔宽</param>
         public static void DrawRectangles(this Graphics g, Color color, RectangleF[] rects, bool smooth = false, float penWidth = 1)
         {
-            using (Pen pn = color.Pen(penWidth))
-            {
-                g.Smooth(smooth);
-                g.DrawRectangles(pn, rects);
-                g.Smooth(false);
-            }
+            g.Smooth(smooth);
+            using Pen pn = color.Pen(penWidth);
+            g.DrawRectangles(pn, rects);
+            g.Smooth(false);
         }
 
         /// <summary>
@@ -1041,12 +1135,10 @@ namespace Sunny.UI
         public static void DrawRoundRectangle(this Graphics g, Pen pen, Rectangle rect, int cornerRadius, bool smooth = true)
         {
             g.Smooth(smooth);
-            if (cornerRadius > 0)
+            if (!UIStyles.GlobalRectangle && cornerRadius > 0)
             {
-                using (GraphicsPath path = rect.CreateRoundedRectanglePath(cornerRadius))
-                {
-                    g.DrawPath(pen, path);
-                }
+                using GraphicsPath path = rect.CreateRoundedRectanglePath(cornerRadius);
+                g.DrawPath(pen, path);
             }
             else
             {
@@ -1067,12 +1159,10 @@ namespace Sunny.UI
         public static void FillRoundRectangle(this Graphics g, Brush brush, Rectangle rect, int cornerRadius, bool smooth = true)
         {
             g.Smooth(smooth);
-            if (cornerRadius > 0)
+            if (!UIStyles.GlobalRectangle && cornerRadius > 0)
             {
-                using (GraphicsPath path = rect.CreateRoundedRectanglePath(cornerRadius))
-                {
-                    g.FillPath(brush, path);
-                }
+                using GraphicsPath path = rect.CreateRoundedRectanglePath(cornerRadius);
+                g.FillPath(brush, path);
             }
             else
             {
@@ -1125,12 +1215,10 @@ namespace Sunny.UI
         /// <param name="penWidth">笔宽</param>
         public static void DrawRoundRectangle(this Graphics g, Color color, Rectangle rect, int cornerRadius, bool smooth = true, float penWidth = 1)
         {
-            if (cornerRadius > 0)
+            if (!UIStyles.GlobalRectangle && cornerRadius > 0)
             {
-                using (GraphicsPath path = rect.CreateRoundedRectanglePath(cornerRadius))
-                {
-                    g.DrawPath(color, path, smooth, penWidth);
-                }
+                using GraphicsPath path = rect.CreateRoundedRectanglePath(cornerRadius);
+                g.DrawPath(color, path, smooth, penWidth);
             }
             else
             {
@@ -1148,12 +1236,10 @@ namespace Sunny.UI
         /// <param name="smooth">平滑</param>
         public static void FillRoundRectangle(this Graphics g, Color color, Rectangle rect, int cornerRadius, bool smooth = true)
         {
-            if (cornerRadius > 0)
+            if (!UIStyles.GlobalRectangle && cornerRadius > 0)
             {
-                using (GraphicsPath path = rect.CreateRoundedRectanglePath(cornerRadius))
-                {
-                    g.FillPath(color, path, smooth);
-                }
+                using GraphicsPath path = rect.CreateRoundedRectanglePath(cornerRadius);
+                g.FillPath(color, path, smooth);
             }
             else
             {
@@ -1224,9 +1310,8 @@ namespace Sunny.UI
             }
             else
             {
-                GraphicsPath path = g.CreateFanPath(center, d1, d2, startAngle, sweepAngle);
+                using GraphicsPath path = g.CreateFanPath(center, d1, d2, startAngle, sweepAngle);
                 g.DrawPath(color, path, smooth, penWidth);
-                path.Dispose();
             }
         }
 
@@ -1250,9 +1335,8 @@ namespace Sunny.UI
             }
             else
             {
-                GraphicsPath path = g.CreateFanPath(center, d1, d2, startAngle, sweepAngle);
+                using GraphicsPath path = g.CreateFanPath(center, d1, d2, startAngle, sweepAngle);
                 g.DrawPath(color, path, smooth, penWidth);
-                path.Dispose();
             }
         }
 
@@ -1275,9 +1359,8 @@ namespace Sunny.UI
             }
             else
             {
-                GraphicsPath path = g.CreateFanPath(center, d1, d2, startAngle, sweepAngle);
+                using GraphicsPath path = g.CreateFanPath(center, d1, d2, startAngle, sweepAngle);
                 g.FillPath(color, path, smooth);
-                path.Dispose();
             }
         }
 
@@ -1300,9 +1383,8 @@ namespace Sunny.UI
             }
             else
             {
-                GraphicsPath path = g.CreateFanPath(center, d1, d2, startAngle, sweepAngle);
+                using GraphicsPath path = g.CreateFanPath(center, d1, d2, startAngle, sweepAngle);
                 g.FillPath(color, path, smooth);
-                path.Dispose();
             }
         }
 
@@ -1321,11 +1403,8 @@ namespace Sunny.UI
         public static void FillPie(this Graphics g, Color color, int x, int y, int width, int height, float startAngle, float sweepAngle, bool smooth = true)
         {
             g.Smooth(smooth);
-            using (Brush br = color.Brush())
-            {
-                g.FillPie(br, x, y, width, height, startAngle, sweepAngle);
-            }
-
+            using Brush br = color.Brush();
+            g.FillPie(br, x, y, width, height, startAngle, sweepAngle);
             g.Smooth(false);
         }
 
@@ -1356,11 +1435,8 @@ namespace Sunny.UI
         public static void FillPie(this Graphics g, Color color, float x, float y, float width, float height, float startAngle, float sweepAngle, bool smooth = true)
         {
             g.Smooth(smooth);
-            using (Brush br = color.Brush())
-            {
-                g.FillPie(br, x, y, width, height, startAngle, sweepAngle);
-            }
-
+            using Brush br = color.Brush();
+            g.FillPie(br, x, y, width, height, startAngle, sweepAngle);
             g.Smooth(false);
         }
 
@@ -1447,11 +1523,8 @@ namespace Sunny.UI
         public static void DrawPie(this Graphics g, Color color, float x, float y, float width, float height, float startAngle, float sweepAngle, bool smooth = true, float penWidth = 1)
         {
             g.Smooth(smooth);
-            using (Pen pen = color.Pen(penWidth))
-            {
-                g.DrawPie(pen, x, y, width, height, startAngle, sweepAngle);
-            }
-
+            using Pen pen = color.Pen(penWidth);
+            g.DrawPie(pen, x, y, width, height, startAngle, sweepAngle);
             g.Smooth(false);
         }
 
@@ -1484,11 +1557,8 @@ namespace Sunny.UI
         public static void DrawPie(this Graphics g, Color color, int x, int y, int width, int height, float startAngle, float sweepAngle, bool smooth = true, float penWidth = 1)
         {
             g.Smooth(smooth);
-            using (Pen pen = color.Pen(penWidth))
-            {
-                g.DrawPie(pen, x, y, width, height, startAngle, sweepAngle);
-            }
-
+            using Pen pen = color.Pen(penWidth);
+            g.DrawPie(pen, x, y, width, height, startAngle, sweepAngle);
             g.Smooth(false);
         }
 
@@ -1521,8 +1591,7 @@ namespace Sunny.UI
             g.DrawImage(img, new Rectangle(rect.X + angleSize, rect.Bottom - angleSize, rect.Width - angleSize * 2, angleSize),
                 new Rectangle(angleSize, img.Height - angleSize, img.Width - angleSize * 2, angleSize), GraphicsUnit.Pixel);
             //中间
-            g.DrawImage(img,
-                new Rectangle(rect.X + angleSize, rect.Y + angleSize, rect.Width - angleSize * 2, rect.Height - angleSize * 2),
+            g.DrawImage(img, new Rectangle(rect.X + angleSize, rect.Y + angleSize, rect.Width - angleSize * 2, rect.Height - angleSize * 2),
                 new Rectangle(angleSize, angleSize, img.Width - angleSize * 2, img.Height - angleSize * 2), GraphicsUnit.Pixel);
         }
 
@@ -1565,193 +1634,6 @@ namespace Sunny.UI
             //中间
             g.DrawImage(img, new Rectangle(cutLeft * iZoom, cutTop * iZoom, destWidth - (cutLeft + cutRight) * iZoom, destHeight - (cutTop + cutBottom) * iZoom),
                new Rectangle(cutLeft, cutTop, img.Width - cutLeft - cutRight, img.Height - cutTop - cutBottom), GraphicsUnit.Pixel);
-        }
-
-        /// <summary>
-        /// 绘制字符串
-        /// </summary>
-        /// <param name="g">绘图图元</param>
-        /// <param name="str">字符串</param>
-        /// <param name="font">字体</param>
-        /// <param name="color">颜色</param>
-        /// <param name="size">大小</param>
-        /// <param name="padding">边距</param>
-        /// <param name="align">位置位置</param>
-        public static void DrawString(this Graphics g, string str, Font font, Color color, Size size, Padding padding, ContentAlignment align)
-        {
-            if (str.IsNullOrEmpty()) return;
-            SizeF sf = g.MeasureString(str, font);
-            using (Brush br = color.Brush())
-            {
-                switch (align)
-                {
-                    case ContentAlignment.MiddleCenter:
-                        g.DrawString(str, font, br, padding.Left + (size.Width - sf.Width - padding.Left - padding.Right) / 2.0f,
-                            padding.Top + (size.Height - sf.Height - padding.Top - padding.Bottom) / 2.0f);
-                        break;
-
-                    case ContentAlignment.TopLeft:
-                        g.DrawString(str, font, br, padding.Left, padding.Top);
-                        break;
-
-                    case ContentAlignment.TopCenter:
-                        g.DrawString(str, font, br, padding.Left + (size.Width - sf.Width - padding.Left - padding.Right) / 2.0f, padding.Top);
-                        break;
-
-                    case ContentAlignment.TopRight:
-                        g.DrawString(str, font, br, size.Width - sf.Width - padding.Right, padding.Top);
-                        break;
-
-                    case ContentAlignment.MiddleLeft:
-                        g.DrawString(str, font, br, padding.Left, padding.Top + (size.Height - sf.Height - padding.Top - padding.Bottom) / 2.0f);
-                        break;
-
-                    case ContentAlignment.MiddleRight:
-                        g.DrawString(str, font, br, size.Width - sf.Width - padding.Right, padding.Top + (size.Height - sf.Height - padding.Top - padding.Bottom) / 2.0f);
-                        break;
-
-                    case ContentAlignment.BottomLeft:
-                        g.DrawString(str, font, br, padding.Left, size.Height - sf.Height - padding.Bottom);
-                        break;
-
-                    case ContentAlignment.BottomCenter:
-                        g.DrawString(str, font, br, padding.Left + (size.Width - sf.Width - padding.Left - padding.Right) / 2.0f, size.Height - sf.Height - padding.Bottom);
-                        break;
-
-                    case ContentAlignment.BottomRight:
-                        g.DrawString(str, font, br, size.Width - sf.Width - padding.Right, size.Height - sf.Height - padding.Bottom);
-                        break;
-                }
-            }
-        }
-
-        /// <summary>
-        /// 绘制字符串
-        /// </summary>
-        /// <param name="g">绘图图元</param>
-        /// <param name="text">文字</param>
-        /// <param name="font">字体</param>
-        /// <param name="color">颜色</param>
-        /// <param name="rect">区域</param>
-        /// <param name="format">格式</param>
-        /// <param name="angle">角度</param>
-        public static void DrawString(this Graphics g, string text, Font font, Color color, RectangleF rect, StringFormat format, float angle)
-        {
-            if (text.IsNullOrEmpty()) return;
-            using (Brush br = color.Brush())
-            {
-                g.DrawStringRotateAtCenter(text, font, color, rect.Center(), (int)angle);
-                //g.DrawString(s, font, br, layoutRectangle, format, angle);
-            }
-        }
-
-        /// <summary>
-        /// 以文字中心点为原点，旋转文字
-        /// </summary>
-        /// <param name="g">绘图图元</param>
-        /// <param name="text">文字</param>
-        /// <param name="font">字体</param>
-        /// <param name="color">颜色</param>
-        /// <param name="centerPoint">文字中心点</param>
-        /// <param name="angle">角度</param>
-        public static void DrawStringRotateAtCenter(this Graphics g, string text, Font font, Color color, PointF centerPoint, float angle)
-        {
-            if (text.IsNullOrEmpty()) return;
-            using (Brush br = color.Brush())
-            {
-                g.DrawStringRotateAtCenter(text, font, br, centerPoint, angle);
-            }
-        }
-
-        /// <summary>
-        /// 以文字中心点为原点，旋转文字
-        /// </summary>
-        /// <param name="g">绘图图元</param>
-        /// <param name="text">文字</param>
-        /// <param name="font">字体</param>
-        /// <param name="brush">笔刷</param>
-        /// <param name="centerPoint">文字中心点</param>
-        /// <param name="angle">角度</param>
-        public static void DrawStringRotateAtCenter(this Graphics g, string text, Font font, Brush brush, PointF centerPoint, float angle)
-        {
-            if (text.IsNullOrEmpty()) return;
-            SizeF sf = g.MeasureString(text, font);
-            float x1 = centerPoint.X - sf.Width / 2.0f;
-            float y1 = centerPoint.Y - sf.Height / 2.0f;
-
-            // 把画板的原点(默认是左上角)定位移到文字中心
-            g.TranslateTransform(x1 + sf.Width / 2, y1 + sf.Height / 2);
-            // 旋转画板
-            g.RotateTransform(angle);
-            // 回退画板x,y轴移动过的距离
-            g.TranslateTransform(-(x1 + sf.Width / 2), -(y1 + sf.Height / 2));
-            g.DrawString(text, font, brush, x1, y1);
-
-            //恢复
-            g.TranslateTransform(x1 + sf.Width / 2, y1 + sf.Height / 2);
-            g.RotateTransform(-angle);
-            g.TranslateTransform(-(x1 + sf.Width / 2), -(y1 + sf.Height / 2));
-        }
-
-        /// <summary>
-        /// 以旋转点为原点，旋转文字
-        /// </summary>
-        /// <param name="g">绘图图元</param>
-        /// <param name="text">文本</param>
-        /// <param name="font">字体</param>
-        /// <param name="brush">填充</param>
-        /// <param name="rotatePoint">旋转点</param>
-        /// <param name="format">布局方式</param>
-        /// <param name="angle">角度</param>
-        public static void DrawString(this Graphics g, string text, Font font, Brush brush, PointF rotatePoint, StringFormat format, float angle)
-        {
-            if (text.IsNullOrEmpty()) return;
-            // Save the matrix
-            Matrix mtxSave = g.Transform;
-
-            Matrix mtxRotate = g.Transform;
-            mtxRotate.RotateAt(angle, rotatePoint);
-            g.Transform = mtxRotate;
-
-            g.DrawString(text, font, brush, rotatePoint, format);
-
-            // Reset the matrix
-            g.Transform = mtxSave;
-        }
-
-        /// <summary>
-        /// 绘制字符串
-        /// </summary>
-        /// <param name="g">绘图图元</param>
-        /// <param name="text">文字</param>
-        /// <param name="font">字体</param>
-        /// <param name="color">颜色</param>
-        /// <param name="rotatePoint">旋转点</param>
-        /// <param name="format">格式</param>
-        /// <param name="angle">角度</param>
-        public static void DrawString(this Graphics g, string text, Font font, Color color, PointF rotatePoint, StringFormat format, float angle)
-        {
-            if (text.IsNullOrEmpty()) return;
-            using (Brush br = color.Brush())
-            {
-                g.DrawString(text, font, br, rotatePoint, format, angle);
-            }
-        }
-
-        /// <summary>
-        /// 绘制根据矩形旋转文本
-        /// </summary>
-        /// <param name="g">绘图图元</param>
-        /// <param name="text">文本</param>
-        /// <param name="font">字体</param>
-        /// <param name="brush">填充</param>
-        /// <param name="rect">局部矩形</param>
-        /// <param name="format">布局方式</param>
-        /// <param name="angle">角度</param>
-        public static void DrawString(this Graphics g, string text, Font font, Brush brush, RectangleF rect, StringFormat format, float angle)
-        {
-            if (text.IsNullOrEmpty()) return;
-            g.DrawStringRotateAtCenter(text, font, brush, rect.Center(), angle);
         }
 
         /// <summary>

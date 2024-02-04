@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -24,6 +24,10 @@
  * 2021-12-07: V3.0.9 更改图片自动刷新
  * 2022-01-02: V3.0.9 增加角标
  * 2022-03-19: V3.1.1 重构主题配色
+ * 2023-05-13: V3.3.6 重构DrawString函数
+ * 2023-05-16: V3.3.6 重构DrawFontImage函数
+ * 2023-10-26: V3.5.1 字体图标增加旋转角度参数SymbolRotate
+ * 2024-01-21: V3.6.3 增加分组编号
 ******************************************************************************/
 
 using System;
@@ -144,10 +148,10 @@ namespace Sunny.UI
             }
         }
 
-        private Font tipsFont = UIFontColor.SubFont();
+        private Font tipsFont = UIStyles.SubFont();
 
         [Description("角标文字字体"), Category("SunnyUI")]
-        [DefaultValue(typeof(Font), "微软雅黑, 9pt")]
+        [DefaultValue(typeof(Font), "宋体, 9pt")]
         public Font TipsFont
         {
             get { return tipsFont; }
@@ -185,7 +189,8 @@ namespace Sunny.UI
             List<UIHeaderButton> buttons = Parent.GetControls<UIHeaderButton>();
             foreach (var button in buttons)
             {
-                button.Selected = false;
+                if (button.GroupIndex == GroupIndex)
+                    button.Selected = false;
             }
 
             if (ShowSelected)
@@ -197,6 +202,10 @@ namespace Sunny.UI
 
             base.OnClick(e);
         }
+
+        [DefaultValue(0)]
+        [Description("分组编号"), Category("SunnyUI")]
+        public int GroupIndex { get; set; }
 
         [DefaultValue(true)]
         [Description("显示选中状态"), Category("SunnyUI")]
@@ -240,6 +249,26 @@ namespace Sunny.UI
             {
                 symbolColor = value;
                 Invalidate();
+            }
+        }
+
+        private int _symbolRotate = 0;
+
+        /// <summary>
+        /// 字体图标旋转角度
+        /// </summary>
+        [DefaultValue(0)]
+        [Description("字体图标旋转角度"), Category("SunnyUI")]
+        public int SymbolRotate
+        {
+            get => _symbolRotate;
+            set
+            {
+                if (_symbolRotate != value)
+                {
+                    _symbolRotate = value;
+                    Invalidate();
+                }
             }
         }
 
@@ -611,21 +640,19 @@ namespace Sunny.UI
         {
             //重绘父类
             base.OnPaint(e);
-            SizeF ImageSize = new SizeF(0, 0);
+            Size ImageSize = new Size(0, 0);
             if (Symbol > 0)
-                ImageSize = e.Graphics.GetFontImageSize(Symbol, SymbolSize);
+                ImageSize = new Size(SymbolSize, SymbolSize);
             if (Image != null)
                 ImageSize = Image.Size;
 
             Color color = GetForeColor();
-            SizeF sf = e.Graphics.MeasureString(Text, Font);
-
             switch (textImageRelation)
             {
                 case TextImageRelation.TextAboveImage:
                     {
                         #region  文本在上
-                        e.Graphics.DrawString(Text, Font, color, (Width - sf.Width) / 2, Padding.Top);
+                        e.Graphics.DrawString(Text, Font, color, new Rectangle(0, Padding.Top, Width, Height), ContentAlignment.TopCenter);
 
                         //字体图标
                         if (Symbol > 0 && Image == null)
@@ -637,13 +664,8 @@ namespace Sunny.UI
                                 bcColor = CircleHoverColor;
                             }
 
-                            e.Graphics.FillEllipse(bcColor, (Width - CircleSize) / 2.0f, Height - Padding.Bottom - CircleSize, CircleSize, CircleSize);
-                            e.Graphics.DrawFontImage(Symbol, SymbolSize, SymbolColor,
-                                new RectangleF(
-                                    symbolOffset.X + (Width - CircleSize) / 2.0f,
-                                    symbolOffset.Y + Height - Padding.Bottom - CircleSize,
-                                    CircleSize,
-                                    CircleSize));
+                            e.Graphics.FillEllipse(bcColor, (Width - CircleSize) / 2.0f - 1, Height - Padding.Bottom - CircleSize - 1, CircleSize, CircleSize);
+                            e.Graphics.DrawFontImage(Symbol, SymbolSize, SymbolColor, new Rectangle(0, Height - Padding.Bottom - CircleSize, Width, CircleSize), symbolOffset.X, symbolOffset.Y, SymbolRotate);
                         }
                         else if (Image != null)
                         {
@@ -665,27 +687,22 @@ namespace Sunny.UI
                                 bcColor = CircleHoverColor;
                             }
 
-                            e.Graphics.FillEllipse(bcColor, Padding.Left, (Height - CircleSize) / 2.0f, CircleSize, CircleSize);
-                            e.Graphics.DrawFontImage(Symbol, SymbolSize, SymbolColor,
-                                new RectangleF(
-                                    symbolOffset.X + Padding.Left,
-                                    symbolOffset.Y + (Height - CircleSize) / 2.0f,
-                                    CircleSize,
-                                    CircleSize));
+                            e.Graphics.FillEllipse(bcColor, Padding.Left - 1, (Height - CircleSize) / 2.0f - 1, CircleSize, CircleSize);
+                            e.Graphics.DrawFontImage(Symbol, SymbolSize, SymbolColor, new Rectangle(Padding.Left, 0, CircleSize, Height), symbolOffset.X, symbolOffset.Y, SymbolRotate);
                         }
                         else if (Image != null)
                         {
                             e.Graphics.DrawImage(Image, ImageTop, (Height - ImageSize.Height) / 2.0f, ImageSize.Width, ImageSize.Height);
                         }
 
-                        e.Graphics.DrawString(Text, Font, color, Width - Padding.Right - sf.Width, (Height - sf.Height) / 2);
+                        e.Graphics.DrawString(Text, Font, color, new Rectangle(0, 0, Width - Padding.Right, Height), ContentAlignment.MiddleRight);
                         #endregion
                     }
                     break;
                 case TextImageRelation.TextBeforeImage:
                     {
                         #region  文本在前
-                        e.Graphics.DrawString(Text, Font, color, Padding.Left, (Height - sf.Height) / 2);
+                        e.Graphics.DrawString(Text, Font, color, new Rectangle(Padding.Left, 0, Width, Height), ContentAlignment.MiddleLeft);
 
                         //字体图标
                         if (Symbol > 0 && Image == null)
@@ -697,13 +714,8 @@ namespace Sunny.UI
                                 bcColor = CircleHoverColor;
                             }
 
-                            e.Graphics.FillEllipse(bcColor, Width - Padding.Right - CircleSize, (Height - CircleSize) / 2.0f, CircleSize, CircleSize);
-                            e.Graphics.DrawFontImage(Symbol, SymbolSize, SymbolColor,
-                                new RectangleF(
-                                    symbolOffset.X + Width - Padding.Right - CircleSize,
-                                    symbolOffset.Y + (Height - CircleSize) / 2.0f,
-                                    CircleSize,
-                                    CircleSize));
+                            e.Graphics.FillEllipse(bcColor, Width - Padding.Right - CircleSize - 1, (Height - CircleSize) / 2.0f - 1, CircleSize, CircleSize);
+                            e.Graphics.DrawFontImage(Symbol, SymbolSize, SymbolColor, new Rectangle(Width - Padding.Right - CircleSize, 0, CircleSize, Height), symbolOffset.X, symbolOffset.Y, SymbolRotate);
                         }
                         else if (Image != null)
                         {
@@ -725,20 +737,15 @@ namespace Sunny.UI
                                 bcColor = CircleHoverColor;
                             }
 
-                            e.Graphics.FillEllipse(bcColor, (Width - CircleSize) / 2.0f, Padding.Top, CircleSize, CircleSize);
-                            e.Graphics.DrawFontImage(Symbol, SymbolSize, SymbolColor,
-                                new RectangleF(
-                                    symbolOffset.X + (Width - CircleSize) / 2.0f,
-                                    symbolOffset.Y + Padding.Top,
-                                    CircleSize,
-                                    CircleSize));
+                            e.Graphics.FillEllipse(bcColor, (Width - CircleSize) / 2.0f - 1, Padding.Top - 1, CircleSize, CircleSize);
+                            e.Graphics.DrawFontImage(Symbol, SymbolSize, SymbolColor, new Rectangle(0, Padding.Top, Width, CircleSize), symbolOffset.X, symbolOffset.Y, SymbolRotate);
                         }
                         else if (Image != null)
                         {
                             e.Graphics.DrawImage(Image, (Width - ImageSize.Width) / 2.0f, ImageTop, ImageSize.Width, ImageSize.Height);
                         }
 
-                        e.Graphics.DrawString(Text, Font, color, (Width - sf.Width) / 2, Height - Padding.Bottom - sf.Height);
+                        e.Graphics.DrawString(Text, Font, color, new Rectangle(0, 0, Width, Height - Padding.Bottom), ContentAlignment.BottomCenter);
                         #endregion
                     }
                     break;
@@ -747,28 +754,13 @@ namespace Sunny.UI
             if (Enabled && ShowTips && !string.IsNullOrEmpty(TipsText))
             {
                 e.Graphics.SetHighQuality();
-                sf = e.Graphics.MeasureString(TipsText, TempFont);
-                float sfMax = Math.Max(sf.Width, sf.Height);
-                float x = Width - 1 - 2 - sfMax;
-                float y = 1 + 1;
-                e.Graphics.FillEllipse(TipsColor, x, y, sfMax, sfMax);
-                e.Graphics.DrawString(TipsText, TempFont, TipsForeColor, x + sfMax / 2.0f - sf.Width / 2.0f, y + sfMax / 2.0f - sf.Height / 2.0f);
-            }
-        }
-
-        Font tmpFont;
-
-        private Font TempFont
-        {
-            get
-            {
-                if (tmpFont == null || !tmpFont.Size.EqualsFloat(TipsFont.DPIScaleFontSize()))
-                {
-                    tmpFont?.Dispose();
-                    tmpFont = TipsFont.DPIScaleFont();
-                }
-
-                return tmpFont;
+                using var TempFont = TipsFont.DPIScaleFont(TipsFont.Size);
+                Size sf = TextRenderer.MeasureText(TipsText, TempFont);
+                int sfMax = Math.Max(sf.Width, sf.Height);
+                int x = Width - 1 - 2 - sfMax;
+                int y = 1 + 1;
+                e.Graphics.FillEllipse(TipsColor, x - 1, y, sfMax, sfMax);
+                e.Graphics.DrawString(TipsText, TempFont, TipsForeColor, new Rectangle(x, y, sfMax, sfMax), ContentAlignment.MiddleCenter);
             }
         }
 

@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -28,35 +28,29 @@ namespace Sunny.UI
     {
         UITabControl MainTabControl { get; }
 
-        UIPage AddPage(UIPage page, int index);
+        UIPage AddPage(UIPage page, int pageIndex);
 
-        UIPage AddPage(UIPage page, Guid guid);
+        UIPage AddPage(UIPage page, Guid pageGuid);
 
         UIPage AddPage(UIPage page);
 
         bool SelectPage(int pageIndex);
 
-        bool SelectPage(Guid guid);
+        bool SelectPage(Guid pageGuid);
 
         UIPage GetPage(int pageIndex);
 
-        UIPage GetPage(Guid guid);
+        UIPage GetPage(Guid pageGuid);
 
         bool TopMost { get; set; }
 
         bool RemovePage(int pageIndex);
 
-        bool RemovePage(Guid guid);
+        bool RemovePage(Guid pageGuid);
 
-        void FeedbackFormPage(int fromPageIndex, params object[] objects);
+        bool ExistPage(int pageIndex);
 
-        bool ExistPage(int index);
-
-        bool ExistPage(Guid guid);
-
-        bool SetParamToPage(int toPageIndex, int fromPageIndex, params object[] objects);
-
-        bool SetParamToPage(Guid toPageGuid, Guid fromPageGuid, params object[] objects);
+        bool ExistPage(Guid pageGuid);
 
         void Init();
 
@@ -66,8 +60,31 @@ namespace Sunny.UI
 
         List<T> GetPages<T>() where T : UIPage;
 
-        void DealPageAdded(UIPage page);
-        void DealPageSelected(UIPage page);
-        void DealPageRemoved(UIPage page);
+        UIPage SelectedPage { get; }
     }
+
+    public class UIPageParamsArgs : EventArgs
+    {
+        public UIPage SourcePage { get; set; }
+
+        public UIPage DestPage { get; set; }
+
+        public object Value { get; set; }
+
+        public bool Handled { get; set; } = false;
+
+        public UIPageParamsArgs()
+        {
+
+        }
+
+        public UIPageParamsArgs(UIPage sourcePage, UIPage destPage, object value)
+        {
+            SourcePage = sourcePage;
+            DestPage = destPage;
+            Value = value;
+        }
+    }
+
+    public delegate void OnReceiveParams(object sender, UIPageParamsArgs e);
 }

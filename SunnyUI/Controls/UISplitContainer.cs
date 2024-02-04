@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -19,6 +19,8 @@
  * 2021-10-30: V3.0.8 增加文件说明
  * 2022-04-03: V3.1.3 增加主题样式
  * 2022-04-20: V3.1.5 修复调用Collapse()后，展开/收回操作失效
+ * 2022-12-06: V3.3.0 去掉SplitterWidth限制
+ * 2022-12-06: V3.3.0 SplitterWidth值小的时不绘制箭头
 ******************************************************************************/
 using System;
 using System.ComponentModel;
@@ -75,7 +77,7 @@ namespace Sunny.UI
                      ControlStyles.AllPaintingInWmPaint |
                      ControlStyles.OptimizedDoubleBuffer, true);
             _lastDistance = SplitterDistance;
-            SplitterWidth = 10;
+            base.SplitterWidth = 11;
             MinimumSize = new Size(20, 20);
             Version = UIGlobal.Version;
         }
@@ -89,7 +91,7 @@ namespace Sunny.UI
         /// <summary>
         /// 控件缩放前在其容器里的位置
         /// </summary>
-        [Browsable(false)]
+        [Browsable(false), DefaultValue(typeof(Rectangle), "0, 0, 0, 0")]
         public Rectangle ZoomScaleRect { get; set; }
 
         /// <summary>
@@ -99,12 +101,6 @@ namespace Sunny.UI
         public void SetZoomScale(float scale)
         {
 
-        }
-
-        private void SetStyleCustom(bool needRefresh = true)
-        {
-            _style = UIStyle.Custom;
-            if (needRefresh) Invalidate();
         }
 
         private Color barColor = Color.FromArgb(56, 56, 56);
@@ -159,7 +155,7 @@ namespace Sunny.UI
             set
             {
                 arrowColor = value;
-                SetStyleCustom();
+                Invalidate();
             }
         }
 
@@ -249,12 +245,12 @@ namespace Sunny.UI
             }
         }
 
-        private UIStyle _style = UIStyle.Blue;
+        private UIStyle _style = UIStyle.Inherited;
 
         /// <summary>
         /// 主题样式
         /// </summary>
-        [DefaultValue(UIStyle.Blue), Description("主题样式"), Category("SunnyUI")]
+        [DefaultValue(UIStyle.Inherited), Description("主题样式"), Category("SunnyUI")]
         public UIStyle Style
         {
             get => _style;
@@ -264,7 +260,7 @@ namespace Sunny.UI
         /// <summary>
         /// 自定义主题风格
         /// </summary>
-        [DefaultValue(false)]
+        [DefaultValue(false), Browsable(false)]
         [Description("获取或设置可以自定义主题风格"), Category("SunnyUI")]
         public bool StyleCustomMode { get; set; }
 
@@ -285,9 +281,6 @@ namespace Sunny.UI
         {
             get; set;
         }
-
-        [Browsable(false), DefaultValue(false)]
-        public bool IsScaled { get; set; }
 
         public void Collapse()
         {
@@ -374,44 +367,45 @@ namespace Sunny.UI
                 return;
             }
 
-            if (SplitterWidth < 11) SplitterWidth = 11;
+            //if (SplitterWidth < 11) SplitterWidth = 11;
 
             Rectangle arrowRect = CalcArrowRect(CollapseRect);
             Color handleRectColor = _uiControlState == UIControlState.Hover ? handleHoverColor : HandleColor;
             Point[] points = GetHandlePoints();
-            using (Brush br = new SolidBrush(handleRectColor))
-            {
-                e.Graphics.SetHighQuality();
-                e.Graphics.FillPolygon(br, points);
-                e.Graphics.SetDefaultQuality();
-            }
+            using Brush br = new SolidBrush(handleRectColor);
+            e.Graphics.SetHighQuality();
+            e.Graphics.FillPolygon(br, points);
+            e.Graphics.SetDefaultQuality();
 
-            switch (_collapsePanel)
+            if (SplitterWidth >= 9)
             {
-                case UICollapsePanel.Panel1:
-                    if (bHorizontal)
-                    {
-                        e.Graphics.DrawFontImage(SplitPanelState == UISplitPanelState.Collapsed ? 61703 : 61702,
-                            22, arrowColor, arrowRect);
-                    }
-                    else
-                    {
-                        e.Graphics.DrawFontImage(SplitPanelState == UISplitPanelState.Collapsed ? 61701 : 61700,
-                            22, arrowColor, arrowRect);
-                    }
-                    break;
-                case UICollapsePanel.Panel2:
-                    if (bHorizontal)
-                    {
-                        e.Graphics.DrawFontImage(SplitPanelState == UISplitPanelState.Collapsed ? 61702 : 61703,
-                            22, arrowColor, arrowRect);
-                    }
-                    else
-                    {
-                        e.Graphics.DrawFontImage(SplitPanelState == UISplitPanelState.Collapsed ? 61700 : 61701,
-                            22, arrowColor, arrowRect);
-                    }
-                    break;
+                switch (_collapsePanel)
+                {
+                    case UICollapsePanel.Panel1:
+                        if (bHorizontal)
+                        {
+                            e.Graphics.DrawFontImage(SplitPanelState == UISplitPanelState.Collapsed ? 61703 : 61702,
+                                22, arrowColor, arrowRect);
+                        }
+                        else
+                        {
+                            e.Graphics.DrawFontImage(SplitPanelState == UISplitPanelState.Collapsed ? 61701 : 61700,
+                                22, arrowColor, arrowRect);
+                        }
+                        break;
+                    case UICollapsePanel.Panel2:
+                        if (bHorizontal)
+                        {
+                            e.Graphics.DrawFontImage(SplitPanelState == UISplitPanelState.Collapsed ? 61702 : 61703,
+                                22, arrowColor, arrowRect);
+                        }
+                        else
+                        {
+                            e.Graphics.DrawFontImage(SplitPanelState == UISplitPanelState.Collapsed ? 61700 : 61701,
+                                22, arrowColor, arrowRect);
+                        }
+                        break;
+                }
             }
         }
 
@@ -641,7 +635,7 @@ namespace Sunny.UI
         /// 设置主题样式
         /// </summary>
         /// <param name="style">主题样式</param>
-        public void SetStyle(UIStyle style)
+        private void SetStyle(UIStyle style)
         {
             if (!style.IsCustom())
             {
@@ -649,7 +643,13 @@ namespace Sunny.UI
                 Invalidate();
             }
 
-            _style = style;
+            _style = style == UIStyle.Inherited ? UIStyle.Inherited : UIStyle.Custom;
+        }
+
+        public void SetInheritedStyle(UIStyle style)
+        {
+            SetStyle(style);
+            _style = UIStyle.Inherited;
         }
 
         public void SetDPIScale()

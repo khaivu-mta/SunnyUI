@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -19,6 +19,8 @@
  * 2020-01-01: V2.2.0 增加文件说明
  * 2020-05-29: V2.2.5 重写
  * 2020-07-04: V2.2.6 重写下拉窗体，缩短创建时间
+ * 2023-03-26: V3.3.3 修复下拉框鼠标移动位置的Bug
+ * 2023-05-13: V3.3.6 重构DrawString函数
 ******************************************************************************/
 
 using System;
@@ -74,7 +76,7 @@ namespace Sunny.UI
             this.TopPanel.Controls.Add(this.b1);
             this.TopPanel.Dock = System.Windows.Forms.DockStyle.Top;
             this.TopPanel.FillColor = System.Drawing.Color.White;
-            this.TopPanel.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.TopPanel.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.TopPanel.Location = new System.Drawing.Point(0, 0);
             this.TopPanel.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.TopPanel.MinimumSize = new System.Drawing.Size(1, 1);
@@ -97,7 +99,7 @@ namespace Sunny.UI
             this.b4.Cursor = System.Windows.Forms.Cursors.Hand;
             this.b4.FillColor = System.Drawing.Color.White;
             this.b4.FillHoverColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(160)))), ((int)(((byte)(255)))));
-            this.b4.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.b4.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.b4.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(160)))), ((int)(((byte)(255)))));
             this.b4.ImageInterval = 0;
             this.b4.Location = new System.Drawing.Point(427, 4);
@@ -121,7 +123,7 @@ namespace Sunny.UI
             this.b3.Cursor = System.Windows.Forms.Cursors.Hand;
             this.b3.FillColor = System.Drawing.Color.White;
             this.b3.FillHoverColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(160)))), ((int)(((byte)(255)))));
-            this.b3.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.b3.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.b3.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(160)))), ((int)(((byte)(255)))));
             this.b3.ImageInterval = 0;
             this.b3.Location = new System.Drawing.Point(391, 4);
@@ -144,7 +146,7 @@ namespace Sunny.UI
             this.b2.Cursor = System.Windows.Forms.Cursors.Hand;
             this.b2.FillColor = System.Drawing.Color.White;
             this.b2.FillHoverColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(160)))), ((int)(((byte)(255)))));
-            this.b2.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.b2.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.b2.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(160)))), ((int)(((byte)(255)))));
             this.b2.ImageInterval = 0;
             this.b2.Location = new System.Drawing.Point(40, 4);
@@ -167,7 +169,7 @@ namespace Sunny.UI
             this.b1.Cursor = System.Windows.Forms.Cursors.Hand;
             this.b1.FillColor = System.Drawing.Color.White;
             this.b1.FillHoverColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(160)))), ((int)(((byte)(255)))));
-            this.b1.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.b1.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.b1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(160)))), ((int)(((byte)(255)))));
             this.b1.ImageInterval = 0;
             this.b1.Location = new System.Drawing.Point(4, 4);
@@ -191,7 +193,7 @@ namespace Sunny.UI
             this.TabControl.Controls.Add(this.tabPage3);
             this.TabControl.Dock = System.Windows.Forms.DockStyle.Fill;
             this.TabControl.DrawMode = System.Windows.Forms.TabDrawMode.OwnerDrawFixed;
-            this.TabControl.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.TabControl.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.TabControl.ItemSize = new System.Drawing.Size(150, 40);
             this.TabControl.Location = new System.Drawing.Point(0, 31);
             this.TabControl.MainPage = "";
@@ -218,7 +220,7 @@ namespace Sunny.UI
             // 
             this.p1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.p1.FillColor = System.Drawing.Color.White;
-            this.p1.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.p1.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.p1.Location = new System.Drawing.Point(0, 0);
             this.p1.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.p1.MinimumSize = new System.Drawing.Size(1, 1);
@@ -248,7 +250,7 @@ namespace Sunny.UI
             // 
             this.p2.Dock = System.Windows.Forms.DockStyle.Fill;
             this.p2.FillColor = System.Drawing.Color.White;
-            this.p2.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.p2.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.p2.Location = new System.Drawing.Point(0, 0);
             this.p2.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.p2.MinimumSize = new System.Drawing.Size(1, 1);
@@ -278,7 +280,7 @@ namespace Sunny.UI
             // 
             this.p3.Dock = System.Windows.Forms.DockStyle.Fill;
             this.p3.FillColor = System.Drawing.Color.White;
-            this.p3.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.p3.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.p3.Location = new System.Drawing.Point(0, 0);
             this.p3.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.p3.MinimumSize = new System.Drawing.Size(1, 1);
@@ -328,13 +330,15 @@ namespace Sunny.UI
 
         public override void SetDPIScale()
         {
-            if (!IsScaled)
-            {
-                TopPanel.SetDPIScaleFont();
-            }
-
             base.SetDPIScale();
+            if (DesignMode) return;
+            if (!UIDPIScale.NeedSetDPIFont()) return;
+
+            TopPanel.SetDPIScale();
         }
+
+        public DateTime max = DateTime.MaxValue;
+        public DateTime min = DateTime.MinValue;
 
         public void Translate()
         {
@@ -357,6 +361,18 @@ namespace Sunny.UI
         {
             if (TabControl.SelectedIndex > 0)
             {
+                if (TabControl.SelectedIndex == 2)
+                {
+                    if (new DateTime(Year, Month, 1) > max) return;
+                    if (new DateTime(Year, Month, 1).EndOfMonth() < min) return;
+                }
+
+                if (TabControl.SelectedIndex == 1)
+                {
+                    if (Year < min.Year) return;
+                    if (Year > max.Year) return;
+                }
+
                 TabControl.SelectedIndex--;
                 activeDay = -1;
             }
@@ -581,15 +597,20 @@ namespace Sunny.UI
                 int left = width * (i % 4);
                 int top = height * (i / 4);
 
-                SizeF sf = e.Graphics.MeasureString(months[i], Font);
-                if (i + 1 == Month)
+                Color color = ForeColor;
+                if (new DateTime(Year, i + 1, 1) > max || new DateTime(Year, i + 1, 1).EndOfMonth() < min)
                 {
-                    e.Graphics.DrawString(months[i], Font, PrimaryColor, left + (width - sf.Width) / 2, top + (height - sf.Height) / 2);
+                    color = Color.DarkGray;
                 }
                 else
                 {
-                    e.Graphics.DrawString(months[i], Font, i == activeMonth ? PrimaryColor : ForeColor, left + (width - sf.Width) / 2, top + (height - sf.Height) / 2);
+                    if (i + 1 == Month) color = PrimaryColor;
+                    if (i + 1 == Month) color = PrimaryColor;
+                    if (i == activeMonth) color = PrimaryColor;
+                    if (i == activeMonth) color = PrimaryColor;
                 }
+
+                e.Graphics.DrawString(months[i], Font, color, new Rectangle(left, top, width, height), ContentAlignment.MiddleCenter);
             }
         }
 
@@ -601,6 +622,10 @@ namespace Sunny.UI
             int y = e.Location.Y / height;
             Month = x + y * 4 + 1;
             if (Month <= 0 || Month > 12) return;
+
+            if (new DateTime(Year, Month, 1) > max) return;
+            if (new DateTime(Year, Month, 1).EndOfMonth() < min) return;
+
             SetYearMonth(Year, Month);
             activeMonth = -1;
 
@@ -625,6 +650,11 @@ namespace Sunny.UI
             int x = e.Location.X / width;
             int y = e.Location.Y / height;
             int im = x + y * 4;
+
+            if (im + 1 <= 0 || im + 1 > 12) return;
+            if (new DateTime(Year, im + 1, 1) > max) return;
+            if (new DateTime(Year, im + 1, 1).EndOfMonth() < min) return;
+
             if (activeMonth != im)
             {
                 activeMonth = im;
@@ -645,11 +675,22 @@ namespace Sunny.UI
                 int left = width * (i % 4);
                 int top = height * (i / 4);
 
-                SizeF sf = e.Graphics.MeasureString(years[i].ToString(), Font);
                 Color color = (i == 0 || i == 11) ? Color.DarkGray : ForeColor;
+                if (years[i] < min.Year || years[i] > max.Year)
+                {
+                    color = Color.DarkGray;
+                }
+                else
+                {
+                    if (years[i] == Year) color = PrimaryColor;
+                    if (years[i] == Year) color = PrimaryColor;
+                    if (i == activeYear) color = PrimaryColor;
+                    if (i == activeYear) color = PrimaryColor;
+                }
+
                 if (years[i] != 10000)
                 {
-                    e.Graphics.DrawString(years[i].ToString(), Font, (i == activeYear || years[i] == Year) ? PrimaryColor : color, left + (width - sf.Width) / 2, top + (height - sf.Height) / 2);
+                    e.Graphics.DrawString(years[i].ToString(), Font, color, new Rectangle(left, top, width, height), ContentAlignment.MiddleCenter);
                 }
             }
         }
@@ -661,6 +702,12 @@ namespace Sunny.UI
             int x = e.Location.X / width;
             int y = e.Location.Y / height;
             int iy = x + y * 4;
+
+            if (iy < 0) return;
+            if (iy >= 12) return;
+            if (years[iy] < min.Year) return;
+            if (years[iy] > max.Year) return;
+
             if (activeYear != iy)
             {
                 activeYear = iy;
@@ -676,6 +723,9 @@ namespace Sunny.UI
             int y = e.Location.Y / height;
             int iy = x + y * 4;
             if (iy < 0 || iy >= 12) return;
+            if (years[iy] < min.Year) return;
+            if (years[iy] > max.Year) return;
+
             Year = years[iy] > 9999 ? 9999 : years[iy];
             activeYear = -1;
 
@@ -696,21 +746,11 @@ namespace Sunny.UI
         {
             int width = p3.Width / 7;
             int height = (p3.Height - 30) / 6;
-
-            SizeF sf = e.Graphics.MeasureString(UILocalize.Sunday, Font);
-            e.Graphics.DrawString(UILocalize.Sunday, Font, ForeColor, width * 0 + (width - sf.Width) / 2, 4 + (19 - sf.Height) / 2);
-            sf = e.Graphics.MeasureString(UILocalize.Monday, Font);
-            e.Graphics.DrawString(UILocalize.Monday, Font, ForeColor, width * 1 + (width - sf.Width) / 2, 4 + (19 - sf.Height) / 2);
-            sf = e.Graphics.MeasureString(UILocalize.Tuesday, Font);
-            e.Graphics.DrawString(UILocalize.Tuesday, Font, ForeColor, width * 2 + (width - sf.Width) / 2, 4 + (19 - sf.Height) / 2);
-            sf = e.Graphics.MeasureString(UILocalize.Wednesday, Font);
-            e.Graphics.DrawString(UILocalize.Wednesday, Font, ForeColor, width * 3 + (width - sf.Width) / 2, 4 + (19 - sf.Height) / 2);
-            sf = e.Graphics.MeasureString(UILocalize.Thursday, Font);
-            e.Graphics.DrawString(UILocalize.Thursday, Font, ForeColor, width * 4 + (width - sf.Width) / 2, 4 + (19 - sf.Height) / 2);
-            sf = e.Graphics.MeasureString(UILocalize.Friday, Font);
-            e.Graphics.DrawString(UILocalize.Friday, Font, ForeColor, width * 5 + (width - sf.Width) / 2, 4 + (19 - sf.Height) / 2);
-            sf = e.Graphics.MeasureString(UILocalize.Saturday, Font);
-            e.Graphics.DrawString(UILocalize.Saturday, Font, ForeColor, width * 6 + (width - sf.Width) / 2, 4 + (19 - sf.Height) / 2);
+            string[] weeks = { UILocalize.Sunday, UILocalize.Monday, UILocalize.Tuesday, UILocalize.Wednesday, UILocalize.Thursday, UILocalize.Friday, UILocalize.Saturday };
+            for (int i = 0; i < weeks.Length; i++)
+            {
+                e.Graphics.DrawString(weeks[i], Font, ForeColor, new Rectangle(width * i, 4, width, 19), ContentAlignment.MiddleCenter);
+            }
 
             e.Graphics.DrawLine(Color.DarkGray, 8, 26, 268, 26);
 
@@ -719,14 +759,14 @@ namespace Sunny.UI
             {
                 int left = width * (i % 7);
                 int top = height * (i / 7);
-
-                sf = e.Graphics.MeasureString(days[i].Day.ToString(), Font);
                 Color color = (days[i].Month == Month) ? ForeColor : Color.DarkGray;
                 color = (days[i].DateString() == date.DateString()) ? PrimaryColor : color;
+                if (days[i] < min) color = Color.DarkGray;
+                if (days[i] > max) color = Color.DarkGray;
 
                 if (!maxDrawer)
                 {
-                    e.Graphics.DrawString(days[i].Day.ToString(), Font, i == activeDay ? PrimaryColor : color, left + (width - sf.Width) / 2, top + 30 + (height - sf.Height) / 2);
+                    e.Graphics.DrawString(days[i].Day.ToString(), Font, i == activeDay ? PrimaryColor : color, new Rectangle(left, top + 30, width, height), ContentAlignment.MiddleCenter);
                 }
 
                 if (!maxDrawer && days[i].Date.Equals(DateTime.MaxValue.Date))
@@ -737,17 +777,10 @@ namespace Sunny.UI
 
             if (ShowToday)
             {
-                using (Font SubFont = new Font("微软雅黑", 10.5f / UIDPIScale.DPIScale()))
-                {
-                    e.Graphics.FillRectangle(p3.FillColor, p3.Width - width * 4 + 1, p3.Height - height + 1, width * 4 - 2, height - 2);
-                    e.Graphics.FillRoundRectangle(PrimaryColor, new Rectangle(p3.Width - width * 4 + 6, p3.Height - height + 3, 8, height - 10), 3);
-
-                    sf = e.Graphics.MeasureString(UILocalize.Today + ": " + DateTime.Now.DateString(), SubFont);
-                    e.Graphics.DrawString(UILocalize.Today + ": " + DateTime.Now.DateString(), SubFont, isToday ? PrimaryColor : Color.DarkGray, p3.Width - width * 4 + 17, p3.Height - height - 1 + (height - sf.Height) / 2.0f);
-
-                    //sf = e.Graphics.MeasureString(DateTime.Now.DateString(), Font);
-                    //e.Graphics.DrawString(DateTime.Now.DateString(), Font, isToday ? PrimaryColor : Color.DarkGray, p3.Width - width * 4 + 55, p3.Height - height - 1 + (height - sf.Height) / 2.0f);
-                }
+                using Font SubFont = this.Font.DPIScaleFont(10.5f);
+                e.Graphics.FillRectangle(p3.FillColor, p3.Width - width * 4 + 1, p3.Height - height + 1, width * 4 - 2, height - 2);
+                e.Graphics.FillRoundRectangle(PrimaryColor, new Rectangle(p3.Width - width * 4 + 6, p3.Height - height + 3, 8, height - 10), 3);
+                e.Graphics.DrawString(UILocalize.Today + ": " + DateTime.Now.DateString(), SubFont, isToday ? PrimaryColor : Color.DarkGray, new Rectangle(p3.Width - width * 4 + 17, p3.Height - height - 1, Width, height), ContentAlignment.MiddleLeft);
             }
         }
 
@@ -768,6 +801,17 @@ namespace Sunny.UI
             int x = e.Location.X / width;
             int y = (e.Location.Y - 30) / height;
             int iy = x + y * 7;
+
+            if (iy.InRange(0, days.Count - 1))
+            {
+                if (days[iy] < min) return;
+                if (days[iy] > max) return;
+            }
+            else
+            {
+                return;
+            }
+
             bool istoday = ShowToday && e.Location.Y > p3.Top + p3.Height - height && e.Location.X > p3.Left + width * 3;
 
             if (activeDay != iy || istoday != isToday)
@@ -787,11 +831,18 @@ namespace Sunny.UI
             int y = (e.Location.Y - 30) / height;
             int id = x + y * 7;
             if (id < 0 || id >= 42) return;
-            date = days[id].Date;
 
             if (ShowToday && e.Location.Y > p3.Height - height && e.Location.X > p3.Width - width * 4)
             {
+                if (DateTime.Now.Date < min) return;
+                if (DateTime.Now.Date > max) return;
                 date = DateTime.Now.Date;
+            }
+            else
+            {
+                if (days[id].Date < min) return;
+                if (days[id].Date > max) return;
+                date = days[id].Date;
             }
 
             DoValueChanged(this, Date);

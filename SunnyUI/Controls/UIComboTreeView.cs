@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -21,6 +21,10 @@
  * 2022-05-15: V3.0.8 显示CheckBoxes时自己选中节点文字可切换状态
  * 2022-06-16: V3.2.0 增加下拉框宽度、高度
  * 2022-07-12: V3.2.1 修复CanSelectRootNode时可以展开子节点
+ * 2022-11-30: V3.3.0 增加Clear方法
+ * 2023-02-04: V3.3.1 下拉框增加显示全选选择框
+ * 2023-04-02: V3.3.4 显示清除按钮
+ * 2023-06-12: V3.3.8 修复使用清空按钮后，再次打开下拉框，上次的选择内容还是存在
 ******************************************************************************/
 
 using System;
@@ -59,6 +63,38 @@ namespace Sunny.UI
             this.PerformLayout();
         }
 
+        /// <summary> 
+        /// 必需的设计器变量。
+        /// </summary>
+        private System.ComponentModel.IContainer components = null;
+
+        /// <summary> 
+        /// 清理所有正在使用的资源。
+        /// </summary>
+        /// <param name="disposing">如果应释放托管资源，为 true；否则为 false。</param>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && (components != null))
+            {
+                components.Dispose();
+            }
+
+            item?.Dispose();
+            base.Dispose(disposing);
+        }
+
+        [DefaultValue(false)]
+        [Description("显示清除按钮"), Category("SunnyUI")]
+        public bool ShowClearButton
+        {
+            get => showClearButton;
+            set => showClearButton = value;
+        }
+
+        [DefaultValue(true)]
+        [Description("下拉框显示全选选择框"), Category("SunnyUI")]
+        public bool ShowSelectedAllCheckBox { get; set; } = true;
+
         [DefaultValue(250)]
         [Description("下拉框宽度"), Category("SunnyUI")]
         public int DropDownWidth { get; set; }
@@ -76,14 +112,10 @@ namespace Sunny.UI
             return edit;
         }
 
-        /// <summary>
-        /// 重载字体变更
-        /// </summary>
-        /// <param name="e">参数</param>
-        protected override void OnFontChanged(EventArgs e)
+        public override void Clear()
         {
-            base.OnFontChanged(e);
-            if (item != null) item.TreeView.Font = Font;
+            base.Clear();
+            TreeView.Nodes.Clear();
         }
 
         [Browsable(false)]
@@ -203,13 +235,26 @@ namespace Sunny.UI
 
         private void UIComboTreeView_ButtonClick(object sender, EventArgs e)
         {
+            if (NeedDrawClearButton)
+            {
+                NeedDrawClearButton = false;
+                Text = "";
+                TreeView.SelectedNode = null;
+                TreeView.UnCheckedAll();
+                Invalidate();
+                return;
+            }
+
             ItemForm.Size = ItemSize;
             //item.TreeView.ExpandAll();
             item.CanSelectRootNode = CanSelectRootNode;
             item.Translate();
             item.SetDPIScale();
             //ItemForm.Show(this);
-            ItemForm.Show(this, new Size(DropDownWidth < Width ? Width : DropDownWidth, DropDownHeight));
+            int width = DropDownWidth < Width ? Width : DropDownWidth;
+            width = Math.Max(250, width);
+            item.ShowSelectedAllCheckBox = ShowSelectedAllCheckBox;
+            ItemForm.Show(this, new Size(width, DropDownHeight));
         }
 
         [DefaultValue(typeof(Size), "250, 220"), Description("下拉弹框界面大小"), Category("SunnyUI")]

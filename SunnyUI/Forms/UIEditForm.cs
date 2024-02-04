@@ -1,6 +1,6 @@
-﻿/******************************************************************************
+/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -22,11 +22,15 @@
  * 2021-10-26: V3.0.8 代码生成增加ComboTreeView类型
  * 2021-10-28: V3.0.8 代码生成增加ComboCheckedListBox类型
  * 2022-04-18: V3.1.5 修改一处Show引起的无法获取控件值的问题
+ * 2023-04-23: V3.3.5 代码生成增加，Double类型增加小数点位数
+ * 2023-07-27: V3.4.1 默认提示弹窗TopMost为true
+ * 2023-10-31: V3.5.2 代码生成增加ComboDataGridView类型
 ******************************************************************************/
 
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -40,6 +44,7 @@ namespace Sunny.UI
 
             btnOK.Text = UILocalize.OK;
             btnCancel.Text = UILocalize.Cancel;
+            base.TopMost = true;
         }
 
         private readonly UIEditOption Option;
@@ -55,14 +60,14 @@ namespace Sunny.UI
 
             if (Option.AutoLabelWidth)
             {
-                float size = 0;
+                int size = 0;
                 foreach (var info in Option.Infos)
                 {
-                    SizeF sf = info.Text.MeasureString(Font);
+                    Size sf = TextRenderer.MeasureText(info.Text, Font);
                     size = Math.Max(sf.Width, size);
                 }
 
-                Option.LabelWidth = (int)size + 1 + 50;
+                Option.LabelWidth = size + 1 + 50;
             }
 
             Width = Option.LabelWidth + Option.ValueWidth + 28;
@@ -111,6 +116,7 @@ namespace Sunny.UI
                 {
                     ctrl = new UITextBox();
                     var edit = (UITextBox)ctrl;
+                    edit.DecimalPlaces = info.DecimalPlaces;
                     edit.Type = UITextBox.UIEditType.Double;
                     edit.DoubleValue = info.Value.ToString().ToDouble();
                     edit.EnterAsTab = true;
@@ -143,9 +149,9 @@ namespace Sunny.UI
                         string[] items = (string[])info.DataSource;
                         edit.ActiveText = items[0];
                         edit.InActiveText = items[1];
-                        SizeF sf1 = GDI.MeasureString(items[0], edit.Font);
-                        SizeF sf2 = GDI.MeasureString(items[0], edit.Font);
-                        edit.Width = (int)Math.Max(sf1.Width, sf2.Width) + edit.Height + 16;
+                        Size sf1 = TextRenderer.MeasureText(items[0], edit.Font);
+                        Size sf2 = TextRenderer.MeasureText(items[0], edit.Font);
+                        edit.Width = Math.Max(sf1.Width, sf2.Width) + edit.Height + 16;
                     }
                 }
 
@@ -209,6 +215,29 @@ namespace Sunny.UI
                     }
                 }
 
+                if (info.EditType == EditType.ComboDataGridView)
+                {
+                    ctrl = new UIComboDataGridView();
+                    var edit = (UIComboDataGridView)ctrl;
+                    edit.DataGridView.Init();
+                    edit.DataGridView.AutoGenerateColumns = true;
+                    var obj = (DataTable)info.DataSource;
+                    edit.DataGridView.DataSource = obj;
+                    edit.DataGridView.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+                    foreach (DataGridViewColumn item in edit.DataGridView.Columns)
+                    {
+                        item.ReadOnly = true;
+                    }
+
+                    edit.SelectIndexChange += Edit_SelectIndexChange;
+                    int index = (int)info.Value;
+                    if (index >= 0)
+                    {
+                        edit.DataGridView.SelectedIndex = index;
+                        edit.Text = obj.Rows[index][info.DisplayMember].ToString();
+                    }
+                }
+
                 if (ctrl != null)
                 {
                     ctrl.Left = Option.LabelWidth;
@@ -242,12 +271,21 @@ namespace Sunny.UI
             btnOK.ShowFocusLine = btnCancel.ShowFocusLine = true;
         }
 
+        private void Edit_SelectIndexChange(object sender, int index)
+        {
+            UIComboDataGridView edit = (UIComboDataGridView)sender;
+            var info = Option.Dictionary[edit.Name.Replace("Edit_", "")];
+            var obj = (DataTable)info.DataSource;
+            edit.Text = obj.Rows[index][info.DisplayMember].ToString();
+        }
+
         public UIEditForm(UIEditOption option)
         {
             InitializeComponent();
 
             btnOK.Text = UILocalize.OK;
             btnCancel.Text = UILocalize.Cancel;
+            base.TopMost = true;
 
             Option = option;
             InitEditor();
@@ -435,6 +473,13 @@ namespace Sunny.UI
 
                         info.Value = result.ToArray();
                     }
+
+                    if (info.EditType == EditType.ComboDataGridView)
+                    {
+                        UIComboDataGridView edit = this.GetControl<UIComboDataGridView>("Edit_" + info.DataPropertyName);
+                        if (edit == null) continue;
+                        info.Value = edit.DataGridView.SelectedIndex;
+                    }
                 }
             }
 
@@ -500,7 +545,7 @@ namespace Sunny.UI
 
         protected bool CheckRange(UITextBox edit, double min, double max, string desc)
         {
-            bool result = edit.DoubleValue >= min && edit.IntValue <= max;
+            bool result = edit.DoubleValue >= min && edit.DoubleValue <= max;
             if (!result)
             {
                 UIMessageTip.ShowWarning(edit, desc);

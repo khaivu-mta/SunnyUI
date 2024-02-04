@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -20,6 +20,8 @@
  * 2021-06-19: V3.0.4 增加方形显示，优化渐变色
  * 2021-08-07: V3.0.5 默认不显示灯光亮线
  * 2022-05-15: V3.1.8 增加文字显示
+ * 2023-05-12: V3.3.6 重构DrawString函数
+ * 2023-08-28: V3.4.2 恢复全局矩形设计时圆形灯光效果
 ******************************************************************************/
 
 using System;
@@ -89,8 +91,7 @@ namespace Sunny.UI
         /// <param name="path">绘图路径</param>
         protected override void OnPaintFore(Graphics g, GraphicsPath path)
         {
-            SizeF sf = g.MeasureString(Text, Font);
-            g.DrawString(Text, Font, ForeColor, Width / 2 - sf.Width / 2, Height / 2 - sf.Height / 2);
+            g.DrawString(Text, Font, ForeColor, ClientRectangle, TextAlign);
         }
 
         [DefaultValue(500), Description("显示间隔"), Category("SunnyUI")]
@@ -179,33 +180,29 @@ namespace Sunny.UI
             if (Shape == UIShape.Circle)
             {
                 if (Radius != ShowSize) Radius = ShowSize;
-                GraphicsPath CirclePath = new GraphicsPath();
+                using GraphicsPath CirclePath = new GraphicsPath();
                 CirclePath.AddEllipse(2, 2, ShowSize - 4, ShowSize - 4);
                 g.Smooth();
 
                 if (ShowCenterColor)
                 {
                     Color[] surroundColor = new Color[] { color };
-                    PathGradientBrush gradientBrush = new PathGradientBrush(path);
+                    using GraphicsPath path1 = ClientRectangle.CreateTrueRoundedRectanglePath(Height);
+                    using PathGradientBrush gradientBrush = new PathGradientBrush(path1);
                     gradientBrush.CenterPoint = new PointF(ShowSize / 2.0f, ShowSize / 2.0f);
                     gradientBrush.CenterColor = cColor;
                     gradientBrush.SurroundColors = surroundColor;
                     g.FillPath(gradientBrush, CirclePath);
-                    gradientBrush.Dispose();
                 }
                 else
                 {
                     g.FillPath(color, CirclePath);
                 }
 
-                CirclePath.Dispose();
-
                 if (ShowLightLine)
                 {
                     int size = (ShowSize - 4) / 5;
-                    g.DrawArc(cColor, size, size,
-                        ShowSize - size * 2, ShowSize - size * 2,
-                        45, -155);
+                    g.DrawArc(cColor, size, size, ShowSize - size * 2, ShowSize - size * 2, 45, -155);
                 }
             }
 
@@ -216,7 +213,7 @@ namespace Sunny.UI
 
                 if (ShowCenterColor)
                 {
-                    GraphicsPath CirclePath = new GraphicsPath();
+                    using GraphicsPath CirclePath = new GraphicsPath();
                     Point[] p = {
                         new Point(3,3),new Point(ShowSize-3,3),
                         new Point(ShowSize-3,ShowSize-3),new Point(3,ShowSize-3)
@@ -226,13 +223,11 @@ namespace Sunny.UI
                     g.Smooth();
 
                     Color[] surroundColor = new Color[] { color };
-                    PathGradientBrush gradientBrush = new PathGradientBrush(path);
+                    using PathGradientBrush gradientBrush = new PathGradientBrush(path);
                     gradientBrush.CenterPoint = new PointF(ShowSize / 2.0f, ShowSize / 2.0f);
                     gradientBrush.CenterColor = cColor;
                     gradientBrush.SurroundColors = surroundColor;
                     g.FillPath(gradientBrush, CirclePath);
-                    gradientBrush.Dispose();
-                    CirclePath.Dispose();
                 }
             }
         }

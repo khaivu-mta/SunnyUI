@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -20,12 +20,16 @@
  * 2022-01-05: V3.0.9 增加线的样式，支持透明背景
  * 2022-01-10: V3.1.0 修复了文本为空不显示的问题
  * 2022-03-19: V3.1.1 重构主题配色
+ * 2022-11-26: V3.2.9 水平方向文字不居中时，可设置线条渐变色
+ * 2023-05-12: V3.3.6 重构DrawString函数
+ * 2023-11-16: V3.5.2 重构主题
 ******************************************************************************/
 
 using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Windows.Forms;
 
 namespace Sunny.UI
 {
@@ -37,8 +41,11 @@ namespace Sunny.UI
             SetStyleFlags(true, false);
             Size = new Size(360, 29);
             MinimumSize = new Size(1, 1);
-            foreColor = UIStyles.Blue.LineForeColor;
-            fillColor = UIStyles.Blue.LineFillColor;
+            ForeColor = UIStyles.Blue.LineForeColor;
+            fillColor = UIColor.Transparent;
+            fillColor2 = UIStyles.Blue.PanelFillColor2;
+            BackColor = UIColor.Transparent;
+            rectColor = UIStyles.Blue.LineRectColor;
         }
 
         public enum LineDirection
@@ -91,19 +98,10 @@ namespace Sunny.UI
             base.SetStyleColor(uiColor);
 
             rectColor = uiColor.LineRectColor;
-            foreColor = uiColor.LineForeColor;
-            fillColor = uiColor.LineFillColor;
-        }
-
-        /// <summary>
-        /// 字体颜色
-        /// </summary>
-        [Description("字体颜色"), Category("SunnyUI")]
-        [DefaultValue(typeof(Color), "48, 48, 48")]
-        public override Color ForeColor
-        {
-            get => foreColor;
-            set => SetForeColor(value);
+            ForeColor = uiColor.LineForeColor;
+            fillColor2 = uiColor.PanelFillColor2;
+            fillColor = UIColor.Transparent;
+            BackColor = UIColor.Transparent;
         }
 
         private UILineCap startCap = UILineCap.None;
@@ -178,7 +176,7 @@ namespace Sunny.UI
         {
             SizeF sf = new SizeF(0, 0);
             float x = 0;
-            Pen pen = new Pen(rectColor, lineSize);
+            using Pen pen = new Pen(rectColor, lineSize);
             if (LineDashStyle != UILineDashStyle.None)
             {
                 pen.DashStyle = (DashStyle)((int)LineDashStyle);
@@ -188,51 +186,34 @@ namespace Sunny.UI
             {
                 if (Text.IsValid())
                 {
-                    sf = g.MeasureString(Text, Font);
+                    sf = TextRenderer.MeasureText(Text, Font);
                     switch (TextAlign)
                     {
-                        case ContentAlignment.BottomLeft:
-                            g.DrawString(Text, Font, foreColor, Padding.Left + TextInterval + 2, (Height + lineSize) / 2.0f);
-                            break;
-
+                        case ContentAlignment.TopLeft:
+                            g.DrawString(Text, Font, ForeColor, new Rectangle(Padding.Left + TextInterval + 2, 0, Width - Padding.Left - textInterval - 2 - Padding.Right - textInterval - 2, (Height - lineSize) / 2), ContentAlignment.BottomLeft); break;
+                        case ContentAlignment.TopCenter:
+                            g.DrawString(Text, Font, ForeColor, new Rectangle(Padding.Left + TextInterval + 2, 0, Width - Padding.Left - textInterval - 2 - Padding.Right - textInterval - 2, (Height - lineSize) / 2), ContentAlignment.BottomCenter); break;
+                        case ContentAlignment.TopRight:
+                            g.DrawString(Text, Font, ForeColor, new Rectangle(Padding.Left + TextInterval + 2, 0, Width - Padding.Left - textInterval - 2 - Padding.Right - textInterval - 2, (Height - lineSize) / 2), ContentAlignment.BottomRight); break;
                         case ContentAlignment.MiddleLeft:
                             x = Padding.Left + TextInterval;
-                            g.DrawString(Text, Font, foreColor, Padding.Left + TextInterval + 2, (Height - sf.Height) / 2);
-                            break;
-
-                        case ContentAlignment.TopLeft:
-                            g.DrawString(Text, Font, foreColor, Padding.Left + TextInterval + 2, (Height - lineSize) / 2.0f - sf.Height);
-                            break;
-
-                        case ContentAlignment.BottomCenter:
-                            g.DrawString(Text, Font, foreColor, (Width - sf.Width) / 2, (Height + lineSize) / 2.0f);
-                            break;
-
+                            g.DrawString(Text, Font, ForeColor, new Rectangle(Padding.Left + TextInterval + 2, 0, Width - Padding.Left - textInterval - 2 - Padding.Right - textInterval - 2, Height), TextAlign); break;
                         case ContentAlignment.MiddleCenter:
                             x = (Width - sf.Width) / 2 - 2;
-                            g.DrawString(Text, Font, foreColor, (Width - sf.Width) / 2, (Height - sf.Height) / 2);
-                            break;
-
-                        case ContentAlignment.TopCenter:
-                            g.DrawString(Text, Font, foreColor, (Width - sf.Width) / 2, (Height - lineSize) / 2.0f - sf.Height);
-                            break;
-
-                        case ContentAlignment.BottomRight:
-                            g.DrawString(Text, Font, foreColor, Width - sf.Width - TextInterval - 2 - Padding.Right, (Height + lineSize) / 2.0f);
-                            break;
-
+                            g.DrawString(Text, Font, ForeColor, new Rectangle(Padding.Left + TextInterval + 2, 0, Width - Padding.Left - textInterval - 2 - Padding.Right - textInterval - 2, Height), TextAlign); break;
                         case ContentAlignment.MiddleRight:
                             x = Width - sf.Width - TextInterval - 4 - Padding.Right;
-                            g.DrawString(Text, Font, foreColor, Width - sf.Width - TextInterval - 2 - Padding.Right, (Height - sf.Height) / 2);
-                            break;
-
-                        case ContentAlignment.TopRight:
-                            g.DrawString(Text, Font, foreColor, Width - sf.Width - TextInterval - 2 - Padding.Right, (Height - lineSize) / 2.0f - sf.Height);
-                            break;
+                            g.DrawString(Text, Font, ForeColor, new Rectangle(Padding.Left + TextInterval + 2, 0, Width - Padding.Left - textInterval - 2 - Padding.Right - textInterval - 2, Height), TextAlign); break;
+                        case ContentAlignment.BottomLeft:
+                            g.DrawString(Text, Font, ForeColor, new Rectangle(Padding.Left + TextInterval + 2, (Height + lineSize) / 2, Width - Padding.Left - textInterval - 2 - Padding.Right - textInterval - 2, Height), ContentAlignment.TopLeft); break;
+                        case ContentAlignment.BottomCenter:
+                            g.DrawString(Text, Font, ForeColor, new Rectangle(Padding.Left + TextInterval + 2, (Height + lineSize) / 2, Width - Padding.Left - textInterval - 2 - Padding.Right - textInterval - 2, Height), ContentAlignment.TopCenter); break;
+                        case ContentAlignment.BottomRight:
+                            g.DrawString(Text, Font, ForeColor, new Rectangle(Padding.Left + TextInterval + 2, (Height + lineSize) / 2, Width - Padding.Left - textInterval - 2 - Padding.Right - textInterval - 2, Height), ContentAlignment.TopRight); break;
                     }
                 }
 
-                int top = (Height - lineSize) / 2;
+                int top = Height / 2;
                 if (Text.IsValid())
                 {
                     switch (TextAlign)
@@ -244,13 +225,31 @@ namespace Sunny.UI
                             g.DrawLine(pen, x + sf.Width + 2, top, Width - 2 - Padding.Left - Padding.Right, top);
                             break;
                         default:
-                            g.DrawLine(pen, Padding.Left, top, Width - 2 - Padding.Left - Padding.Right, top);
+                            if (LineColorGradient)
+                            {
+                                top = (Height - lineSize) / 2;
+                                using LinearGradientBrush br = new LinearGradientBrush(new Point(0, 0), new Point(Width, 0), LineColor, LineColor2);
+                                g.FillRectangle(br, new Rectangle(Padding.Left, top, Width - 2 - Padding.Left - Padding.Right, LineSize));
+                            }
+                            else
+                            {
+                                g.DrawLine(pen, Padding.Left, top, Width - 2 - Padding.Left - Padding.Right, top);
+                            }
                             break;
                     }
                 }
                 else
                 {
-                    g.DrawLine(pen, Padding.Left, top, Width - 2 - Padding.Left - Padding.Right, top);
+                    if (LineColorGradient)
+                    {
+                        top = (Height - lineSize) / 2;
+                        using LinearGradientBrush br = new LinearGradientBrush(new Point(0, 0), new Point(Width, 0), LineColor, LineColor2);
+                        g.FillRectangle(br, new Rectangle(Padding.Left, top, Width - 2 - Padding.Left - Padding.Right, LineSize));
+                    }
+                    else
+                    {
+                        g.DrawLine(pen, Padding.Left, top, Width - 2 - Padding.Left - Padding.Right, top);
+                    }
                 }
 
                 switch (startCap)
@@ -291,8 +290,6 @@ namespace Sunny.UI
                 int left = (Width - lineSize) / 2;
                 g.DrawLine(pen, left, Padding.Top, left, Height - Padding.Top - Padding.Bottom);
             }
-
-            pen.Dispose();
         }
 
         UILineDashStyle lineDashStyle = UILineDashStyle.None;
@@ -315,7 +312,7 @@ namespace Sunny.UI
         /// 填充颜色，当值为背景色或透明色或空值则不填充
         /// </summary>
         [Description("填充颜色"), Category("SunnyUI")]
-        [DefaultValue(typeof(Color), "243, 249, 255")]
+        [DefaultValue(typeof(Color), "Transparent")]
         public Color FillColor
         {
             get => fillColor;
@@ -323,14 +320,40 @@ namespace Sunny.UI
         }
 
         /// <summary>
-        /// 边框颜色
+        /// 线颜色
         /// </summary>
-        [Description("边框颜色"), Category("SunnyUI")]
+        [Description("线颜色"), Category("SunnyUI")]
         [DefaultValue(typeof(Color), "80, 160, 255")]
         public Color LineColor
         {
             get => rectColor;
             set => SetRectColor(value);
+        }
+
+        /// <summary>
+        /// 线颜色2
+        /// </summary>
+        [Description("线颜色2"), Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "243, 249, 255")]
+        public Color LineColor2
+        {
+            get => fillColor2;
+            set => SetFillColor2(value);
+        }
+
+        [Description("线颜色渐变"), Category("SunnyUI")]
+        [DefaultValue(false)]
+        public bool LineColorGradient
+        {
+            get => fillColorGradient;
+            set
+            {
+                if (fillColorGradient != value)
+                {
+                    fillColorGradient = value;
+                    Invalidate();
+                }
+            }
         }
     }
 }

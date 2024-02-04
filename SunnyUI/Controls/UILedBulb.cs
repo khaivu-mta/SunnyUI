@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -53,7 +53,7 @@ namespace Sunny.UI
         /// <summary>
         /// 控件缩放前在其容器里的位置
         /// </summary>
-        [Browsable(false)]
+        [Browsable(false), DefaultValue(typeof(Rectangle), "0, 0, 0, 0")]
         public Rectangle ZoomScaleRect { get; set; }
 
         /// <summary>
@@ -143,15 +143,13 @@ namespace Sunny.UI
         protected override void OnPaint(PaintEventArgs e)
         {
             // Create an offscreen graphics object for double buffering
-            Bitmap offScreenBmp = new Bitmap(ClientRectangle.Width, ClientRectangle.Height);
-            using (var g = Graphics.FromImage(offScreenBmp))
-            {
-                g.SetHighQuality();
-                // Draw the control
-                drawControl(g, On);
-                // Draw the image to the screen
-                e.Graphics.DrawImageUnscaled(offScreenBmp, 0, 0);
-            }
+            using Bitmap offScreenBmp = new Bitmap(ClientRectangle.Width, ClientRectangle.Height);
+            using var g = Graphics.FromImage(offScreenBmp);
+            g.SetHighQuality();
+            // Draw the control
+            drawControl(g, On);
+            // Draw the image to the screen
+            e.Graphics.DrawImageUnscaled(offScreenBmp, 0, 0);
         }
 
         /// <summary>
@@ -176,27 +174,25 @@ namespace Sunny.UI
             g.FillEllipse(darkColor, rectangle);
 
             // Draw the glow gradient
-            var path = new GraphicsPath();
+            using var path = new GraphicsPath();
             path.AddEllipse(rectangle);
-            var pathBrush = new PathGradientBrush(path);
+            using var pathBrush = new PathGradientBrush(path);
             pathBrush.CenterColor = lightColor;
             pathBrush.SurroundColors = new[] { Color.FromArgb(0, lightColor) };
             g.SetHighQuality();
             g.FillEllipse(pathBrush, rectangle);
-            pathBrush.Dispose();
 
             // Draw the white reflection gradient
             var offset = Convert.ToInt32(diameter * .15F);
             var diameter1 = Convert.ToInt32(rectangle.Width * .8F);
             var whiteRect = new Rectangle(rectangle.X - offset, rectangle.Y - offset, diameter1, diameter1);
-            var path1 = new GraphicsPath();
+            using var path1 = new GraphicsPath();
             path1.AddEllipse(whiteRect);
-            var pathBrush1 = new PathGradientBrush(path);
+            using var pathBrush1 = new PathGradientBrush(path);
             pathBrush1.CenterColor = _reflectionColor;
             pathBrush1.SurroundColors = _surroundColor;
             g.SetHighQuality();
             g.FillEllipse(pathBrush1, whiteRect);
-            pathBrush1.Dispose();
 
             // Draw the border
             g.SetClip(ClientRectangle);
@@ -204,10 +200,8 @@ namespace Sunny.UI
 
             if (On)
             {
-                using (Pen pn = new Pen(Color.FromArgb(85, Color.Black), 1F))
-                {
-                    g.DrawEllipse(pn, rectangle);
-                }
+                using Pen pn = new Pen(Color.FromArgb(85, Color.Black), 1F);
+                g.DrawEllipse(pn, rectangle);
             }
 
             g.SetDefaultQuality();

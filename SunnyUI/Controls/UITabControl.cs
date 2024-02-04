@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -30,6 +30,9 @@
  * 2022-05-11: V3.1.8 修复屏蔽左右键后其他控件无法使用左右键的问题
  * 2022-05-17: V3.1.9 修复了一个首页无法关闭的问题
  * 2022-06-19: V3.2.0 多页面框架关闭页面时执行UIPage的FormClosed事件
+ * 2023-05-12: V3.3.6 重构DrawString函数
+ * 2023-11-06: V3.5.2 重构主题
+ * 2023-12-13: V3.6.2 优化UIPage的Init和Final加载逻辑
 ******************************************************************************/
 
 using Sunny.UI.Win32;
@@ -60,11 +63,12 @@ namespace Sunny.UI
 
             ItemSize = new Size(150, 40);
             DrawMode = TabDrawMode.OwnerDrawFixed;
-            Font = UIFontColor.Font();
+            base.Font = UIStyles.Font();
             AfterSetFillColor(FillColor);
             Version = UIGlobal.Version;
 
             Helper = new UITabControlHelper(this);
+            Helper.TabPageAndUIPageChanged += Helper_TabPageAndUIPageChanged;
             timer = new Timer();
             timer.Interval = 500;
             timer.Tick += Timer_Tick;
@@ -77,7 +81,14 @@ namespace Sunny.UI
             _fillColor = UIStyles.Blue.TabControlBackColor;
         }
 
-        [Browsable(false)]
+        private void Helper_TabPageAndUIPageChanged(object sender, TabPageAndUIPageArgs e)
+        {
+            TabPageAndUIPageChanged?.Invoke(this, e);
+        }
+
+        public event TabPageAndUIPageEventHandler TabPageAndUIPageChanged;
+
+        [Browsable(false), DefaultValue(null)]
         public IFrame Frame
         {
             get; set;
@@ -92,7 +103,7 @@ namespace Sunny.UI
         /// <summary>
         /// 控件缩放前在其容器里的位置
         /// </summary>
-        [Browsable(false)]
+        [Browsable(false), DefaultValue(typeof(Rectangle), "0, 0, 0, 0")]
         public Rectangle ZoomScaleRect { get; set; }
 
         /// <summary>
@@ -148,10 +159,10 @@ namespace Sunny.UI
             }
         }
 
-        private Font tipsFont = UIFontColor.SubFont();
+        private Font tipsFont = UIStyles.SubFont();
 
         [Description("角标文字字体"), Category("SunnyUI")]
-        [DefaultValue(typeof(Font), "微软雅黑, 9pt")]
+        [DefaultValue(typeof(Font), "宋体, 9pt")]
         public Font TipsFont
         {
             get { return tipsFont; }
@@ -165,16 +176,13 @@ namespace Sunny.UI
             }
         }
 
-        [Browsable(false)]
-        public bool IsScaled { get; private set; }
+        private float DefaultFontSize = -1;
 
         public void SetDPIScale()
         {
-            if (!IsScaled)
-            {
-                this.SetDPIScaleFont();
-                IsScaled = true;
-            }
+            if (!UIDPIScale.NeedSetDPIFont()) return;
+            if (DefaultFontSize < 0) DefaultFontSize = this.Font.Size;
+            this.SetDPIScaleFont(DefaultFontSize);
         }
 
         protected override void Dispose(bool disposing)
@@ -245,6 +253,8 @@ namespace Sunny.UI
 
         public bool RemovePage(Guid guid) => Helper.RemovePage(guid);
 
+        public void RemoveAllPages(bool keepMainPage = true) => Helper.RemoveAllPages(keepMainPage);
+
         public UIPage GetPage(int pageIndex) => Helper.GetPage(pageIndex);
 
         public UIPage GetPage(Guid guid) => Helper.GetPage(guid);
@@ -261,8 +271,11 @@ namespace Sunny.UI
         public void AddPage(UIPage page)
         {
             Helper.AddPage(page);
-            Frame?.DealPageAdded(page);
+            PageAdded?.Invoke(this, new UIPageEventArgs(page));
         }
+
+        internal event OnUIPageChanged PageAdded;
+        internal event OnUIPageChanged PageRemoved;
 
         public void AddPage(int pageIndex, UITabControl page) => Helper.AddPage(pageIndex, page);
 
@@ -297,12 +310,9 @@ namespace Sunny.UI
         /// <summary>
         /// 自定义主题风格
         /// </summary>
-        [DefaultValue(false)]
+        [DefaultValue(false), Browsable(false)]
         [Description("获取或设置可以自定义主题风格"), Category("SunnyUI")]
-        public bool StyleCustomMode
-        {
-            get; set;
-        }
+        public bool StyleCustomMode { get; set; }
 
         private HorizontalAlignment textAlignment = HorizontalAlignment.Center;
 
@@ -356,14 +366,8 @@ namespace Sunny.UI
             {
                 _fillColor = value;
                 AfterSetFillColor(value);
-                SetStyleCustom();
+                Invalidate();
             }
-        }
-
-        private void SetStyleCustom(bool needRefresh = true)
-        {
-            _style = UIStyle.Custom;
-            if (needRefresh) Invalidate();
         }
 
         /// <summary>
@@ -421,7 +425,7 @@ namespace Sunny.UI
                 if (tabSelectedForeColor != value)
                 {
                     tabSelectedForeColor = value;
-                    SetStyleCustom();
+                    Invalidate();
                 }
             }
         }
@@ -463,7 +467,7 @@ namespace Sunny.UI
                 if (tabSelectedHighColor != value)
                 {
                     tabSelectedHighColor = value;
-                    SetStyleCustom();
+                    Invalidate();
                 }
             }
         }
@@ -488,12 +492,12 @@ namespace Sunny.UI
             }
         }
 
-        private UIStyle _style = UIStyle.Blue;
+        private UIStyle _style = UIStyle.Inherited;
 
         /// <summary>
         /// 主题样式
         /// </summary>
-        [DefaultValue(UIStyle.Blue), Description("主题样式"), Category("SunnyUI")]
+        [DefaultValue(UIStyle.Inherited), Description("主题样式"), Category("SunnyUI")]
         public UIStyle Style
         {
             get => _style;
@@ -525,7 +529,11 @@ namespace Sunny.UI
             }
         }
 
-        public void SetStyle(UIStyle style)
+        /// <summary>
+        /// 设置主题样式
+        /// </summary>
+        /// <param name="style">主题样式</param>
+        private void SetStyle(UIStyle style)
         {
             if (!style.IsCustom())
             {
@@ -533,7 +541,13 @@ namespace Sunny.UI
                 Invalidate();
             }
 
-            _style = style;
+            _style = style == UIStyle.Inherited ? UIStyle.Inherited : UIStyle.Custom;
+        }
+
+        public void SetInheritedStyle(UIStyle style)
+        {
+            SetStyle(style);
+            _style = UIStyle.Inherited;
         }
 
         public void SetStyleColor(UIBaseStyle uiColor)
@@ -638,10 +652,7 @@ namespace Sunny.UI
                     TabRect = new Rectangle(GetTabRect(index).Location.X - 2, GetTabRect(index).Location.Y + 2, ItemSize.Width, ItemSize.Height);
                 }
 
-                Bitmap bmp = new Bitmap(TabRect.Width, TabRect.Height);
-                Graphics g = Graphics.FromImage(bmp);
-
-                SizeF sf = e.Graphics.MeasureString(TabPages[index].Text, Font);
+                Size sf = TextRenderer.MeasureText(TabPages[index].Text, Font);
                 int textLeft = ImageList?.ImageSize.Width ?? 0;
                 if (ImageList != null) textLeft += 4 + 4 + 6;
                 if (TextAlignment == HorizontalAlignment.Right)
@@ -650,23 +661,16 @@ namespace Sunny.UI
                     textLeft = textLeft + (int)((TabRect.Width - textLeft - sf.Width) / 2.0f);
 
                 // 绘制标题
-                g.Clear(TabBackColor);
+                e.Graphics.FillRectangle(tabBackColor, TabRect);
                 if (index == SelectedIndex)
                 {
-                    g.Clear(TabSelectedColor);
-
+                    e.Graphics.FillRectangle(TabSelectedColor, TabRect);
                     if (TabSelectedHighColorSize > 0)
-                        g.FillRectangle(TabSelectedHighColor, 0, bmp.Height - TabSelectedHighColorSize, bmp.Width, TabSelectedHighColorSize);
+                        e.Graphics.FillRectangle(TabSelectedHighColor, TabRect.Left, TabRect.Height - TabSelectedHighColorSize, TabRect.Width, TabSelectedHighColorSize);
                 }
 
-                if (Alignment == TabAlignment.Bottom)
-                {
-                    g.DrawString(TabPages[index].Text, Font, index == SelectedIndex ? tabSelectedForeColor : TabUnSelectedForeColor, textLeft, (TabRect.Height - sf.Height - TabSelectedHighColorSize) / 2.0f);
-                }
-                else
-                {
-                    g.DrawString(TabPages[index].Text, Font, index == SelectedIndex ? tabSelectedForeColor : TabUnSelectedForeColor, textLeft, 2 + (TabRect.Height - sf.Height - TabSelectedHighColorSize) / 2.0f);
-                }
+                e.Graphics.DrawString(TabPages[index].Text, Font, index == SelectedIndex ? tabSelectedForeColor : TabUnSelectedForeColor,
+                    new Rectangle(TabRect.Left + textLeft, TabRect.Top, TabRect.Width, TabRect.Height), ContentAlignment.MiddleLeft);
 
                 var menuItem = Helper[index];
                 bool show1 = TabPages[index].Text != MainPage;
@@ -683,7 +687,7 @@ namespace Sunny.UI
                             color = tabSelectedForeColor;
                         }
 
-                        g.DrawFontImage(77, 28, color, new Rectangle(TabRect.Width - 28, 0, 24, TabRect.Height));
+                        e.Graphics.DrawFontImage(77, 28, color, new Rectangle(TabRect.Left + TabRect.Width - 28, 0, 24, TabRect.Height));
                     }
                 }
 
@@ -693,31 +697,22 @@ namespace Sunny.UI
                     int imageIndex = TabPages[index].ImageIndex;
                     if (imageIndex >= 0 && imageIndex < ImageList.Images.Count)
                     {
-                        g.DrawImage(ImageList.Images[imageIndex], 4 + 6, TabRect.Y + (TabRect.Height - ImageList.ImageSize.Height) / 2.0f, ImageList.ImageSize.Width, ImageList.ImageSize.Height);
+                        e.Graphics.DrawImage(ImageList.Images[imageIndex], TabRect.Left + 4 + 6, TabRect.Y + (TabRect.Height - ImageList.ImageSize.Height) / 2.0f, ImageList.ImageSize.Width, ImageList.ImageSize.Height);
                     }
                 }
 
                 string TipsText = GetTipsText(TabPages[index]);
                 if (Enabled && TipsText.IsValid())
                 {
-                    g.SetHighQuality();
-                    sf = g.MeasureString(TipsText, TempFont);
-                    float sfMax = Math.Max(sf.Width, sf.Height);
-                    float x = TabRect.Width - 1 - 2 - sfMax;
-                    if (showActiveCloseButton || ShowCloseButton)
-                        x -= 24;
-                    float y = 1 + 1;
-                    g.FillEllipse(TipsColor, x, y, sfMax, sfMax);
-                    g.DrawString(TipsText, TempFont, TipsForeColor, x + sfMax / 2.0f - sf.Width / 2.0f, y + sfMax / 2.0f - sf.Height / 2.0f);
+                    using var TempFont = TipsFont.DPIScaleFont(TipsFont.Size);
+                    sf = TextRenderer.MeasureText(TipsText, TempFont);
+                    int sfMax = Math.Max(sf.Width, sf.Height);
+                    int x = TabRect.Width - 1 - 2 - sfMax;
+                    if (showActiveCloseButton || ShowCloseButton) x -= 24;
+                    int y = 1 + 1;
+                    e.Graphics.FillEllipse(TipsColor, TabRect.Left + x - 1, y, sfMax, sfMax);
+                    e.Graphics.DrawString(TipsText, TempFont, TipsForeColor, new Rectangle(TabRect.Left + x, y, sfMax, sfMax), ContentAlignment.MiddleCenter);
                 }
-
-                if (RightToLeftLayout && RightToLeft == RightToLeft.Yes)
-                {
-                    bmp = bmp.HorizontalFlip();
-                }
-
-                e.Graphics.DrawImage(bmp, TabRect.Left, TabRect.Top);
-                bmp.Dispose();
             }
         }
 
@@ -745,22 +740,6 @@ namespace Sunny.UI
                         Invalidate();
                     }
                 }
-            }
-        }
-
-        Font tmpFont;
-
-        private Font TempFont
-        {
-            get
-            {
-                if (tmpFont == null || !tmpFont.Size.EqualsFloat(TipsFont.DPIScaleFontSize()))
-                {
-                    tmpFont?.Dispose();
-                    tmpFont = TipsFont.DPIScaleFont();
-                }
-
-                return tmpFont;
             }
         }
 
@@ -850,7 +829,7 @@ namespace Sunny.UI
             {
                 if (AutoClosePage)
                 {
-                    Frame?.DealPageRemoved(pages[i]);
+                    PageRemoved?.Invoke(this, new UIPageEventArgs(pages[i]));
 
                     try
                     {
@@ -922,7 +901,7 @@ namespace Sunny.UI
             timer?.Start();
         }
 
-        private int LastIndex;
+        //private int LastIndex;
 
         public void Init()
         {
@@ -933,22 +912,7 @@ namespace Sunny.UI
 
             if (SelectedIndex >= 0)
             {
-                List<UIPage> pages;
-                if (LastIndex != SelectedIndex)
-                {
-                    if (LastIndex >= 0 && TabPages.Count > 0 && LastIndex < TabPages.Count)
-                    {
-                        pages = TabPages[LastIndex].GetControls<UIPage>();
-                        foreach (var page in pages)
-                        {
-                            page.Final();
-                        }
-                    }
-
-                    LastIndex = SelectedIndex;
-                }
-
-                pages = TabPages[SelectedIndex].GetControls<UIPage>();
+                List<UIPage> pages = TabPages[SelectedIndex].GetControls<UIPage>();
                 foreach (var page in pages)
                 {
                     page.ReLoad();

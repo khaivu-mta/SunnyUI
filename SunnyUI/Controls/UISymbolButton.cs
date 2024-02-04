@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -20,6 +20,9 @@
  * 2020-07-26: V2.2.6 增加Image属性，增加图片和文字的摆放位置
  * 2022-01-05: V3.0.9 字体图标增加颜色设置
  * 2022-03-19: V3.1.1 重构主题配色
+ * 2023-05-15: V3.3.6 重构DrawString函数
+ * 2023-05-16: V3.3.6 重构DrawFontImage函数
+ * 2023-11-24: V3.6.2 修复LightStyle的文字和图标颜色
 ******************************************************************************/
 
 using System;
@@ -36,7 +39,7 @@ namespace Sunny.UI
     public class UISymbolButton : UIButton, ISymbol
     {
         private int _symbolSize = 24;
-        private int _imageInterval = 2;
+        private int _imageInterval = 0;
 
         public UISymbolButton()
         {
@@ -69,6 +72,26 @@ namespace Sunny.UI
             }
         }
 
+        private int _symbolRotate = 0;
+
+        /// <summary>
+        /// 字体图标旋转角度
+        /// </summary>
+        [DefaultValue(0)]
+        [Description("字体图标旋转角度"), Category("SunnyUI")]
+        public int SymbolRotate
+        {
+            get => _symbolRotate;
+            set
+            {
+                if (_symbolRotate != value)
+                {
+                    _symbolRotate = value;
+                    Invalidate();
+                }
+            }
+        }
+
         private Color symbolColor = Color.White;
 
         /// <summary>
@@ -84,7 +107,7 @@ namespace Sunny.UI
                 if (symbolColor != value)
                 {
                     symbolColor = value;
-                    SetStyleCustom();
+                    Invalidate();
                 }
             }
         }
@@ -100,7 +123,7 @@ namespace Sunny.UI
                 if (symbolHoverColor != value)
                 {
                     symbolHoverColor = value;
-                    SetStyleCustom(false);
+                    Invalidate();
                 }
             }
         }
@@ -116,7 +139,7 @@ namespace Sunny.UI
                 if (symbolPressColor != value)
                 {
                     symbolPressColor = value;
-                    SetStyleCustom(false);
+                    Invalidate();
                 }
             }
         }
@@ -132,7 +155,7 @@ namespace Sunny.UI
                 if (symbolDisableColor != value)
                 {
                     symbolDisableColor = value;
-                    SetStyleCustom();
+                    Invalidate();
                 }
             }
         }
@@ -148,7 +171,7 @@ namespace Sunny.UI
                 if (symbolSelectedColor != value)
                 {
                     symbolSelectedColor = value;
-                    SetStyleCustom();
+                    Invalidate();
                 }
             }
         }
@@ -199,7 +222,7 @@ namespace Sunny.UI
             }
         }
 
-        [DefaultValue(2)]
+        [DefaultValue(0)]
         [Description("图片文字间间隔"), Category("SunnyUI")]
         public int ImageInterval
         {
@@ -278,7 +301,7 @@ namespace Sunny.UI
             if (IsCircle)
             {
                 int size = Math.Min(Width, Height) - 2 - CircleRectWidth;
-                g.FillEllipse(GetFillColor(), (Width - size) / 2.0f, (Height - size) / 2.0f, size, size);
+                g.FillEllipse(GetFillColor(), (Width - size) / 2.0f - 1, (Height - size) / 2.0f - 1, size, size);
             }
             else
             {
@@ -312,7 +335,7 @@ namespace Sunny.UI
                 int size = Math.Min(Width, Height) - 2 - CircleRectWidth;
                 using var pn = new Pen(GetRectColor(), CircleRectWidth);
                 g.SetHighQuality();
-                g.DrawEllipse(pn, (Width - size) / 2.0f, (Height - size) / 2.0f, size, size);
+                g.DrawEllipse(pn, (Width - size) / 2.0f - 1, (Height - size) / 2.0f - 1, size, size);
                 g.SetDefaultQuality();
             }
             else
@@ -334,7 +357,7 @@ namespace Sunny.UI
         protected Color GetSymbolForeColor()
         {
             //文字
-            Color color = lightStyle ? _style.Colors().ButtonForeLightColor : symbolColor;
+            Color color = lightStyle ? rectColor : symbolColor;
             if (IsHover)
                 color = symbolHoverColor;
             if (IsPress)
@@ -355,53 +378,46 @@ namespace Sunny.UI
             //重绘父类
             base.OnPaint(e);
 
-            SizeF ImageSize = new SizeF(0, 0);
+            Size ImageSize = new Size(0, 0);
             if (Symbol > 0)
-                ImageSize = e.Graphics.GetFontImageSize(Symbol, SymbolSize);
+                ImageSize = new Size(SymbolSize, SymbolSize);
             if (Image != null)
                 ImageSize = Image.Size;
 
             //字体图标
             Color color = GetForeColor();
-            SizeF TextSize = e.Graphics.MeasureString(Text, Font);
+            Size TextSize = TextRenderer.MeasureText(Text, Font);
 
             if (ImageAlign == ContentAlignment.MiddleCenter && TextAlign == ContentAlignment.MiddleCenter)
             {
-                if (ImageSize.Width.Equals(0))
+                if (ImageSize.Width == 0)
                 {
-                    if (TextSize.Width > 0)
-                        e.Graphics.DrawString(Text, Font, color, (Width - TextSize.Width) / 2.0f, (Height - TextSize.Height) / 2.0f);
+                    e.Graphics.DrawString(Text, Font, color, ClientRectangle, ContentAlignment.MiddleCenter);
                 }
-                else if (TextSize.Width.Equals(0))
+                else if (Text.IsNullOrEmpty())
                 {
                     if (ImageSize.Width > 0)
                     {
                         if (Symbol > 0 && Image == null)
                         {
-                            e.Graphics.DrawFontImage(Symbol, SymbolSize, GetSymbolForeColor(),
-                                new RectangleF(
-                                    (Width - ImageSize.Width) / 2.0f,
-                                    Padding.Top + (Height - ImageSize.Height - Padding.Top - Padding.Bottom) / 2.0f,
-                                      ImageSize.Width, ImageSize.Height), SymbolOffset.X, SymbolOffset.Y);
+                            e.Graphics.DrawFontImage(Symbol, SymbolSize, GetSymbolForeColor(), ClientRectangle, SymbolOffset.X, SymbolOffset.Y, SymbolRotate);
                         }
 
                         if (Image != null)
                         {
-                            e.Graphics.DrawImage(Image,
-                                (Width - ImageSize.Width) / 2.0f,
-                                Padding.Top + (Height - ImageSize.Height - Padding.Top - Padding.Bottom) / 2.0f,
-                                  ImageSize.Width, ImageSize.Height);
+                            e.Graphics.DrawImage(Image, (Width - ImageSize.Width) / 2.0f,
+                                Padding.Top + (Height - ImageSize.Height - Padding.Top - Padding.Bottom) / 2.0f, ImageSize.Width, ImageSize.Height);
                         }
                     }
                 }
                 else
                 {
-                    float allWidth = ImageSize.Width + ImageInterval + TextSize.Width;
+                    int allWidth = ImageSize.Width + ImageInterval + TextSize.Width;
 
                     if (Symbol > 0 && Image == null)
                     {
                         e.Graphics.DrawFontImage(Symbol, SymbolSize, GetSymbolForeColor(),
-                            new RectangleF((Width - allWidth) / 2.0f, (Height - ImageSize.Height) / 2.0f, ImageSize.Width, ImageSize.Height), SymbolOffset.X, SymbolOffset.Y);
+                            new RectangleF((Width - allWidth) / 2.0f, 0, ImageSize.Width, Height), SymbolOffset.X, SymbolOffset.Y, SymbolRotate);
                     }
 
                     if (Image != null)
@@ -410,8 +426,7 @@ namespace Sunny.UI
                             ImageSize.Width, ImageSize.Height);
                     }
 
-                    e.Graphics.DrawString(Text, Font, color, (Width - allWidth) / 2.0f + ImageSize.Width + ImageInterval,
-                        (Height - TextSize.Height) / 2.0f);
+                    e.Graphics.DrawString(Text, Font, color, new Rectangle((int)((Width - allWidth) / 2.0f + ImageSize.Width + ImageInterval), 0, Width, Height), ContentAlignment.MiddleLeft);
                 }
             }
             else
@@ -472,7 +487,7 @@ namespace Sunny.UI
                     if (Symbol > 0 && Image == null)
                     {
                         e.Graphics.DrawFontImage(Symbol, SymbolSize, GetSymbolForeColor(),
-                            new RectangleF(left, top, ImageSize.Width, ImageSize.Height), SymbolOffset.X, SymbolOffset.Y);
+                            new Rectangle((int)left, (int)top, (int)ImageSize.Width, (int)ImageSize.Height), SymbolOffset.X, SymbolOffset.Y, SymbolRotate);
                     }
 
                     if (Image != null)
@@ -481,60 +496,7 @@ namespace Sunny.UI
                     }
                 }
 
-                left = 0;
-                top = 0;
-                if (TextSize.Width > 0)
-                {
-                    switch (TextAlign)
-                    {
-                        case ContentAlignment.TopLeft:
-                            left = Padding.Left;
-                            top = Padding.Top;
-                            break;
-
-                        case ContentAlignment.TopCenter:
-                            left = (Width - TextSize.Width) / 2.0f;
-                            top = Padding.Top;
-                            break;
-
-                        case ContentAlignment.TopRight:
-                            left = Width - Padding.Right - TextSize.Width;
-                            top = Padding.Top;
-                            break;
-
-                        case ContentAlignment.MiddleLeft:
-                            left = Padding.Left;
-                            top = (Height - TextSize.Height) / 2.0f;
-                            break;
-
-                        case ContentAlignment.MiddleCenter:
-                            left = (Width - TextSize.Width) / 2.0f;
-                            top = (Height - TextSize.Height) / 2.0f;
-                            break;
-
-                        case ContentAlignment.MiddleRight:
-                            left = Width - Padding.Right - TextSize.Width;
-                            top = (Height - TextSize.Height) / 2.0f;
-                            break;
-
-                        case ContentAlignment.BottomLeft:
-                            left = Padding.Left;
-                            top = Height - Padding.Bottom - TextSize.Height;
-                            break;
-
-                        case ContentAlignment.BottomCenter:
-                            left = (Width - TextSize.Width) / 2.0f;
-                            top = Height - Padding.Bottom - TextSize.Height;
-                            break;
-
-                        case ContentAlignment.BottomRight:
-                            left = Width - Padding.Right - TextSize.Width;
-                            top = Height - Padding.Bottom - TextSize.Height;
-                            break;
-                    }
-
-                    e.Graphics.DrawString(Text, Font, color, left, top);
-                }
+                e.Graphics.DrawString(Text, Font, color, new Rectangle(Padding.Left, Padding.Top, Width - Padding.Left - Padding.Right, Height - Padding.Top - Padding.Bottom), TextAlign);
             }
         }
     }

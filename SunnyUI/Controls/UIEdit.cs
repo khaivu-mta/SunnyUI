@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -17,11 +17,17 @@
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
+ * 2022-12-18: V3.3.0 修复了一个最小值大于0是，显示类型为字符串Text为空仍有显示的问题
+ * 2023-03-07: V3.3.3 修复了删除为空时小数位数和设置值不一致的问题
+ * 2023-04-19: V3.3.5 修复了最大值最小值范围判断的问题
+ * 2023-05-12: V3.3.6 重构DrawString函数
+ * 2023-06-14: V3.3.8 修复输入范围判断的问题
 ******************************************************************************/
 
 using System;
 using System.ComponentModel;
 using System.Drawing;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace Sunny.UI
@@ -31,23 +37,16 @@ namespace Sunny.UI
     {
         private bool canEmpty;
         private int decLength = 2;
-        private bool hasMaxValue;
-        private bool hasMinValue;
-        private string mask = "0.00";
-        private double maxValue = int.MaxValue;
-        private double minValue = int.MinValue;
         private UITextBox.UIEditType _uiEditType = UITextBox.UIEditType.String;
 
         public UIEdit()
         {
             //设置为单选边框
             BorderStyle = BorderStyle.FixedSingle;
-            base.Font = UIFontColor.Font();
+            base.Font = UIStyles.Font();
             base.ForeColor = UIFontColor.Primary;
             Width = 150;
             base.MaxLength = 32767;
-
-            waterMarkBrush = new SolidBrush(_waterMarkActiveColor);
             waterMarkContainer = null;
 
             DrawWaterMark();
@@ -60,7 +59,7 @@ namespace Sunny.UI
         {
             if (this.waterMarkContainer == null && this.TextLength <= 0)
             {
-                waterMarkContainer = new Panel();
+                waterMarkContainer = new PanelEx();
                 waterMarkContainer.Paint += new PaintEventHandler(waterMarkContainer_Paint);
                 waterMarkContainer.Invalidate();
                 waterMarkContainer.Click += new EventHandler(waterMarkContainer_Click);
@@ -77,22 +76,17 @@ namespace Sunny.UI
 
         private void waterMarkContainer_Paint(object sender, PaintEventArgs e)
         {
-            waterMarkContainer.Location = new Point(2, 0);
+            waterMarkContainer.Visible = Watermark.IsValid();
+            waterMarkContainer.Location = new Point(4, 0);
             waterMarkContainer.Height = this.Height;
-            waterMarkContainer.Width = this.Width;
+            waterMarkContainer.Width = this.Width - 4;
             waterMarkContainer.Anchor = AnchorStyles.Left | AnchorStyles.Right;
 
-            if (this.ContainsFocus)
-            {
-                waterMarkBrush = new SolidBrush(this._waterMarkActiveColor);
-            }
-            else
-            {
-                waterMarkBrush = new SolidBrush(this._waterMarkColor);
-            }
+            Color color = _waterMarkColor;
+            if (ContainsFocus) color = _waterMarkActiveColor;
 
             Graphics g = e.Graphics;
-            g.DrawString(this._waterMarkText, Font, waterMarkBrush, new PointF(-2f, 1f));//Take a look at that point
+            g.DrawString(this._waterMarkText, Font, color, waterMarkContainer.ClientRectangle, ContentAlignment.MiddleLeft, -2);//Take a look at that point
         }
 
         private void RemoveWaterMark()
@@ -106,8 +100,6 @@ namespace Sunny.UI
 
         private void ThisHasFocus(object sender, EventArgs e)
         {
-            waterMarkBrush = new SolidBrush(this._waterMarkActiveColor);
-
             if (this.TextLength <= 0)
             {
                 RemoveWaterMark();
@@ -125,8 +117,11 @@ namespace Sunny.UI
             {
                 Invalidate();
             }
+
+            CheckMaxMin();
         }
 
+        private int textLength = 0;
         private void ThisTextChanged(object sender, EventArgs e)
         {
             if (this.TextLength > 0)
@@ -137,6 +132,16 @@ namespace Sunny.UI
             {
                 DrawWaterMark();
             }
+
+            if (Text.IsValid())
+            {
+                if (Text.Length > textLength && Type == UITextBox.UIEditType.Integer || Type == UITextBox.UIEditType.Double)
+                {
+                    CheckMaxMin(true);
+                }
+            }
+
+            textLength = Text.Length;
         }
 
         private void waterMarkContainer_Click(object sender, EventArgs e)
@@ -155,28 +160,102 @@ namespace Sunny.UI
             DrawWaterMark();
         }
 
+        public virtual Color ForeDisableColor { get; set; } = Color.FromArgb(109, 109, 103);
+
         protected override void OnInvalidated(InvalidateEventArgs e)
         {
             base.OnInvalidated(e);
+
             if (waterMarkContainer != null)
-                waterMarkContainer.Invalidate();
-        }
-
-        [Browsable(false), DefaultValue(false)]
-        public bool IsScaled { get; set; }
-
-        public void SetDPIScale()
-        {
-            if (!IsScaled)
             {
-                this.SetDPIScaleFont();
-                IsScaled = true;
+                waterMarkContainer.Visible = Watermark.IsValid();
+                waterMarkContainer.Invalidate();
             }
         }
 
-        private Panel waterMarkContainer;
-        private SolidBrush waterMarkBrush;
+        private float DefaultFontSize = -1;
 
+        public void SetDPIScale()
+        {
+            if (!UIDPIScale.NeedSetDPIFont()) return;
+            if (DefaultFontSize < 0) DefaultFontSize = this.Font.Size;
+            Font = UIDPIScale.DPIScaleFont(Font, DefaultFontSize);
+        }
+
+        [Description("开启后可响应某些触屏的点击事件"), Category("SunnyUI")]
+        [DefaultValue(false)]
+        public bool TouchPressClick
+        {
+            get
+            {
+                if (waterMarkContainer != null)
+                    return waterMarkContainer.TouchPressClick;
+                return false;
+            }
+            set
+            {
+                if (waterMarkContainer != null)
+                    waterMarkContainer.TouchPressClick = value;
+            }
+        }
+
+        internal class PanelEx : Panel
+        {
+            [Description("开启后可响应某些触屏的点击事件"), Category("SunnyUI")]
+            [DefaultValue(false)]
+            public bool TouchPressClick { get; set; } = false;
+
+            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            //////  WndProc窗口程序：
+            //////  当按压屏幕时，产生一个WM_POINTERDOWN消息时，我们通过API函数 PostMessage 投送出一个WM_LBUTTONDOWN消息
+            //////  WM_LBUTTONDOWN消息会产生一个相对应的鼠标按下左键的事件，于是我们只要在mouse_down事件里写下处理过程即可
+            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+            #region WndProc 窗口程序
+
+            [DllImport("user32.dll")]
+            public static extern int PostMessage(IntPtr hwnd, int wMsg, int wParam, int lParam);
+
+            const int WM_POINTERDOWN = 0x0246;
+            const int WM_POINTERUP = 0x0247;
+            const int WM_LBUTTONDOWN = 0x0201;
+            const int WM_LBUTTONUP = 0x0202;
+
+            protected override void WndProc(ref Message m)
+            {
+                if (TouchPressClick)
+                {
+                    switch (m.Msg)
+                    {
+                        case WM_POINTERDOWN:
+                            break;
+                        case WM_POINTERUP:
+                            break;
+                        default:
+                            base.WndProc(ref m);
+                            return;
+                    }
+
+                    switch (m.Msg)
+                    {
+                        case WM_POINTERDOWN:
+                            PostMessage(m.HWnd, WM_LBUTTONDOWN, (int)m.WParam, (int)m.LParam);
+                            break;
+                        case WM_POINTERUP:
+                            PostMessage(m.HWnd, WM_LBUTTONUP, (int)m.WParam, (int)m.LParam);
+                            break;
+                    }
+                }
+                else
+                {
+                    base.WndProc(ref m);
+                }
+            }
+
+            #endregion
+        }
+
+        private PanelEx waterMarkContainer;
         private string _waterMarkText = "";
 
         [DefaultValue(null)]
@@ -320,7 +399,7 @@ namespace Sunny.UI
                     case UITextBox.UIEditType.Double:
                         if (!CanEmpty)
                             if (!Text.IsDouble())
-                                Text = mask;
+                                Text = 0.ToString("f" + decLength);
                         break;
 
                     case UITextBox.UIEditType.Integer:
@@ -356,40 +435,9 @@ namespace Sunny.UI
 
                     if (_uiEditType == UITextBox.UIEditType.Double)
                     {
-                        mask = DecimalToMask(decLength);
-                        Text = DoubleValue.ToString(mask);
+                        Text = DoubleValue.ToString("f" + decLength);
                         Invalidate();
                     }
-                }
-            }
-        }
-
-        [DefaultValue(false)]
-        public bool HasMaxValue
-        {
-            get => hasMaxValue;
-            set
-            {
-                if (hasMaxValue != value)
-                {
-                    hasMaxValue = value;
-                    CheckMaxMin();
-                    Invalidate();
-                }
-            }
-        }
-
-        [DefaultValue(false)]
-        public bool HasMinValue
-        {
-            get => hasMinValue;
-            set
-            {
-                if (hasMinValue != value)
-                {
-                    hasMinValue = value;
-                    CheckMaxMin();
-                    Invalidate();
                 }
             }
         }
@@ -404,8 +452,11 @@ namespace Sunny.UI
             }
             set
             {
-                CheckMaxMin();
-                Text = value.ToString("f" + decLength);
+                if (Type == UITextBox.UIEditType.Double)
+                {
+                    Text = value.ToString("f" + decLength);
+                    CheckMaxMin();
+                }
             }
         }
 
@@ -419,47 +470,12 @@ namespace Sunny.UI
             }
             set
             {
-                CheckMaxMin();
-                Text = value.ToString();
+                if (Type == UITextBox.UIEditType.Integer)
+                {
+                    Text = value.ToString();
+                    CheckMaxMin();
+                }
             }
-        }
-
-        [DefaultValue(int.MaxValue)]
-        public double MaxValue
-        {
-            get => maxValue;
-            set
-            {
-                maxValue = value;
-                if (maxValue < minValue)
-                    minValue = maxValue;
-                CheckMaxMin();
-                Invalidate();
-            }
-        }
-
-        [DefaultValue(int.MinValue)]
-        public double MinValue
-        {
-            get => minValue;
-            set
-            {
-                minValue = value;
-                if (minValue > maxValue)
-                    maxValue = minValue;
-                CheckMaxMin();
-                Invalidate();
-            }
-        }
-
-        private string DecimalToMask(int iDecimal)
-        {
-            if (iDecimal == 0)
-                return "0";
-            var str = "0.";
-            for (int i = 1; i <= iDecimal; i++)
-                str = str + "0";
-            return str;
         }
 
         private int SubCharCount(string str, char subChar)
@@ -571,51 +587,109 @@ namespace Sunny.UI
             return true;
         }
 
-        public void CheckMaxMin()
+        public double CheckMaxMin(double value)
+        {
+            if (_uiEditType == UITextBox.UIEditType.Integer)
+            {
+                if (value > MaxValue)
+                    value = (int)MaxValue;
+                if (value < MinValue)
+                    value = (int)MinValue;
+
+                Text = value.ToString();
+                SelectionStart = Text.Length;
+                return value;
+            }
+
+            if (_uiEditType == UITextBox.UIEditType.Double)
+            {
+                if (value > MaxValue)
+                    value = MaxValue;
+
+                if (value < MinValue)
+                    value = MinValue;
+
+                Text = value.ToString("f" + decLength);
+                SelectionStart = Text.Length;
+                return value;
+            }
+
+            return value;
+        }
+
+        public void CheckMaxMin(bool checkLen = false)
         {
             if (_uiEditType == UITextBox.UIEditType.Integer)
             {
                 if (Text == "" && CanEmpty) return;
+                if (!int.TryParse(Text, out var a)) return;
 
-                if (!int.TryParse(Text, out var a))
-                    Text = @"0";
+                int tlen = Text.Replace("+", "").Replace("-", "").Length;
+                int maxlen = MaxValue.ToString().Replace("+", "").Replace("-", "").Length;
+                int minlen = MinValue.ToString().Replace("+", "").Replace("-", "").Length;
+                int mlen = Math.Max(maxlen, minlen);
 
-                if (hasMaxValue)
+                if (a > MaxValue)
                 {
-                    var m = (int)Math.Floor(maxValue);
-                    if (a > m)
-                        a = m;
-                }
-                if (hasMinValue)
-                {
-                    var m = (int)Math.Ceiling(minValue);
-                    if (a < m)
-                        a = m;
+                    if (!checkLen || (checkLen && tlen >= mlen))
+                    {
+                        a = (int)MaxValue;
+                        Text = a.ToString();
+                        SelectionStart = Text.Length;
+                    }
                 }
 
-                Text = a.ToString();
+                if (a < MinValue)
+                {
+                    if (!checkLen || (checkLen && tlen >= mlen))
+                    {
+                        a = (int)MinValue;
+                        Text = a.ToString();
+                        SelectionStart = Text.Length;
+                    }
+                }
+
+                if (!checkLen)
+                {
+                    Text = a.ToString();
+                }
             }
 
             if (_uiEditType == UITextBox.UIEditType.Double)
             {
                 if (Text == "" && CanEmpty) return;
+                if (!double.TryParse(Text, out var a)) return;
 
-                if (!double.TryParse(Text, out var a))
+                int tlen = Text.Replace("+", "").Replace("-", "").Length;
+                int maxlen = MaxValue.ToString("f" + decLength).Replace("+", "").Replace("-", "").Length;
+                int minlen = MinValue.ToString("f" + decLength).Replace("+", "").Replace("-", "").Length;
+                int mlen = Math.Max(maxlen, minlen);
+
+                if (a > MaxValue)
+                {
+                    if (!checkLen || (checkLen && tlen >= mlen))
+                    {
+                        a = MaxValue;
+                        Text = a.ToString("f" + decLength);
+                        SelectionStart = Text.Length;
+                    }
+                }
+
+                mlen = MinValue.ToString("f" + decLength).Replace("+", "").Replace("-", "").Length;
+                if (a < MinValue)
+                {
+                    if (!checkLen || (checkLen && tlen >= mlen))
+                    {
+                        a = MinValue;
+                        Text = a.ToString("f" + decLength);
+                        SelectionStart = Text.Length;
+                    }
+                }
+
+                if (!checkLen)
+                {
                     Text = a.ToString("f" + decLength);
-
-                if (hasMaxValue)
-                {
-                    if (a > maxValue)
-                        a = maxValue;
                 }
-
-                if (hasMinValue)
-                {
-                    if (a < minValue)
-                        a = minValue;
-                }
-
-                Text = a.ToString("f" + decLength);
             }
         }
 
@@ -683,24 +757,134 @@ namespace Sunny.UI
             {
                 if (Text == "" && CanEmpty) return;
 
-                if (StringIndexIsChar(Text, 0, '.'))
-                    Text = @"0" + Text;
-
-                if (StringIndexIsChar(Text, Text.Length - 1, '.'))
-                    Text = Text + @"0";
-
-                if (StringIndexIsChar(Text, 0, '+') || StringIndexIsChar(Text, 0, '+'))
-                    if (StringIndexIsChar(Text, 1, '.'))
-                        Text = Text.Insert(1, @"0");
+                //if (StringIndexIsChar(Text, 0, '.'))
+                //    Text = @"0" + Text;
+                //
+                //if (StringIndexIsChar(Text, Text.Length - 1, '.'))
+                //    Text = Text + @"0";
+                //
+                //if (StringIndexIsChar(Text, 0, '+') || StringIndexIsChar(Text, 0, '+'))
+                //    if (StringIndexIsChar(Text, 1, '.'))
+                //        Text = Text.Insert(1, @"0");
 
                 if (!double.TryParse(Text, out var doubleValue))
-                    Text = mask;
-
-                Text = doubleValue.ToString("f" + decLength);
+                    Text = 0.ToString("f" + decLength);
+                else
+                    Text = doubleValue.ToString("f" + decLength);
             }
 
-            CheckMaxMin();
+            //CheckMaxMin();
             //Invalidate();
+        }
+
+        private double max = int.MaxValue;
+        private double min = int.MinValue;
+
+        static internal double EffectiveMax(double _max)
+        {
+            double maxSupported = double.MaxValue;
+            if (_max > maxSupported)
+            {
+                return maxSupported;
+            }
+
+            return _max;
+        }
+
+        static internal double EffectiveMin(double _min)
+        {
+            double minSupported = double.MinValue;
+            if (_min < minSupported)
+            {
+                return minSupported;
+            }
+
+            return _min;
+        }
+
+        [DefaultValue(int.MaxValue)]
+        [Description("最大日期"), Category("SunnyUI")]
+        public double MaxValue
+        {
+            get
+            {
+                return EffectiveMax(max);
+            }
+            set
+            {
+                //if (value != max)
+                {
+                    if (value < EffectiveMin(min))
+                    {
+                        value = EffectiveMin(min);
+                    }
+
+                    // If trying to set the maximum greater than Max, throw.
+                    if (value > double.MaxValue)
+                    {
+                        value = double.MaxValue;
+                    }
+
+                    max = value;
+                    if (Type == UITextBox.UIEditType.Integer)
+                        max = Math.Min(max, int.MaxValue);
+
+                    //If Value (which was once valid) is suddenly greater than the max (since we just set it)
+                    //then adjust this...
+                    if (IntValue > max)
+                    {
+                        IntValue = (int)max;
+                    }
+
+                    if (DoubleValue > max)
+                    {
+                        DoubleValue = max;
+                    }
+                }
+            }
+        }
+
+        [DefaultValue(int.MinValue)]
+        [Description("最小日期"), Category("SunnyUI")]
+        public double MinValue
+        {
+            get
+            {
+                return EffectiveMin(min);
+            }
+            set
+            {
+                if (value != min)
+                {
+                    if (value > EffectiveMax(max))
+                    {
+                        value = EffectiveMax(max);
+                    }
+
+                    // If trying to set the minimum less than Min, throw.
+                    if (value < double.MinValue)
+                    {
+                        value = double.MinValue;
+                    }
+
+                    min = value;
+                    if (Type == UITextBox.UIEditType.Integer)
+                        min = Math.Max(min, int.MinValue);
+
+                    //If Value (which was once valid) is suddenly less than the min (since we just set it)
+                    //then adjust this...
+                    if (IntValue < min)
+                    {
+                        IntValue = (int)min;
+                    }
+
+                    if (DoubleValue < min)
+                    {
+                        min = value;
+                        DoubleValue = min;
+                    }
+                }
+            }
         }
     }
 }

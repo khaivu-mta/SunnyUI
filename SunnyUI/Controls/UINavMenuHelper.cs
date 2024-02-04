@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -18,6 +18,8 @@
  *
  * 2020-01-01: V2.2.0 增加文件说明
  * 2022-04-14: V3.1.3 重构扩展函数
+ * 2022-11-29: V3.3.0 重构RemovePage方法
+ * 2023-10-26: V3.5.1 字体图标增加旋转角度参数SymbolRotate
 ******************************************************************************/
 
 using System;
@@ -71,6 +73,11 @@ namespace Sunny.UI
             return this[node] == null ? new Point(0, 0) : Items[node].SymbolOffset;
         }
 
+        public int GetSymbolRotate(TreeNode node)
+        {
+            return this[node] == null ? 0 : Items[node].SymbolRotate;
+        }
+
         public int GetPageIndex(TreeNode node)
         {
             return this[node] == null ? -1 : Items[node].PageIndex;
@@ -111,7 +118,7 @@ namespace Sunny.UI
             Items[node].PageIndex = index;
         }
 
-        public void SetGuid(TreeNode node, Guid guid)
+        public void SetPageGuid(TreeNode node, Guid guid)
         {
             if (node == null) return;
 
@@ -119,17 +126,18 @@ namespace Sunny.UI
             Items[node].PageGuid = guid;
         }
 
-        public void SetSymbol(TreeNode node, int symbol, int symbolSize = 32)
+        public void SetSymbol(TreeNode node, int symbol, int symbolSize = 32, int symbolRotate = 0)
         {
             if (node == null) return;
 
             CreateIfNotExist(node);
             Items[node].Symbol = symbol;
             Items[node].SymbolSize = symbolSize;
+            Items[node].SymbolRotate = symbolRotate;
             node.TreeView.Invalidate();
         }
 
-        public void SetSymbol(TreeNode node, int symbol, Point symbolOffset, int symbolSize = 32)
+        public void SetSymbol(TreeNode node, int symbol, Point symbolOffset, int symbolSize = 32, int symbolRotate = 0)
         {
             if (node == null) return;
 
@@ -137,6 +145,7 @@ namespace Sunny.UI
             Items[node].Symbol = symbol;
             Items[node].SymbolSize = symbolSize;
             Items[node].SymbolOffset = symbolOffset;
+            Items[node].SymbolRotate = symbolRotate;
             node.TreeView.Invalidate();
         }
 
@@ -253,6 +262,7 @@ namespace Sunny.UI
             }
 
             TabPage tabPage = CreateTabIfNotExists(new NavMenuItem(page));
+            page.Dock = DockStyle.Fill;
             page.TabPage = tabPage;
             tabPage.Controls.Add(page);
             tabPage.Text = page.Text;
@@ -350,11 +360,20 @@ namespace Sunny.UI
             return CreateTabIfNotExists(new NavMenuItem("", guid));
         }
 
+        public event TabPageAndUIPageEventHandler TabPageAndUIPageChanged;
+
         public bool SelectPage(int pageIndex)
         {
             if (pageIndex < 0)
             {
                 return false;
+            }
+
+            List<UIPage> pages = tabControl.SelectedTab.GetControls<UIPage>();
+            if (pages.Count == 1)
+            {
+                bool isCancel = pages[0].OnPageDeselecting();
+                if (isCancel) return false;
             }
 
             foreach (var item in PageItems)
@@ -364,6 +383,7 @@ namespace Sunny.UI
                     if (tabControl.TabPages.Contains(item.Key))
                     {
                         tabControl.SelectTab(item.Key);
+                        TabPageAndUIPageChanged?.Invoke(this, new TabPageAndUIPageArgs(item.Key, item.Value.PageIndex, item.Value.PageGuid));
                         return true;
                     }
                 }
@@ -379,6 +399,13 @@ namespace Sunny.UI
                 return false;
             }
 
+            List<UIPage> pages = tabControl.SelectedTab.GetControls<UIPage>();
+            if (pages.Count == 1)
+            {
+                bool isCancel = pages[0].OnPageDeselecting();
+                if (isCancel) return false;
+            }
+
             foreach (var item in PageItems)
             {
                 if (item.Value.PageGuid == guid && item.Key != null)
@@ -386,6 +413,7 @@ namespace Sunny.UI
                     if (tabControl.TabPages.Contains(item.Key))
                     {
                         tabControl.SelectTab(item.Key);
+                        TabPageAndUIPageChanged?.Invoke(this, new TabPageAndUIPageArgs(item.Key, item.Value.PageIndex, item.Value.PageGuid));
                         return true;
                     }
                 }
@@ -396,19 +424,11 @@ namespace Sunny.UI
 
         public UIPage GetPage(int pageIndex)
         {
-            if (pageIndex < 0) return null;
-            foreach (var item in PageItems)
+            var pages = GetPages<UIPage>();
+            for (int i = 0; i < pages.Count; i++)
             {
-                if (item.Value.PageIndex == pageIndex && item.Key != null)
-                {
-                    var tabPage = item.Key;
-                    var pages = tabPage.GetControls<UIPage>();
-                    for (int i = 0; i < pages.Count; i++)
-                    {
-                        if (pages[i].PageIndex == pageIndex)
-                            return pages[i];
-                    }
-                }
+                if (pages[i].PageIndex == pageIndex)
+                    return pages[i];
             }
 
             return null;
@@ -428,7 +448,7 @@ namespace Sunny.UI
                 if (item.Key != null)
                 {
                     var tabPage = item.Key;
-                    var pages = tabPage.GetControls<UIPage>();
+                    var pages = tabPage.GetControls<T>();
                     for (int i = 0; i < pages.Count; i++)
                     {
                         if (pages[i] is T pg)
@@ -443,32 +463,48 @@ namespace Sunny.UI
         public UIPage GetPage(Guid guid)
         {
             if (guid == Guid.Empty) return null;
-            foreach (var item in PageItems)
+            var pages = GetPages<UIPage>();
+            for (int i = 0; i < pages.Count; i++)
             {
-                if (item.Value.PageGuid == guid && item.Key != null)
-                {
-                    var tabPage = item.Key;
-                    var pages = tabPage.GetControls<UIPage>();
-                    for (int i = 0; i < pages.Count; i++)
-                    {
-                        if (pages[i].PageGuid == guid)
-                            return pages[i];
-                    }
-                }
+                if (pages[i].PageGuid == guid)
+                    return pages[i];
             }
 
             return null;
         }
 
+        public void RemoveAllPages(bool keepMainPage = true)
+        {
+            var pages = GetPages<UIPage>();
+            foreach (var page in pages)
+            {
+                if (keepMainPage && page.TabPage?.Text == tabControl.MainPage) continue;
+                RemovePage(page.PageIndex);
+            }
+        }
+
         public bool RemovePage(int pageIndex)
         {
-            if (pageIndex < 0) return false;
             foreach (var item in PageItems)
             {
-                if (item.Value.PageIndex == pageIndex && item.Key != null)
+                if (item.Value.PageIndex == pageIndex)
                 {
-                    TabPage tabPage = item.Key;
-                    tabControl.RemoveTabPage(tabPage.TabIndex);
+                    UIPage page = GetPage(pageIndex);
+                    if (page != null)
+                    {
+                        TabPage tabpage = page.TabPage;
+                        page.Final();
+                        page.Dispose();
+                        page = null;
+
+                        if (tabpage != null)
+                        {
+                            tabpage.Parent = null;
+                            tabpage.Dispose();
+                            tabpage = null;
+                        }
+                    }
+
                     PageItems.TryRemove(item.Key, out _);
                     return true;
                 }
@@ -482,10 +518,23 @@ namespace Sunny.UI
             if (guid == Guid.Empty) return false;
             foreach (var item in PageItems)
             {
-                if (item.Value.PageGuid == guid && item.Key != null)
+                if (item.Value.PageGuid == guid)
                 {
-                    TabPage tabPage = item.Key;
-                    tabControl.RemoveTabPage(tabPage.TabIndex);
+                    UIPage page = GetPage(guid);
+                    if (page != null)
+                    {
+                        TabPage tabpage = page.TabPage;
+                        page.Dispose();
+                        page = null;
+
+                        if (tabpage != null)
+                        {
+                            tabpage.Parent = null;
+                            tabpage.Dispose();
+                            tabpage = null;
+                        }
+                    }
+
                     PageItems.TryRemove(item.Key, out _);
                     return true;
                 }
@@ -518,6 +567,11 @@ namespace Sunny.UI
         /// </summary>
         public Point SymbolOffset { get; set; } = new Point(0, 0);
 
+        /// <summary>
+        /// 字体图标旋转角度
+        /// </summary>
+        public int SymbolRotate { get; set; } = 0;
+
         public int PageIndex { get; set; }
 
         public string TipsText { get; set; }
@@ -548,6 +602,8 @@ namespace Sunny.UI
             PageGuid = page.PageGuid;
             Symbol = page.Symbol;
             SymbolSize = page.SymbolSize;
+            SymbolOffset = page.SymbolOffset;
+            SymbolRotate = page.SymbolRotate;
             AlwaysOpen = page.AlwaysOpen;
         }
 
@@ -563,4 +619,21 @@ namespace Sunny.UI
             Text = text;
         }
     }
+
+    public class TabPageAndUIPageArgs : EventArgs
+    {
+        public TabPage TabPage { get; set; }
+
+        public int PageIndex { get; set; }
+        public Guid PageGuid { get; set; }
+
+        public TabPageAndUIPageArgs(TabPage tabPage, int pageIndex, Guid pageGuid)
+        {
+            TabPage = tabPage;
+            PageIndex = pageIndex;
+            PageGuid = pageGuid;
+        }
+    }
+
+    public delegate void TabPageAndUIPageEventHandler(object sender, TabPageAndUIPageArgs e);
 }

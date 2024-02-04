@@ -18,7 +18,10 @@
                 components.Dispose();
             }
 
-            HideFilterForm();
+            dropForm?.Dispose();    
+            filterForm?.Dispose();
+            filterItemForm?.Dispose();
+
             base.Dispose(disposing);
         }
 
@@ -30,18 +33,21 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.SuspendLayout();
+            SuspendLayout();
+            // 
+            // edit
+            // 
+            edit.Leave += edit_Leave;
             // 
             // UIComboBox
             // 
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
-            this.Name = "UIComboBox";
-            this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.UIComboBox_KeyDown);
-            this.ButtonClick += new System.EventHandler(this.UIComboBox_ButtonClick);
-            this.FontChanged += new System.EventHandler(this.UIComboBox_FontChanged);
-            this.ResumeLayout(false);
-            this.PerformLayout();
-
+            AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
+            Name = "UIComboBox";
+            KeyDown += UIComboBox_KeyDown;
+            ButtonClick += UIComboBox_ButtonClick;
+            FontChanged += UIComboBox_FontChanged;
+            ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion

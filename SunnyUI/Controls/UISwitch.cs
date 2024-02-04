@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -22,6 +22,9 @@
  * 2021-09-14: V3.0.7 增加Disabled颜色
  * 2022-01-02: V3.0.9 增加是否只读属性
  * 2022-03-19: V3.1.1 重构主题配色
+ * 2022-09-26: V3.2.4 修复了Readonly时，双击还可以改变值的问题
+ * 2022-04-23: V3.3.5 增加ActiveChanging事件，在状态改变前可以进行判断
+ * 2023-05-13: V3.3.6 重构DrawString函数
 ******************************************************************************/
 
 using System;
@@ -108,7 +111,7 @@ namespace Sunny.UI
             get => activeValue;
             set
             {
-                if (activeValue != value)
+                if (!ReadOnly && activeValue != value)
                 {
                     activeValue = value;
                     ValueChanged?.Invoke(this, value);
@@ -188,7 +191,7 @@ namespace Sunny.UI
         /// <param name="e">参数</param>
         protected override void OnClick(EventArgs e)
         {
-            if (!ReadOnly) Active = !Active;
+            ActiveChange();
             base.OnClick(e);
         }
 
@@ -196,12 +199,28 @@ namespace Sunny.UI
         {
             if (!UseDoubleClick)
             {
-                Active = !Active;
+                ActiveChange();
                 base.OnClick(e);
             }
             else
             {
                 base.OnDoubleClick(e);
+            }
+        }
+
+        public event OnCancelEventArgs ActiveChanging;
+
+        private void ActiveChange()
+        {
+            CancelEventArgs e = new CancelEventArgs();
+            if (ActiveChanging != null)
+            {
+                ActiveChanging?.Invoke(this, e);
+            }
+
+            if (!e.Cancel)
+            {
+                Active = !Active;
             }
         }
 
@@ -246,20 +265,19 @@ namespace Sunny.UI
             if (SwitchShape == UISwitchShape.Round)
             {
                 Rectangle rect = new Rectangle(0, 0, Width - 1, Height - 1);
-                g.FillRoundRectangle(color, rect, rect.Height);
+                using GraphicsPath path1 = rect.CreateTrueRoundedRectanglePath(rect.Height);
+                g.FillPath(color, path1, true);
 
                 int width = Width - 3 - 1 - 3 - (rect.Height - 6);
                 if (!Active)
                 {
                     g.FillEllipse(fillColor.IsValid() ? fillColor : Color.White, 3, 3, rect.Height - 6, rect.Height - 6);
-                    SizeF sf = g.MeasureString(InActiveText, Font);
-                    g.DrawString(InActiveText, Font, fillColor.IsValid() ? fillColor : Color.White, 3 + rect.Height - 6 + (width - sf.Width) / 2, 3 + (rect.Height - 6 - sf.Height) / 2);
+                    g.DrawString(InActiveText, Font, fillColor.IsValid() ? fillColor : Color.White, new Rectangle(3 + rect.Height - 6, 0, width, rect.Height), ContentAlignment.MiddleCenter);
                 }
                 else
                 {
                     g.FillEllipse(fillColor.IsValid() ? fillColor : Color.White, Width - 3 - 1 - (rect.Height - 6), 3, rect.Height - 6, rect.Height - 6);
-                    SizeF sf = g.MeasureString(ActiveText, Font);
-                    g.DrawString(ActiveText, Font, fillColor.IsValid() ? fillColor : Color.White, 3 + (width - sf.Width) / 2, 3 + (rect.Height - 6 - sf.Height) / 2);
+                    g.DrawString(ActiveText, Font, fillColor.IsValid() ? fillColor : Color.White, new Rectangle(3, 0, width, rect.Height), ContentAlignment.MiddleCenter);
                 }
             }
 
@@ -272,14 +290,12 @@ namespace Sunny.UI
                 if (!Active)
                 {
                     g.FillRoundRectangle(fillColor.IsValid() ? fillColor : Color.White, 3, 3, rect.Height - 6, rect.Height - 6, Radius);
-                    SizeF sf = g.MeasureString(InActiveText, Font);
-                    g.DrawString(InActiveText, Font, fillColor.IsValid() ? fillColor : Color.White, 3 + rect.Height - 6 + (width - sf.Width) / 2, 3 + (rect.Height - 6 - sf.Height) / 2);
+                    g.DrawString(InActiveText, Font, fillColor.IsValid() ? fillColor : Color.White, new Rectangle(3 + rect.Height - 6, 0, width, rect.Height), ContentAlignment.MiddleCenter);
                 }
                 else
                 {
                     g.FillRoundRectangle(fillColor.IsValid() ? fillColor : Color.White, Width - 3 - 1 - (rect.Height - 6), 3, rect.Height - 6, rect.Height - 6, Radius);
-                    SizeF sf = g.MeasureString(ActiveText, Font);
-                    g.DrawString(ActiveText, Font, fillColor.IsValid() ? fillColor : Color.White, 3 + (width - sf.Width) / 2, 3 + (rect.Height - 6 - sf.Height) / 2);
+                    g.DrawString(ActiveText, Font, fillColor.IsValid() ? fillColor : Color.White, new Rectangle(3, 0, width, rect.Height), ContentAlignment.MiddleCenter);
                 }
             }
         }

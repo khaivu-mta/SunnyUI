@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -53,6 +53,26 @@ namespace Sunny.UI
             this.ButtonClick += this.UIColorPicker_ButtonClick;
             this.ResumeLayout(false);
             this.PerformLayout();
+        }
+
+        /// <summary> 
+        /// 必需的设计器变量。
+        /// </summary>
+        private System.ComponentModel.IContainer components = null;
+
+        /// <summary> 
+        /// 清理所有正在使用的资源。
+        /// </summary>
+        /// <param name="disposing">如果应释放托管资源，为 true；否则为 false。</param>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && (components != null))
+            {
+                components.Dispose();
+            }
+
+            item?.Dispose();
+            base.Dispose(disposing);
         }
 
         /// <summary>
@@ -148,8 +168,8 @@ namespace Sunny.UI
         {
             base.OnPaintFore(g, path);
             if (Text.IsValid()) Text = "";
-            var pathColor = g.CreateRoundedRectanglePath(new Rectangle(3, 3, Width - 32, Height - 7), 3, UICornerRadiusSides.All);
-            g.FillPath(Value, pathColor);
+            using var colorPath = g.CreateRoundedRectanglePath(new Rectangle(3, 3, Width - 32, Height - 7), 3, UICornerRadiusSides.All);
+            g.FillPath(Value, colorPath);
         }
 
         /// <summary>

@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -17,6 +17,7 @@
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
+ * 2022-11-01: V3.2.6 增加文件编码，通过Load传入
 ******************************************************************************/
 
 using System;
@@ -24,6 +25,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
+using System.Text;
 
 namespace Sunny.UI
 {
@@ -34,6 +36,18 @@ namespace Sunny.UI
     public class IniConfig<TConfig> : BaseConfig<TConfig> where TConfig : IniConfig<TConfig>, new()
     {
         #region 加载
+
+        /// <summary>
+        /// Ini文件编码格式
+        /// </summary>
+        [ConfigIgnore]
+        public Encoding IniEncoding { get; private set; } = Encoding.Default;
+
+        public bool Load(string fileName, Encoding encoding)
+        {
+            IniEncoding = encoding;
+            return Load(fileName);
+        }
 
         /// <summary>加载指定配置文件</summary>
         /// <param name="filename">文件名</param>
@@ -66,7 +80,7 @@ namespace Sunny.UI
                     }
                 }
 
-                IniFile ini = new IniFile(filename);
+                IniFile ini = new IniFile(filename, IniEncoding);
                 foreach (var ident in idents.Values)
                 {
                     if (ident.IsList)
@@ -118,7 +132,9 @@ namespace Sunny.UI
             }
 
             ConfigHelper.SaveConfigValue(Current, idents);
-            List<string> strs = new List<string> { ";<!--" + Description + "-->", "" };
+            StringBuilder strs = new StringBuilder();
+            strs.AppendLine(";<?ini version=\"" + UIGlobal.Version + "\" encoding=\"" + IniEncoding.BodyName + "\"?>");
+            strs.AppendLine("");
             Dictionary<string, List<Ident>> listidents = new Dictionary<string, List<Ident>>();
             foreach (var ident in idents.Values)
             {
@@ -134,7 +150,7 @@ namespace Sunny.UI
 
             foreach (var values in listidents)
             {
-                strs.Add("[" + values.Key + "]");
+                strs.AppendLine("[" + values.Key + "]");
 
                 SortedList<int, Ident> slist = new SortedList<int, Ident>();
                 foreach (var ident in values.Value)
@@ -146,28 +162,36 @@ namespace Sunny.UI
                 {
                     if (!ident.Description.IsNullOrEmpty())
                     {
-                        strs.Add(";<!--" + ident.Description + "-->");
+                        strs.AppendLine(";<!--" + ident.Description + "-->");
                     }
 
                     if (ident.IsList)
                     {
                         for (int i = 0; i < ident.Values.Count; i++)
                         {
-                            strs.Add("Value" + i + "=" + ident.Values[i]);
+                            strs.AppendLine("Value" + i + "=" + ident.Values[i]);
                         }
                     }
                     else
                     {
-                        strs.Add(ident.Key + "=" + ident.Value);
+                        strs.AppendLine(ident.Key + "=" + ident.Value);
                     }
                 }
 
-                strs.Add("");
+                strs.AppendLine("");
             }
 
             listidents.Clear();
             DirEx.CreateDir(Path.GetDirectoryName(filename));
-            File.WriteAllLines(filename, strs.ToArray(), IniBase.IniEncoding);
+            string filetmp = filename + "." + RandomEx.RandomPureChar(3);
+            File.Delete(filetmp);
+            StreamWriter sw = new StreamWriter(filetmp, false, IniEncoding);
+            sw.WriteLine(strs.ToString());
+            sw.Flush();
+            sw.Close();
+            sw.Dispose();
+            File.Delete(filename);
+            File.Move(filetmp, filename);
         }
 
         #endregion 加载

@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -39,6 +39,19 @@
  * 2022-07-30: V3.2.2 坐标轴的小数位数重构调整至坐标轴标签 AxisLabel.DecimalPlaces
  * 2022-07-30: V3.2.2 坐标轴的日期格式重构调整至坐标轴标签 AxisLabel.DateTimeFormat
  * 2022-08-17: V3.2.3 修复数据全为Nan时绘制出错
+ * 2022-09-19: V3.2.4 增加鼠标可框选缩放属性MouseZoom
+ * 2023-03-26: V3.3.3 自定义X轴坐标时，点数据提示显示为原始值
+ * 2023-04-23: V3.3.5 打开Smooth绘制，建议数据差距不大时可平滑绘制
+ * 2023-05-12: V3.3.6 增加了一种开关量曲线的显示方式
+ * 2023-05-14: V3.3.6 重构DrawString函数
+ * 2023-06-06: V3.3.7 修复X轴文字重叠问题
+ * 2023-07-02: V3.3.9 增加PointFormat，鼠标选中值显示格式化事件
+ * 2023-07-02: V3.3.9 增加了数据沿Y轴变化时鼠标移动到数据点时显示数据点标签
+ * 2023-07-14: V3.4.0 增加了坐标轴绘制时显示箭头，并在箭头处显示数量单位的功能
+ * 2023-10-04: V3.5.0 增加了Y轴数据由上向下绘制
+ * 2023-10-05: V3.5.0 增加了X轴和Y轴鼠标选择区域并返回选中范围
+ * 2023-10-20: V3.5.1 增加了绘制线的DashStyle样式
+ * 2023-11-22: V3.6.0 增加了区域选择范围相等时不执行事件
 ******************************************************************************/
 
 using System;
@@ -68,7 +81,7 @@ namespace Sunny.UI
         }
 
         [Browsable(false)]
-        public Point DrawOrigin => new Point(Option.Grid.Left, Height - Option.Grid.Bottom);
+        public Point DrawOrigin => new Point(Option.Grid.Left, Option.YDataOrder == UIYDataOrder.Asc ? Height - Option.Grid.Bottom : Option.Grid.Top);
 
         [Browsable(false)]
         public Size DrawSize => new Size(Width - Option.Grid.Left - Option.Grid.Right, Height - Option.Grid.Top - Option.Grid.Bottom);
@@ -89,9 +102,16 @@ namespace Sunny.UI
             foreach (var series in Option.Series.Values)
             {
                 if (series.IsY2)
-                    series.CalcData(this, XScale, Y2Scale);
+                    series.CalcData(this, XScale, Y2Scale, Option.YDataOrder);
                 else
-                    series.CalcData(this, XScale, YScale);
+                    series.CalcData(this, XScale, YScale, Option.YDataOrder);
+
+                if (series is UISwitchLineSeries lineSeries)
+                {
+                    lineSeries.YOffsetPos = series.IsY2 ?
+                        Y2Scale.CalcYPixel(lineSeries.YOffset, DrawOrigin.Y, DrawSize.Height, Option.YDataOrder) :
+                        YScale.CalcYPixel(lineSeries.YOffset, DrawOrigin.Y, DrawSize.Height, Option.YDataOrder);
+                }
             }
 
             NeedDraw = true;
@@ -99,13 +119,17 @@ namespace Sunny.UI
 
         public override void Refresh()
         {
-            base.Refresh();
-            if (Option != null)
-            {
-                SetOption(Option);
-            }
-
+            if (Option != null) SetOption(Option);
             CalcData();
+
+            if (InvokeRequired)
+            {
+                Invoke(new Action(base.Refresh));
+            }
+            else
+            {
+                base.Refresh();
+            }
         }
 
         protected UIScale XScale;
@@ -277,7 +301,8 @@ namespace Sunny.UI
             if (Option.Grid.BottomShow)
                 g.DrawLine(ForeColor, Option.Grid.Left, Height - Option.Grid.Bottom, Width - Option.Grid.Right, Height - Option.Grid.Bottom);
 
-            float zeroPos = YScale.CalcYPixel(0, DrawOrigin.Y, DrawSize.Height);
+            using var TempFont = Font.DPIScaleFont(UIStyles.DefaultSubFontSize);
+            float zeroPos = YScale.CalcYPixel(0, DrawOrigin.Y, DrawSize.Height, Option.YDataOrder);
             if (zeroPos > Option.Grid.Top && zeroPos < Height - Option.Grid.Bottom)
             {
                 if (Option.ShowZeroLine)
@@ -287,12 +312,53 @@ namespace Sunny.UI
 
                 if (Option.ShowZeroValue)
                 {
-                    SizeF sf = g.MeasureString("0", TempFont);
-                    g.DrawString("0", TempFont, ForeColor, DrawOrigin.X - Option.YAxis.AxisTick.Length - sf.Width, zeroPos - sf.Height / 2.0f);
+                    g.DrawString("0", TempFont, ForeColor, new Rectangle(DrawOrigin.X - Option.YAxis.AxisTick.Length - Width, (int)zeroPos - Height, Width, Height * 2), ContentAlignment.MiddleRight);
                 }
             }
 
             if (XScale == null || YScale == null || Y2Scale == null) return;
+
+            if (Option.XAxis.ShowArrow)
+            {
+                Point pt1 = new Point(Width - Option.Grid.Right + Option.XAxis.ShowArrowSize, Height - Option.Grid.Bottom);
+                g.DrawLine(ForeColor, Option.Grid.Left, Height - Option.Grid.Bottom, pt1.X, pt1.Y);
+                Point pt2 = new Point(pt1.X - 10, pt1.Y - 4);
+                Point pt3 = new Point(pt1.X - 10, pt1.Y + 4);
+                g.FillPolygon(ForeColor, new PointF[] { pt1, pt2, pt3 });
+
+                if (Option.XAxis.Unit.IsValid())
+                {
+                    g.DrawString(Option.XAxis.Unit, TempFont, ForeColor, new Rectangle(pt1.X - 200, pt1.Y, 400, 400), ContentAlignment.TopCenter);
+                }
+            }
+
+            if (Option.YAxis.ShowArrow)
+            {
+                Point pt1 = new Point(Option.Grid.Left, Option.Grid.Top - Option.YAxis.ShowArrowSize);
+                g.DrawLine(ForeColor, pt1.X, pt1.Y, Option.Grid.Left, Height - Option.Grid.Bottom);
+                Point pt2 = new Point(pt1.X - 4, pt1.Y + 10);
+                Point pt3 = new Point(pt1.X + 4, pt1.Y + 10);
+                g.FillPolygon(ForeColor, new PointF[] { pt1, pt2, pt3 });
+
+                if (Option.YAxis.Unit.IsValid())
+                {
+                    g.DrawString(Option.YAxis.Unit, TempFont, ForeColor, new Rectangle(pt1.X - 200, pt1.Y - 200, 200, 400), ContentAlignment.MiddleRight);
+                }
+            }
+
+            if (Option.HaveY2 && Option.Y2Axis.ShowArrow)
+            {
+                Point pt1 = new Point(Width - Option.Grid.Right, Option.Grid.Top - Option.Y2Axis.ShowArrowSize);
+                g.DrawLine(ForeColor, pt1.X, pt1.Y, Width - Option.Grid.Right, Height - Option.Grid.Bottom);
+                Point pt2 = new Point(pt1.X - 4, pt1.Y + 10);
+                Point pt3 = new Point(pt1.X + 4, pt1.Y + 10);
+                g.FillPolygon(ForeColor, new PointF[] { pt1, pt2, pt3 });
+
+                if (Option.Y2Axis.Unit.IsValid())
+                {
+                    g.DrawString(Option.Y2Axis.Unit, TempFont, ForeColor, new Rectangle(pt1.X, pt1.Y - 200, 200, 400), ContentAlignment.MiddleLeft);
+                }
+            }
 
             //X Tick           
             {
@@ -328,19 +394,24 @@ namespace Sunny.UI
                             label = Option.XAxis.CustomLabels.GetLabel(i);
                         }
 
-                        SizeF sf = g.MeasureString(label, TempFont);
+                        SizeF sf = TextRenderer.MeasureText(label, TempFont);
                         float xx = x - sf.Width / 2.0f;
-
                         if (xx > xr && xx + sf.Width < Width)
                         {
                             xr = xx + sf.Width;
-                            g.DrawString(label, TempFont, ForeColor, xx, DrawOrigin.Y + Option.XAxis.AxisTick.Length);
+                            if (Option.YDataOrder == UIYDataOrder.Asc)
+                                g.DrawString(label, TempFont, ForeColor, new Rectangle((int)x - Width, DrawOrigin.Y + Option.XAxis.AxisTick.Length, Width * 2, Height), ContentAlignment.TopCenter);
+                            else
+                                g.DrawString(label, TempFont, ForeColor, new Rectangle((int)x - Width, 0, Width * 2, (int)(DrawOrigin.Y - Option.XAxis.AxisTick.Length)), ContentAlignment.BottomCenter);
                         }
                     }
 
                     if (Option.XAxis.AxisTick.Show)
                     {
-                        g.DrawLine(ForeColor, x, DrawOrigin.Y, x, DrawOrigin.Y + Option.XAxis.AxisTick.Length);
+                        if (Option.YDataOrder == UIYDataOrder.Asc)
+                            g.DrawLine(ForeColor, x, DrawOrigin.Y, x, DrawOrigin.Y + Option.XAxis.AxisTick.Length);
+                        else
+                            g.DrawLine(ForeColor, x, DrawOrigin.Y, x, DrawOrigin.Y - Option.XAxis.AxisTick.Length);
                     }
 
                     if (x.Equals(DrawOrigin.X)) continue;
@@ -348,25 +419,20 @@ namespace Sunny.UI
 
                     if (Option.XAxis.ShowGridLine)
                     {
-                        using (Pen pn = new Pen(ForeColor))
-                        {
-                            pn.DashStyle = DashStyle.Dash;
-                            pn.DashPattern = new float[] { 3, 3 };
-                            g.DrawLine(pn, x, DrawOrigin.Y, x, Option.Grid.Top);
-                        }
+                        using Pen pn = new Pen(ForeColor);
+                        pn.DashStyle = DashStyle.Dash;
+                        pn.DashPattern = new float[] { 3, 3 };
+                        g.DrawLine(pn, x, DrawOrigin.Y, x, Option.Grid.Top);
                     }
                 }
 
-                SizeF sfName = g.MeasureString(Option.XAxis.Name, TempFont);
-                g.DrawString(Option.XAxis.Name, TempFont, ForeColor,
-                    DrawOrigin.X + (DrawSize.Width - sfName.Width) / 2.0f,
-                    DrawOrigin.Y + Option.XAxis.AxisTick.Length + sfName.Height);
+                g.DrawString(Option.XAxis.Name, TempFont, ForeColor, new Rectangle(DrawOrigin.X, 0, DrawSize.Width, Height - 16), ContentAlignment.BottomCenter);
             }
 
             //Y Tick            
             {
                 double[] YLabels = Option.YAxis.HaveCustomLabels ? Option.YAxis.CustomLabels.LabelValues() : YScale.CalcLabels();
-                float[] labels = YScale.CalcYPixels(YLabels, DrawOrigin.Y, DrawSize.Height);
+                float[] labels = YScale.CalcYPixels(YLabels, DrawOrigin.Y, DrawSize.Height, Option.YDataOrder);
                 float widthMax = 0;
                 for (int i = 0; i < labels.Length; i++)
                 {
@@ -379,12 +445,12 @@ namespace Sunny.UI
                     else
                         label = YLabels[i].ToString("F" + Option.YAxis.AxisLabel.DecimalPlaces);
 
-                    SizeF sf = g.MeasureString(label, TempFont);
+                    Size sf = TextRenderer.MeasureText(label, TempFont);
                     widthMax = Math.Max(widthMax, sf.Width);
 
                     if (Option.YAxis.AxisLabel.Show)
                     {
-                        g.DrawString(label, TempFont, ForeColor, DrawOrigin.X - Option.YAxis.AxisTick.Length - sf.Width, y - sf.Height / 2.0f);
+                        g.DrawString(label, TempFont, ForeColor, new Rectangle(DrawOrigin.X - Option.YAxis.AxisTick.Length - Width, (int)y - Height, Width, Height * 2), ContentAlignment.MiddleRight);
                     }
 
                     if (Option.YAxis.AxisTick.Show)
@@ -397,26 +463,24 @@ namespace Sunny.UI
 
                     if (Option.YAxis.ShowGridLine)
                     {
-                        using (Pen pn = new Pen(ForeColor))
-                        {
-                            pn.DashStyle = DashStyle.Dash;
-                            pn.DashPattern = new float[] { 3, 3 };
-                            g.DrawLine(pn, DrawOrigin.X, y, Width - Option.Grid.Right, y);
-                        }
+                        using Pen pn = new Pen(ForeColor);
+                        pn.DashStyle = DashStyle.Dash;
+                        pn.DashPattern = new float[] { 3, 3 };
+                        g.DrawLine(pn, DrawOrigin.X, y, Width - Option.Grid.Right, y);
                     }
                 }
 
-                SizeF sfName = g.MeasureString(Option.YAxis.Name, TempFont);
+                Size sfName = TextRenderer.MeasureText(Option.YAxis.Name, TempFont);
                 float xx = DrawOrigin.X - Option.YAxis.AxisTick.Length - widthMax - sfName.Height / 2.0f;
                 float yy = Option.Grid.Top + DrawSize.Height / 2.0f;
-                g.DrawStringRotateAtCenter(Option.YAxis.Name, TempFont, ForeColor, new PointF(xx, yy), 270);
+                g.DrawRotateString(Option.YAxis.Name, TempFont, ForeColor, new PointF(xx, yy), 270);
             }
 
             //Y2 Tick
             if (Option.HaveY2)
             {
                 double[] Y2Labels = Option.Y2Axis.HaveCustomLabels ? Option.Y2Axis.CustomLabels.LabelValues() : Y2Scale.CalcLabels();
-                float[] labels = Y2Scale.CalcYPixels(Y2Labels, DrawOrigin.Y, DrawSize.Height);
+                float[] labels = Y2Scale.CalcYPixels(Y2Labels, DrawOrigin.Y, DrawSize.Height, Option.YDataOrder);
                 float widthMax = 0;
                 for (int i = 0; i < labels.Length; i++)
                 {
@@ -431,31 +495,25 @@ namespace Sunny.UI
                         else
                             label = Y2Labels[i].ToString("F" + Option.Y2Axis.AxisLabel.DecimalPlaces);
 
-                        SizeF sf = g.MeasureString(label, TempFont);
+                        Size sf = TextRenderer.MeasureText(label, TempFont);
                         widthMax = Math.Max(widthMax, sf.Width);
-                        g.DrawString(label, TempFont, ForeColor, Width - Option.Grid.Right + Option.Y2Axis.AxisTick.Length, y - sf.Height / 2.0f);
+
+                        if (y.Equals(DrawOrigin.Y) && Option.XAxis.ShowArrow)
+                            g.DrawString(label, TempFont, ForeColor, new Rectangle(Width - Option.Grid.Right + Option.Y2Axis.AxisTick.Length, (int)y - Height, Width, Height * 2), ContentAlignment.MiddleLeft, 0, -sf.Height / 2);
+                        else
+                            g.DrawString(label, TempFont, ForeColor, new Rectangle(Width - Option.Grid.Right + Option.Y2Axis.AxisTick.Length, (int)y - Height, Width, Height * 2), ContentAlignment.MiddleLeft);
                     }
 
                     if (Option.Y2Axis.AxisTick.Show)
                     {
                         g.DrawLine(ForeColor, Width - Option.Grid.Right, y, Width - Option.Grid.Right + Option.YAxis.AxisTick.Length, y);
                     }
-
-                    if (y.Equals(DrawOrigin.Y)) continue;
-                    if (y.Equals(DrawOrigin.X - DrawSize.Height)) continue;
-
-                    using (Pen pn = new Pen(ForeColor))
-                    {
-                        pn.DashStyle = DashStyle.Dash;
-                        pn.DashPattern = new float[] { 3, 3 };
-                        //g.DrawLine(pn, DrawOrigin.X, y, Width - Option.Grid.Right, y);
-                    }
                 }
 
-                SizeF sfName = g.MeasureString(Option.Y2Axis.Name, TempFont);
+                Size sfName = TextRenderer.MeasureText(Option.Y2Axis.Name, TempFont);
                 float xx = Width - Option.Grid.Right + Option.Y2Axis.AxisTick.Length + widthMax + sfName.Height / 2.0f;
                 float yy = Option.Grid.Top + DrawSize.Height / 2.0f;
-                g.DrawStringRotateAtCenter(Option.Y2Axis.Name, TempFont, ForeColor, new PointF(xx, yy), 90);
+                g.DrawRotateString(Option.Y2Axis.Name, TempFont, ForeColor, new PointF(xx, yy), 90);
             }
         }
 
@@ -474,16 +532,48 @@ namespace Sunny.UI
 
             if (series.ShowLine || series.Symbol == UILinePointSymbol.None)
             {
-                using (Pen pen = new Pen(color, series.Width))
-                {
-                    g.SetHighQuality();
-                    for (int i = 0; i < series.Points.Count - 1; i++)
-                    {
-                        g.DrawTwoPoints(pen, series.Points[i], series.Points[i + 1], DrawRect);
-                    }
+                using Pen pen = new Pen(color, series.Width);
+                pen.DashStyle = series.DashStyle;
+                if (series.DashPattern.IsValid()) pen.DashPattern = series.DashPattern;
+                g.SetHighQuality();
 
-                    g.SetDefaultQuality();
+                if (series is UISwitchLineSeries lineSeries)
+                {
+                    List<PointF> points = new List<PointF>();
+                    points.Add(new PointF(lineSeries.Points[0].X, lineSeries.YOffsetPos));
+                    points.AddRange(lineSeries.Points);
+                    points.Add(new PointF(lineSeries.Points[series.Points.Count - 1].X, lineSeries.YOffsetPos));
+                    using var path = points.ToArray().Path();
+                    g.FillPath(color, path);
+                    g.DrawLine(color, points[0], points[points.Count - 1]);
+                    points.Clear();
                 }
+                else
+                {
+                    if (series.ContainsNan || !series.Smooth || series.Points.Count == 2 || ZoomAreas.Count > 5)
+                    {
+                        for (int i = 0; i < series.Points.Count - 1; i++)
+                        {
+                            g.DrawTwoPoints(pen, series.Points[i], series.Points[i + 1], DrawRect);
+                        }
+                    }
+                    else
+                    {
+                        try
+                        {
+                            g.DrawCurve(pen, series.Points.ToArray());
+                        }
+                        catch
+                        {
+                            for (int i = 0; i < series.Points.Count - 1; i++)
+                            {
+                                g.DrawTwoPoints(pen, series.Points[i], series.Points[i + 1], DrawRect);
+                            }
+                        }
+                    }
+                }
+
+                g.SetDefaultQuality();
             }
         }
 
@@ -508,10 +598,8 @@ namespace Sunny.UI
                 {
                     Color color = series.Color;
                     if (!series.CustomColor) color = ChartStyle.GetColor(idx);
-                    using (Graphics graphics = bmp.Graphics())
-                    {
-                        DrawSeries(graphics, color, series);
-                    }
+                    using Graphics graphics = bmp.Graphics();
+                    DrawSeries(graphics, color, series);
 
                     idx++;
                 }
@@ -551,7 +639,7 @@ namespace Sunny.UI
 
                 if (Option.GreaterWarningArea != null)
                 {
-                    wTop = YScale.CalcYPixel(Option.GreaterWarningArea.Value, DrawOrigin.Y, DrawSize.Height);
+                    wTop = YScale.CalcYPixel(Option.GreaterWarningArea.Value, DrawOrigin.Y, DrawSize.Height, Option.YDataOrder);
                     if (wTop < Option.Grid.Top)
                     {
                         wTop = Option.Grid.Top;
@@ -567,7 +655,7 @@ namespace Sunny.UI
 
                 if (Option.LessWarningArea != null)
                 {
-                    wBottom = YScale.CalcYPixel(Option.LessWarningArea.Value, DrawOrigin.Y, DrawSize.Height);
+                    wBottom = YScale.CalcYPixel(Option.LessWarningArea.Value, DrawOrigin.Y, DrawSize.Height, Option.YDataOrder);
                     if (wBottom > Height - Option.Grid.Bottom)
                     {
                         wBottom = Height - Option.Grid.Bottom;
@@ -597,71 +685,68 @@ namespace Sunny.UI
 
                 if (series.Symbol != UILinePointSymbol.None)
                 {
-                    using (Brush br = new SolidBrush(FillColor))
-                    using (Brush br1 = new SolidBrush(color))
-                    using (Pen pn = new Pen(color, series.SymbolLineWidth))
-                    {
-                        foreach (var p in series.Points)
-                        {
-                            if (p.X < Option.Grid.Left || p.X > Width - Option.Grid.Right) continue;
-                            if (p.Y < Option.Grid.Top || p.Y > Height - Option.Grid.Bottom) continue;
-                            if (double.IsNaN(p.X) || double.IsNaN(p.Y)) continue;
+                    using Brush br = new SolidBrush(FillColor);
+                    using Brush br1 = new SolidBrush(color);
+                    using Pen pn = new Pen(color, series.SymbolLineWidth);
 
-                            switch (series.Symbol)
-                            {
-                                case UILinePointSymbol.Square:
-                                    g.FillRectangle(br, p.X - series.SymbolSize, p.Y - series.SymbolSize, series.SymbolSize * 2, series.SymbolSize * 2);
-                                    g.DrawRectangle(pn, p.X - series.SymbolSize, p.Y - series.SymbolSize, series.SymbolSize * 2, series.SymbolSize * 2);
-                                    break;
-                                case UILinePointSymbol.Diamond:
-                                    {
-                                        PointF pt1 = new PointF(p.X - series.SymbolSize, p.Y);
-                                        PointF pt2 = new PointF(p.X, p.Y - series.SymbolSize);
-                                        PointF pt3 = new PointF(p.X + series.SymbolSize, p.Y);
-                                        PointF pt4 = new PointF(p.X, p.Y + series.SymbolSize);
-                                        PointF[] pts = { pt1, pt2, pt3, pt4, pt1 };
-                                        g.SetHighQuality();
-                                        GraphicsPath path = pts.Path();
-                                        g.FillPath(br, path);
-                                        g.DrawPath(pn, path);
-                                        path.Dispose();
-                                    }
-                                    break;
-                                case UILinePointSymbol.Triangle:
-                                    {
-                                        PointF pt1 = new PointF(p.X, p.Y - series.SymbolSize);
-                                        PointF pt2 = new PointF(p.X - series.SymbolSize * 0.866f, p.Y + series.SymbolSize * 0.5f);
-                                        PointF pt3 = new PointF(p.X + series.SymbolSize * 0.866f, p.Y + series.SymbolSize * 0.5f);
-                                        PointF[] pts = { pt1, pt2, pt3, pt1 };
-                                        g.SetHighQuality();
-                                        GraphicsPath path = pts.Path();
-                                        g.FillPath(br, path);
-                                        g.DrawPath(pn, path);
-                                        path.Dispose();
-                                    }
-                                    break;
-                                case UILinePointSymbol.Circle:
+                    foreach (var p in series.Points)
+                    {
+                        if (p.X < Option.Grid.Left || p.X > Width - Option.Grid.Right) continue;
+                        if (p.Y < Option.Grid.Top || p.Y > Height - Option.Grid.Bottom) continue;
+                        if (double.IsNaN(p.X) || double.IsNaN(p.Y)) continue;
+
+                        switch (series.Symbol)
+                        {
+                            case UILinePointSymbol.Square:
+                                g.FillRectangle(br, p.X - series.SymbolSize, p.Y - series.SymbolSize, series.SymbolSize * 2, series.SymbolSize * 2);
+                                g.DrawRectangle(pn, p.X - series.SymbolSize, p.Y - series.SymbolSize, series.SymbolSize * 2, series.SymbolSize * 2);
+                                break;
+                            case UILinePointSymbol.Diamond:
+                                {
+                                    PointF pt1 = new PointF(p.X - series.SymbolSize, p.Y);
+                                    PointF pt2 = new PointF(p.X, p.Y - series.SymbolSize);
+                                    PointF pt3 = new PointF(p.X + series.SymbolSize, p.Y);
+                                    PointF pt4 = new PointF(p.X, p.Y + series.SymbolSize);
+                                    PointF[] pts = { pt1, pt2, pt3, pt4, pt1 };
                                     g.SetHighQuality();
-                                    g.FillEllipse(br, p.X - series.SymbolSize, p.Y - series.SymbolSize, series.SymbolSize * 2, series.SymbolSize * 2);
-                                    g.DrawEllipse(pn, p.X - series.SymbolSize, p.Y - series.SymbolSize, series.SymbolSize * 2, series.SymbolSize * 2);
-                                    break;
-                                case UILinePointSymbol.Round:
+                                    using GraphicsPath path = pts.Path();
+                                    g.FillPath(br, path);
+                                    g.DrawPath(pn, path);
+                                }
+                                break;
+                            case UILinePointSymbol.Triangle:
+                                {
+                                    PointF pt1 = new PointF(p.X, p.Y - series.SymbolSize);
+                                    PointF pt2 = new PointF(p.X - series.SymbolSize * 0.866f, p.Y + series.SymbolSize * 0.5f);
+                                    PointF pt3 = new PointF(p.X + series.SymbolSize * 0.866f, p.Y + series.SymbolSize * 0.5f);
+                                    PointF[] pts = { pt1, pt2, pt3, pt1 };
                                     g.SetHighQuality();
-                                    g.FillEllipse(br1, p.X - series.SymbolSize, p.Y - series.SymbolSize, series.SymbolSize * 2, series.SymbolSize * 2);
-                                    break;
-                                case UILinePointSymbol.Plus:
-                                    g.DrawLine(pn, p.X - series.SymbolSize, p.Y, p.X + series.SymbolSize, p.Y);
-                                    g.DrawLine(pn, p.X, p.Y - series.SymbolSize, p.X, p.Y + series.SymbolSize);
-                                    break;
-                                case UILinePointSymbol.Star:
-                                    g.SetHighQuality();
-                                    g.DrawLine(pn, p.X, p.Y - series.SymbolSize, p.X, p.Y + series.SymbolSize);
-                                    g.DrawLine(pn, p.X - series.SymbolSize * 0.866f, p.Y + series.SymbolSize * 0.5f,
-                                        p.X + series.SymbolSize * 0.866f, p.Y - series.SymbolSize * 0.5f);
-                                    g.DrawLine(pn, p.X - series.SymbolSize * 0.866f, p.Y - series.SymbolSize * 0.5f,
-                                        p.X + series.SymbolSize * 0.866f, p.Y + series.SymbolSize * 0.5f);
-                                    break;
-                            }
+                                    using GraphicsPath path = pts.Path();
+                                    g.FillPath(br, path);
+                                    g.DrawPath(pn, path);
+                                }
+                                break;
+                            case UILinePointSymbol.Circle:
+                                g.SetHighQuality();
+                                g.FillEllipse(br, p.X - series.SymbolSize, p.Y - series.SymbolSize, series.SymbolSize * 2, series.SymbolSize * 2);
+                                g.DrawEllipse(pn, p.X - series.SymbolSize, p.Y - series.SymbolSize, series.SymbolSize * 2, series.SymbolSize * 2);
+                                break;
+                            case UILinePointSymbol.Round:
+                                g.SetHighQuality();
+                                g.FillEllipse(br1, p.X - series.SymbolSize, p.Y - series.SymbolSize, series.SymbolSize * 2, series.SymbolSize * 2);
+                                break;
+                            case UILinePointSymbol.Plus:
+                                g.DrawLine(pn, p.X - series.SymbolSize, p.Y, p.X + series.SymbolSize, p.Y);
+                                g.DrawLine(pn, p.X, p.Y - series.SymbolSize, p.X, p.Y + series.SymbolSize);
+                                break;
+                            case UILinePointSymbol.Star:
+                                g.SetHighQuality();
+                                g.DrawLine(pn, p.X, p.Y - series.SymbolSize, p.X, p.Y + series.SymbolSize);
+                                g.DrawLine(pn, p.X - series.SymbolSize * 0.866f, p.Y + series.SymbolSize * 0.5f,
+                                    p.X + series.SymbolSize * 0.866f, p.Y - series.SymbolSize * 0.5f);
+                                g.DrawLine(pn, p.X - series.SymbolSize * 0.866f, p.Y - series.SymbolSize * 0.5f,
+                                    p.X + series.SymbolSize * 0.866f, p.Y + series.SymbolSize * 0.5f);
+                                break;
                         }
                     }
 
@@ -672,97 +757,86 @@ namespace Sunny.UI
 
         private void DrawAxisScales(Graphics g)
         {
+            using var TempFont = Font.DPIScaleFont(UIStyles.DefaultSubFontSize);
             if (YScale != null)
+            {
                 foreach (var line in Option.YAxisScaleLines)
                 {
-                    float pos = YScale.CalcYPixel(line.Value, DrawOrigin.Y, DrawSize.Height);
+                    float pos = YScale.CalcYPixel(line.Value, DrawOrigin.Y, DrawSize.Height, Option.YDataOrder);
 
 
                     if (pos <= Option.Grid.Top || pos >= Height - Option.Grid.Bottom) continue;
 
-                    using (Pen pn = new Pen(line.Color, line.Size))
+                    using Pen pn = new Pen(line.Color, line.Size);
+                    if (line.DashDot)
                     {
-                        if (line.DashDot)
-                        {
-                            pn.DashStyle = DashStyle.Dash;
-                            pn.DashPattern = new float[] { 3, 3 };
-                        }
-
-                        g.DrawLine(pn, DrawOrigin.X + 1, pos, Width - Option.Grid.Right - 1, pos);
+                        pn.DashStyle = DashStyle.Dash;
+                        pn.DashPattern = new float[] { 3, 3 };
                     }
 
-                    SizeF sf = g.MeasureString(line.Name, TempFont);
-
-                    if (Option.Y2AxisScaleLines != null)
-                        line.Left = UILeftAlignment.Left;
-
-                    if (line.Left == UILeftAlignment.Left)
-                        g.DrawString(line.Name, TempFont, line.Color, DrawOrigin.X + 4, pos - 2 - sf.Height);
-                    if (line.Left == UILeftAlignment.Center)
-                        g.DrawString(line.Name, TempFont, line.Color, DrawOrigin.X + (Width - Option.Grid.Left - Option.Grid.Right - sf.Width) / 2, pos - 2 - sf.Height);
-                    if (line.Left == UILeftAlignment.Right)
-                        g.DrawString(line.Name, TempFont, line.Color, Width - sf.Width - 4 - Option.Grid.Right, pos - 2 - sf.Height);
+                    g.DrawLine(pn, DrawOrigin.X + 1, pos, Width - Option.Grid.Right - 1, pos);
+                    g.DrawString(line.Name, TempFont, line.Color, new Rectangle(DrawOrigin.X + 4, (int)pos - 2 - Height, DrawSize.Width - 8, Height), (StringAlignment)((int)line.Left), StringAlignment.Far);
                 }
+            }
 
             if (Y2Scale != null)
+            {
                 foreach (var line in Option.Y2AxisScaleLines)
                 {
-                    float pos = Y2Scale.CalcYPixel(line.Value, DrawOrigin.Y, DrawSize.Height);
+                    float pos = Y2Scale.CalcYPixel(line.Value, DrawOrigin.Y, DrawSize.Height, Option.YDataOrder);
                     if (pos <= Option.Grid.Top || pos >= Height - Option.Grid.Bottom) continue;
 
-                    using (Pen pn = new Pen(line.Color, line.Size))
+                    using Pen pn = new Pen(line.Color, line.Size);
+                    if (line.DashDot)
                     {
-                        if (line.DashDot)
-                        {
-                            pn.DashStyle = DashStyle.Dash;
-                            pn.DashPattern = new float[] { 3, 3 };
-                        }
-
-                        g.DrawLine(pn, DrawOrigin.X + 1, pos, Width - Option.Grid.Right - 1, pos);
+                        pn.DashStyle = DashStyle.Dash;
+                        pn.DashPattern = new float[] { 3, 3 };
                     }
 
-
-                    SizeF sf = g.MeasureString(line.Name, TempFont);
-                    line.Left = UILeftAlignment.Right;
-                    if (line.Left == UILeftAlignment.Left)
-                        g.DrawString(line.Name, TempFont, line.Color, DrawOrigin.X + 4, pos - 2 - sf.Height);
-                    if (line.Left == UILeftAlignment.Center)
-                        g.DrawString(line.Name, TempFont, line.Color, DrawOrigin.X + (Width - Option.Grid.Left - Option.Grid.Right - sf.Width) / 2, pos - 2 - sf.Height);
-                    if (line.Left == UILeftAlignment.Right)
-                        g.DrawString(line.Name, TempFont, line.Color, Width - sf.Width - 4 - Option.Grid.Right, pos - 2 - sf.Height);
+                    g.DrawLine(pn, DrawOrigin.X + 1, pos, Width - Option.Grid.Right - 1, pos);
+                    g.DrawString(line.Name, TempFont, line.Color, new Rectangle(DrawOrigin.X + 4, (int)pos - 2 - Height, DrawSize.Width - 8, Height), (StringAlignment)((int)line.Left), StringAlignment.Far);
                 }
+            }
 
             int idx = 0;
+            float xmin = -9999;
+            float ymin = Option.Grid.Top + 4;
             if (XScale != null)
+            {
                 foreach (var line in Option.XAxisScaleLines)
                 {
                     float pos = XScale.CalcXPixel(line.Value, DrawOrigin.X, DrawSize.Width);
                     if (pos <= Option.Grid.Left || pos >= Width - Option.Grid.Right) continue;
 
-                    using (Pen pn = new Pen(line.Color, line.Size))
+                    using Pen pn = new Pen(line.Color, line.Size);
+                    if (line.DashDot)
                     {
-                        if (line.DashDot)
-                        {
-                            pn.DashStyle = DashStyle.Dash;
-                            pn.DashPattern = new float[] { 3, 3 };
-                        }
-
-                        g.DrawLine(pn, pos, DrawOrigin.Y - 1, pos, Option.Grid.Top + 1);
+                        pn.DashStyle = DashStyle.Dash;
+                        pn.DashPattern = new float[] { 3, 3 };
                     }
 
-                    SizeF sf = g.MeasureString(line.Name, TempFont);
+                    g.DrawLine(pn, pos, Height - Option.Grid.Bottom - 1, pos, Option.Grid.Top + 1);
+
+                    Size sf = TextRenderer.MeasureText(line.Name, TempFont);
                     float x = pos - sf.Width;
                     if (x < Option.Grid.Left) x = pos + 2;
-                    float y = Option.Grid.Top + 4 + sf.Height * idx;
+                    float y;
+                    if (x > xmin)
+                        y = ymin;
+                    else
+                        y = ymin + sf.Height;
+
                     if (y > Height - Option.Grid.Bottom)
                     {
-                        idx = 0;
-                        y = Option.Grid.Top + 4 + sf.Height * idx;
+                        y = Option.Grid.Top + 4;
                     }
 
+                    xmin = x + sf.Width;
+                    ymin = y;
                     idx++;
-                    g.DrawString(line.Name, TempFont, line.Color, x, y);
+                    g.DrawString(line.Name, TempFont, line.Color, new Rectangle((int)x, (int)y, Width, Height), ContentAlignment.TopLeft);
                 }
+            }
         }
 
         private readonly List<UILineSelectPoint> selectPoints = new List<UILineSelectPoint>();
@@ -784,6 +858,7 @@ namespace Sunny.UI
                 {
                     if (series.DataCount == 0) continue;
                     if (!series.Visible) continue;
+
                     if (series.GetNearestPoint(e.Location, 4, out double x, out double y, out int index))
                     {
                         UILineSelectPoint point = new UILineSelectPoint();
@@ -833,32 +908,32 @@ namespace Sunny.UI
 
                         if (idx > 0) sb.Append('\n');
 
-                        sb.Append(point.Series.Name);
-                        sb.Append('\n');
-                        sb.Append(Option.XAxis.Name + ": ");
-
-                        string customlabel = "";
-                        if (Option.XAxis.HaveCustomLabels)
+                        if (PointFormat != null)
                         {
-                            int ci = (int)point.X;
-                            customlabel = Option.XAxis.CustomLabels.GetLabel(ci);
-                            sb.Append(customlabel);
+                            sb.Append(PointFormat(this, point));
                         }
-
-                        if (customlabel.IsNullOrEmpty())
-                        {
-                            if (Option.XAxisType == UIAxisType.DateTime)
-                                sb.Append(new DateTimeInt64(point.X).ToString(point.Series.XAxisDateTimeFormat.IsValid() ? point.Series.XAxisDateTimeFormat : XScale.Format));
-                            else
-                                sb.Append(point.X.ToString(point.Series.XAxisDecimalPlaces >= 0 ? "F" + point.Series.XAxisDecimalPlaces : XScale.Format));
-                        }
-
-                        sb.Append('\n');
-
-                        if (point.Series.IsY2)
-                            sb.Append(Option.Y2Axis.Name + ": " + point.Y.ToString(point.Series.YAxisDecimalPlaces >= 0 ? "F" + point.Series.YAxisDecimalPlaces : Y2Scale.Format));
                         else
-                            sb.Append(Option.YAxis.Name + ": " + point.Y.ToString(point.Series.YAxisDecimalPlaces >= 0 ? "F" + point.Series.YAxisDecimalPlaces : YScale.Format));
+                        {
+                            sb.Append(point.Series.Name);
+                            sb.Append('\n');
+                            sb.Append(Option.XAxis.Name + ": ");
+
+                            string customlabel = "";
+                            if (customlabel.IsNullOrEmpty())
+                            {
+                                if (Option.XAxisType == UIAxisType.DateTime)
+                                    sb.Append(new DateTimeInt64(point.X).ToString(point.Series.XAxisDateTimeFormat.IsValid() ? point.Series.XAxisDateTimeFormat : XScale.Format));
+                                else
+                                    sb.Append(point.X.ToString(point.Series.XAxisDecimalPlaces >= 0 ? "F" + point.Series.XAxisDecimalPlaces : XScale.Format));
+                            }
+
+                            sb.Append('\n');
+
+                            if (point.Series.IsY2)
+                                sb.Append(Option.Y2Axis.Name + ": " + point.Y.ToString(point.Series.YAxisDecimalPlaces >= 0 ? "F" + point.Series.YAxisDecimalPlaces : Y2Scale.Format));
+                            else
+                                sb.Append(Option.YAxis.Name + ": " + point.Y.ToString(point.Series.YAxisDecimalPlaces >= 0 ? "F" + point.Series.YAxisDecimalPlaces : YScale.Format));
+                        }
 
                         idx++;
                     }
@@ -871,11 +946,10 @@ namespace Sunny.UI
                         }
                         else
                         {
-                            using (Graphics g = this.CreateGraphics())
-                            {
-                                SizeF sf = g.MeasureString(sb.ToString(), TempFont);
-                                tip.Size = new Size((int)sf.Width + 4, (int)sf.Height + 4);
-                            }
+                            using Graphics g = this.CreateGraphics();
+                            using var TempFont = Font.DPIScaleFont(UIStyles.DefaultSubFontSize);
+                            Size sf = TextRenderer.MeasureText(sb.ToString(), TempFont);
+                            tip.Size = new Size(sf.Width + 4, sf.Height + 4);
 
                             int x = e.Location.X + 15;
                             int y = e.Location.Y + 20;
@@ -892,27 +966,63 @@ namespace Sunny.UI
                         }
                     }
 
-                    PointValue?.Invoke(this, selectPoints.ToArray());
+                    if (selectPoints.Count > 0)
+                    {
+                        PointValue?.Invoke(this, selectPoints.ToArray());
+                    }
                 }
             }
             else
             {
-                if (e.Button == MouseButtons.Left && e.X > Option.Grid.Left && e.X < Width - Option.Grid.Right &&
-                    e.Y > Option.Grid.Top && e.Y < Height - Option.Grid.Bottom)
+                switch (MouseDownType)
                 {
-                    StopPoint = e.Location;
-                    Invalidate();
+                    case UILineChartMouseDownType.Zoom:
+                        if (MouseZoom && e.Button == MouseButtons.Left &&
+                            e.X > Option.Grid.Left && e.X < Width - Option.Grid.Right &&
+                            e.Y > Option.Grid.Top && e.Y < Height - Option.Grid.Bottom)
+                        {
+                            StopPoint = e.Location;
+                            Invalidate();
+                        }
+                        break;
+                    case UILineChartMouseDownType.XArea:
+                        if (e.Button == MouseButtons.Left &&
+                            e.X > Option.Grid.Left && e.X < Width - Option.Grid.Right &&
+                            e.Y > Option.Grid.Top && e.Y < Height - Option.Grid.Bottom)
+                        {
+                            StopPoint = e.Location;
+                            Invalidate();
+                        }
+                        break;
+                    case UILineChartMouseDownType.YArea:
+                        if (e.Button == MouseButtons.Left &&
+                            e.X > Option.Grid.Left && e.X < Width - Option.Grid.Right &&
+                            e.Y > Option.Grid.Top && e.Y < Height - Option.Grid.Bottom)
+                        {
+                            StopPoint = e.Location;
+                            Invalidate();
+                        }
+                        break;
+                    default:
+                        break;
                 }
+
             }
         }
 
         public delegate void OnPointValue(object sender, UILineSelectPoint[] points);
 
+        public delegate string OnPointFormat(object sender, UILineSelectPoint point);
+
         public event OnPointValue PointValue;
+
+        public event OnPointFormat PointFormat;
 
         private bool IsMouseDown;
 
         private Point StartPoint, StopPoint;
+
+        public UILineChartMouseDownType MouseDownType { get; set; } = UILineChartMouseDownType.Zoom;
 
         /// <summary>
         /// 重载鼠标按下事件
@@ -922,16 +1032,44 @@ namespace Sunny.UI
         {
             base.OnMouseDown(e);
 
-            if (e.Button == MouseButtons.Left && e.X > Option.Grid.Left && e.X < Width - Option.Grid.Right &&
-                e.Y > Option.Grid.Top && e.Y < Height - Option.Grid.Bottom)
+            switch (MouseDownType)
             {
-                IsMouseDown = true;
-                StartPoint = StopPoint = e.Location;
-            }
+                case UILineChartMouseDownType.Zoom:
+                    if (MouseZoom && e.Button == MouseButtons.Left &&
+                        e.X > Option.Grid.Left && e.X < Width - Option.Grid.Right &&
+                        e.Y > Option.Grid.Top && e.Y < Height - Option.Grid.Bottom)
+                    {
+                        IsMouseDown = true;
+                        StartPoint = StopPoint = e.Location;
+                    }
 
-            if (e.Button == MouseButtons.Right && ContextMenuStrip == null)
-            {
-                ZoomBack();
+                    if (MouseZoom && e.Button == MouseButtons.Right && ContextMenuStrip == null)
+                    {
+                        ZoomBack();
+                    }
+                    break;
+                case UILineChartMouseDownType.XArea:
+                    if (e.Button == MouseButtons.Left &&
+                        e.X > Option.Grid.Left && e.X < Width - Option.Grid.Right &&
+                        e.Y > Option.Grid.Top && e.Y < Height - Option.Grid.Bottom)
+                    {
+                        IsMouseDown = true;
+                        StartPoint = StopPoint = e.Location;
+                    }
+
+                    break;
+                case UILineChartMouseDownType.YArea:
+                    if (e.Button == MouseButtons.Left &&
+                        e.X > Option.Grid.Left && e.X < Width - Option.Grid.Right &&
+                        e.Y > Option.Grid.Top && e.Y < Height - Option.Grid.Bottom)
+                    {
+                        IsMouseDown = true;
+                        StartPoint = StopPoint = e.Location;
+                    }
+
+                    break;
+                default:
+                    break;
             }
         }
 
@@ -942,13 +1080,59 @@ namespace Sunny.UI
         protected override void OnMouseUp(MouseEventArgs e)
         {
             base.OnMouseUp(e);
-            if (IsMouseDown)
+
+            switch (MouseDownType)
             {
-                IsMouseDown = false;
-                Invalidate();
-                Zoom();
+                case UILineChartMouseDownType.Zoom:
+                    if (MouseZoom && IsMouseDown)
+                    {
+                        IsMouseDown = false;
+                        Invalidate();
+                        Zoom();
+                    }
+
+                    break;
+                case UILineChartMouseDownType.XArea:
+                    if (IsMouseDown)
+                    {
+                        IsMouseDown = false;
+                        Invalidate();
+                        double XMin = XScale.CalcXPos(Math.Min(StartPoint.X, StopPoint.X), DrawOrigin.X, DrawSize.Width);
+                        double XMax = XScale.CalcXPos(Math.Max(StartPoint.X, StopPoint.X), DrawOrigin.X, DrawSize.Width);
+                        if (!XMax.EqualsDouble(XMin))
+                            MouseAreaSelected?.Invoke(this, MouseDownType, XMin, XMax, "X");
+                    }
+
+                    break;
+                case UILineChartMouseDownType.YArea:
+                    if (IsMouseDown)
+                    {
+                        IsMouseDown = false;
+                        Invalidate();
+
+                        double y1 = YScale.CalcYPos(Math.Min(StartPoint.Y, StopPoint.Y), DrawOrigin.Y, DrawSize.Height, Option.YDataOrder);
+                        double y2 = YScale.CalcYPos(Math.Max(StartPoint.Y, StopPoint.Y), DrawOrigin.Y, DrawSize.Height, Option.YDataOrder);
+                        if (!y2.EqualsDouble(y1))
+                            MouseAreaSelected?.Invoke(this, MouseDownType, Math.Min(y1, y2), Math.Max(y1, y2), "Y");
+
+                        if (Option.HaveY2)
+                        {
+                            y1 = Y2Scale.CalcYPos(Math.Min(StartPoint.Y, StopPoint.Y), DrawOrigin.Y, DrawSize.Height, Option.YDataOrder);
+                            y2 = Y2Scale.CalcYPos(Math.Max(StartPoint.Y, StopPoint.Y), DrawOrigin.Y, DrawSize.Height, Option.YDataOrder);
+                            if (!y2.EqualsDouble(y1))
+                                MouseAreaSelected?.Invoke(this, MouseDownType, Math.Min(y1, y2), Math.Max(y1, y2), "Y2");
+                        }
+                    }
+
+                    break;
+                default:
+                    break;
             }
         }
+
+        [DefaultValue(true)]
+        [Description("鼠标可框选缩放"), Category("SunnyUI")]
+        public bool MouseZoom { get; set; } = true;
 
         public bool IsZoom { get; private set; }
         private readonly List<ZoomArea> ZoomAreas = new List<ZoomArea>();
@@ -989,13 +1173,18 @@ namespace Sunny.UI
             var zoomArea = new ZoomArea();
             zoomArea.XMin = XScale.CalcXPos(Math.Min(StartPoint.X, StopPoint.X), DrawOrigin.X, DrawSize.Width);
             zoomArea.XMax = XScale.CalcXPos(Math.Max(StartPoint.X, StopPoint.X), DrawOrigin.X, DrawSize.Width);
-            zoomArea.YMax = YScale.CalcYPos(Math.Min(StartPoint.Y, StopPoint.Y), DrawOrigin.Y, DrawSize.Height);
-            zoomArea.YMin = YScale.CalcYPos(Math.Max(StartPoint.Y, StopPoint.Y), DrawOrigin.Y, DrawSize.Height);
+
+            double y1 = YScale.CalcYPos(Math.Min(StartPoint.Y, StopPoint.Y), DrawOrigin.Y, DrawSize.Height, Option.YDataOrder);
+            double y2 = YScale.CalcYPos(Math.Max(StartPoint.Y, StopPoint.Y), DrawOrigin.Y, DrawSize.Height, Option.YDataOrder);
+            zoomArea.YMax = Math.Max(y1, y2);
+            zoomArea.YMin = Math.Min(y1, y2);
 
             if (Option.HaveY2)
             {
-                zoomArea.Y2Max = Y2Scale.CalcYPos(Math.Min(StartPoint.Y, StopPoint.Y), DrawOrigin.Y, DrawSize.Height);
-                zoomArea.Y2Min = Y2Scale.CalcYPos(Math.Max(StartPoint.Y, StopPoint.Y), DrawOrigin.Y, DrawSize.Height);
+                y1 = Y2Scale.CalcYPos(Math.Min(StartPoint.Y, StopPoint.Y), DrawOrigin.Y, DrawSize.Height, Option.YDataOrder);
+                y2 = Y2Scale.CalcYPos(Math.Max(StartPoint.Y, StopPoint.Y), DrawOrigin.Y, DrawSize.Height, Option.YDataOrder);
+                zoomArea.Y2Max = Math.Max(y1, y2);
+                zoomArea.Y2Min = Math.Min(y1, y2);
             }
 
             AddZoomArea(zoomArea);
@@ -1104,16 +1293,49 @@ namespace Sunny.UI
             if (IsMouseDown)
             {
                 Color color = Color.FromArgb(50, UIColor.Blue);
-                g.FillRectangle(color,
-                    Math.Min(StartPoint.X, StopPoint.X),
-                    Math.Min(StartPoint.Y, StopPoint.Y),
-                    Math.Abs(StopPoint.X - StartPoint.X),
-                    Math.Abs(StopPoint.Y - StartPoint.Y));
-                g.DrawRectangle(UIColor.Blue,
-                    Math.Min(StartPoint.X, StopPoint.X),
-                    Math.Min(StartPoint.Y, StopPoint.Y),
-                    Math.Abs(StopPoint.X - StartPoint.X),
-                    Math.Abs(StopPoint.Y - StartPoint.Y));
+
+
+                switch (MouseDownType)
+                {
+                    case UILineChartMouseDownType.Zoom:
+                        g.FillRectangle(color,
+                            Math.Min(StartPoint.X, StopPoint.X),
+                            Math.Min(StartPoint.Y, StopPoint.Y),
+                            Math.Abs(StopPoint.X - StartPoint.X),
+                            Math.Abs(StopPoint.Y - StartPoint.Y));
+                        g.DrawRectangle(UIColor.Blue,
+                            Math.Min(StartPoint.X, StopPoint.X),
+                            Math.Min(StartPoint.Y, StopPoint.Y),
+                            Math.Abs(StopPoint.X - StartPoint.X),
+                            Math.Abs(StopPoint.Y - StartPoint.Y));
+                        break;
+                    case UILineChartMouseDownType.XArea:
+                        g.FillRectangle(color,
+                            Math.Min(StartPoint.X, StopPoint.X),
+                            Option.Grid.Top,
+                            Math.Abs(StopPoint.X - StartPoint.X),
+                            DrawSize.Height);
+                        g.DrawRectangle(UIColor.Blue,
+                            Math.Min(StartPoint.X, StopPoint.X),
+                            Option.Grid.Top,
+                            Math.Abs(StopPoint.X - StartPoint.X),
+                            DrawSize.Height);
+                        break;
+                    case UILineChartMouseDownType.YArea:
+                        g.FillRectangle(color,
+                            Option.Grid.Left,
+                            Math.Min(StartPoint.Y, StopPoint.Y),
+                             DrawSize.Width,
+                            Math.Abs(StopPoint.Y - StartPoint.Y));
+                        g.DrawRectangle(UIColor.Blue,
+                            Option.Grid.Left,
+                            Math.Min(StartPoint.Y, StopPoint.Y),
+                             DrawSize.Width,
+                            Math.Abs(StopPoint.Y - StartPoint.Y));
+                        break;
+                    default:
+                        break;
+                }
             }
         }
 
@@ -1122,5 +1344,7 @@ namespace Sunny.UI
             base.OnMouseDoubleClick(e);
             if (e.Button == MouseButtons.Left) ZoomNormal();
         }
+
+        public event OnMouseAreaSelected MouseAreaSelected;
     }
 }

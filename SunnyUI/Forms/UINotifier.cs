@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -35,32 +35,21 @@ using System.Linq;
 using System.Threading;
 using System.Windows.Forms;
 
-#pragma warning disable 1591
-
 namespace Sunny.UI
 {
     public sealed partial class UINotifier : Form
     {
-
-        [Browsable(false)]
-        public bool IsScaled { get; private set; }
-
         public void SetDPIScale()
         {
-            if (!IsScaled && UIStyles.DPIScale)
+            Font = UIDPIScale.DPIScaleFont(Font, Font.Size);
+
+            noteTitle.Font = noteTitle.Font.DPIScaleFont(noteTitle.Font.Size);
+            noteContent.Font = noteContent.Font.DPIScaleFont(noteContent.Font.Size);
+            noteDate.Font = noteDate.Font.DPIScaleFont(noteDate.Font.Size);
+
+            foreach (var control in this.GetAllDPIScaleControls())
             {
-                this.SetDPIScaleFont();
-
-                noteTitle.Font = noteTitle.Font.DPIScaleFont();
-                noteContent.Font = noteContent.Font.DPIScaleFont();
-                noteDate.Font = noteDate.Font.DPIScaleFont();
-
-                foreach (Control control in this.GetAllDPIScaleControls())
-                {
-                    control.SetDPIScaleFont();
-                }
-
-                IsScaled = true;
+                control.SetDPIScale();
             }
         }
 
@@ -117,7 +106,7 @@ namespace Sunny.UI
             InApplication = insideMe;
 
             InitializeComponent();
-            if (Notes.Count == 0)
+            if (Notes.IsEmpty)
                 ID = 1;
             else
                 ID = (short)(Notes.Keys.Max() + 1);                                                       // Set the Note ID
@@ -385,7 +374,7 @@ namespace Sunny.UI
         //-------------------------------------------------------------------------------------------------------------------------------
         private void onMenuClick(object sender, EventArgs e)
         {
-            closeAllToolStripMenuItem.Font = menu.Font.DPIScaleFont();
+            closeAllToolStripMenuItem.Font = menu.Font.DPIScaleFont(menu.Font.Size);
             menu.Show(buttonMenu, new Point(0, buttonMenu.Height));
         }
 

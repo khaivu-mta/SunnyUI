@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -19,6 +19,7 @@
  * 2020-01-01: V2.2.0 增加文件说明
  * 2020-05-29: V2.2.5 重写
  * 2020-07-08: V2.2.6 重写下拉窗体，缩短创建时间
+ * 2023-05-13: V3.3.6 重构DrawString函数
 ******************************************************************************/
 
 using System;
@@ -114,7 +115,7 @@ namespace Sunny.UI
             this.TopPanel.Controls.Add(this.b1);
             this.TopPanel.Dock = System.Windows.Forms.DockStyle.Top;
             this.TopPanel.FillColor = System.Drawing.Color.White;
-            this.TopPanel.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.TopPanel.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.TopPanel.Location = new System.Drawing.Point(0, 0);
             this.TopPanel.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.TopPanel.MinimumSize = new System.Drawing.Size(1, 1);
@@ -137,7 +138,7 @@ namespace Sunny.UI
             this.b4.Cursor = System.Windows.Forms.Cursors.Hand;
             this.b4.FillColor = System.Drawing.Color.White;
             this.b4.FillHoverColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(160)))), ((int)(((byte)(255)))));
-            this.b4.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.b4.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.b4.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(160)))), ((int)(((byte)(255)))));
             this.b4.ImageInterval = 0;
             this.b4.Location = new System.Drawing.Point(250, 4);
@@ -161,7 +162,7 @@ namespace Sunny.UI
             this.b3.Cursor = System.Windows.Forms.Cursors.Hand;
             this.b3.FillColor = System.Drawing.Color.White;
             this.b3.FillHoverColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(160)))), ((int)(((byte)(255)))));
-            this.b3.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.b3.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.b3.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(160)))), ((int)(((byte)(255)))));
             this.b3.ImageInterval = 0;
             this.b3.Location = new System.Drawing.Point(214, 4);
@@ -184,7 +185,7 @@ namespace Sunny.UI
             this.b2.Cursor = System.Windows.Forms.Cursors.Hand;
             this.b2.FillColor = System.Drawing.Color.White;
             this.b2.FillHoverColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(160)))), ((int)(((byte)(255)))));
-            this.b2.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.b2.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.b2.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(160)))), ((int)(((byte)(255)))));
             this.b2.ImageInterval = 0;
             this.b2.Location = new System.Drawing.Point(40, 4);
@@ -207,7 +208,7 @@ namespace Sunny.UI
             this.b1.Cursor = System.Windows.Forms.Cursors.Hand;
             this.b1.FillColor = System.Drawing.Color.White;
             this.b1.FillHoverColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(160)))), ((int)(((byte)(255)))));
-            this.b1.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.b1.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.b1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(160)))), ((int)(((byte)(255)))));
             this.b1.ImageInterval = 0;
             this.b1.Location = new System.Drawing.Point(4, 4);
@@ -231,7 +232,7 @@ namespace Sunny.UI
             this.TabControl.Controls.Add(this.tabPage3);
             this.TabControl.Dock = System.Windows.Forms.DockStyle.Fill;
             this.TabControl.DrawMode = System.Windows.Forms.TabDrawMode.OwnerDrawFixed;
-            this.TabControl.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.TabControl.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.TabControl.ItemSize = new System.Drawing.Size(150, 40);
             this.TabControl.Location = new System.Drawing.Point(0, 31);
             this.TabControl.MainPage = "";
@@ -259,7 +260,7 @@ namespace Sunny.UI
             // 
             this.p1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.p1.FillColor = System.Drawing.Color.White;
-            this.p1.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.p1.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.p1.Location = new System.Drawing.Point(0, 0);
             this.p1.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.p1.MinimumSize = new System.Drawing.Size(1, 1);
@@ -289,7 +290,7 @@ namespace Sunny.UI
             // 
             this.p2.Dock = System.Windows.Forms.DockStyle.Fill;
             this.p2.FillColor = System.Drawing.Color.White;
-            this.p2.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.p2.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.p2.Location = new System.Drawing.Point(0, 0);
             this.p2.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.p2.MinimumSize = new System.Drawing.Size(1, 1);
@@ -319,7 +320,7 @@ namespace Sunny.UI
             // 
             this.p3.Dock = System.Windows.Forms.DockStyle.Fill;
             this.p3.FillColor = System.Drawing.Color.White;
-            this.p3.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.p3.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.p3.Location = new System.Drawing.Point(0, 0);
             this.p3.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.p3.MinimumSize = new System.Drawing.Size(1, 1);
@@ -338,7 +339,7 @@ namespace Sunny.UI
             // sb
             // 
             this.sb.BackColor = System.Drawing.Color.Transparent;
-            this.sb.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.sb.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.sb.ForeColor = System.Drawing.Color.DarkGray;
             this.sb.Location = new System.Drawing.Point(398, 103);
             this.sb.Name = "sb";
@@ -351,7 +352,7 @@ namespace Sunny.UI
             // mb
             // 
             this.mb.BackColor = System.Drawing.Color.Transparent;
-            this.mb.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.mb.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.mb.ForeColor = System.Drawing.Color.DarkGray;
             this.mb.Location = new System.Drawing.Point(345, 103);
             this.mb.Name = "mb";
@@ -364,7 +365,7 @@ namespace Sunny.UI
             // hb
             // 
             this.hb.BackColor = System.Drawing.Color.Transparent;
-            this.hb.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.hb.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.hb.ForeColor = System.Drawing.Color.DarkGray;
             this.hb.Location = new System.Drawing.Point(292, 103);
             this.hb.Name = "hb";
@@ -377,7 +378,7 @@ namespace Sunny.UI
             // st
             // 
             this.st.BackColor = System.Drawing.Color.Transparent;
-            this.st.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.st.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.st.ForeColor = System.Drawing.Color.DarkGray;
             this.st.Location = new System.Drawing.Point(398, 31);
             this.st.Name = "st";
@@ -390,7 +391,7 @@ namespace Sunny.UI
             // mt
             // 
             this.mt.BackColor = System.Drawing.Color.Transparent;
-            this.mt.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.mt.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.mt.ForeColor = System.Drawing.Color.DarkGray;
             this.mt.Location = new System.Drawing.Point(345, 31);
             this.mt.Name = "mt";
@@ -403,7 +404,7 @@ namespace Sunny.UI
             // ht
             // 
             this.ht.BackColor = System.Drawing.Color.Transparent;
-            this.ht.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.ht.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.ht.ForeColor = System.Drawing.Color.DarkGray;
             this.ht.Location = new System.Drawing.Point(292, 31);
             this.ht.Name = "ht";
@@ -416,7 +417,7 @@ namespace Sunny.UI
             // sc
             // 
             this.sc.BackColor = System.Drawing.Color.Transparent;
-            this.sc.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.sc.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.sc.Location = new System.Drawing.Point(398, 65);
             this.sc.Name = "sc";
             this.sc.Size = new System.Drawing.Size(46, 27);
@@ -429,7 +430,7 @@ namespace Sunny.UI
             // mc
             // 
             this.mc.BackColor = System.Drawing.Color.Transparent;
-            this.mc.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.mc.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.mc.Location = new System.Drawing.Point(345, 65);
             this.mc.Name = "mc";
             this.mc.Size = new System.Drawing.Size(46, 27);
@@ -442,7 +443,7 @@ namespace Sunny.UI
             // hc
             // 
             this.hc.BackColor = System.Drawing.Color.Transparent;
-            this.hc.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.hc.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.hc.Location = new System.Drawing.Point(292, 65);
             this.hc.Name = "hc";
             this.hc.Size = new System.Drawing.Size(46, 27);
@@ -455,7 +456,7 @@ namespace Sunny.UI
             // btnCancel
             // 
             this.btnCancel.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.btnCancel.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.btnCancel.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.btnCancel.Location = new System.Drawing.Point(370, 162);
             this.btnCancel.MinimumSize = new System.Drawing.Size(1, 1);
             this.btnCancel.Name = "btnCancel";
@@ -470,7 +471,7 @@ namespace Sunny.UI
             // btnOK
             // 
             this.btnOK.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.btnOK.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.btnOK.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.btnOK.Location = new System.Drawing.Point(291, 162);
             this.btnOK.MinimumSize = new System.Drawing.Size(1, 1);
             this.btnOK.Name = "btnOK";
@@ -488,7 +489,7 @@ namespace Sunny.UI
             this.s2.Cursor = System.Windows.Forms.Cursors.Hand;
             this.s2.FillColor = System.Drawing.Color.White;
             this.s2.FillHoverColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(160)))), ((int)(((byte)(255)))));
-            this.s2.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.s2.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.s2.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(160)))), ((int)(((byte)(255)))));
             this.s2.ImageInterval = 0;
             this.s2.Location = new System.Drawing.Point(405, 129);
@@ -512,7 +513,7 @@ namespace Sunny.UI
             this.mm2.Cursor = System.Windows.Forms.Cursors.Hand;
             this.mm2.FillColor = System.Drawing.Color.White;
             this.mm2.FillHoverColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(160)))), ((int)(((byte)(255)))));
-            this.mm2.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.mm2.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.mm2.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(160)))), ((int)(((byte)(255)))));
             this.mm2.ImageInterval = 0;
             this.mm2.Location = new System.Drawing.Point(352, 129);
@@ -536,7 +537,7 @@ namespace Sunny.UI
             this.h2.Cursor = System.Windows.Forms.Cursors.Hand;
             this.h2.FillColor = System.Drawing.Color.White;
             this.h2.FillHoverColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(160)))), ((int)(((byte)(255)))));
-            this.h2.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.h2.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.h2.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(160)))), ((int)(((byte)(255)))));
             this.h2.ImageInterval = 0;
             this.h2.Location = new System.Drawing.Point(299, 128);
@@ -560,7 +561,7 @@ namespace Sunny.UI
             this.s1.Cursor = System.Windows.Forms.Cursors.Hand;
             this.s1.FillColor = System.Drawing.Color.White;
             this.s1.FillHoverColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(160)))), ((int)(((byte)(255)))));
-            this.s1.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.s1.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.s1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(160)))), ((int)(((byte)(255)))));
             this.s1.ImageInterval = 0;
             this.s1.Location = new System.Drawing.Point(405, 4);
@@ -584,7 +585,7 @@ namespace Sunny.UI
             this.mm1.Cursor = System.Windows.Forms.Cursors.Hand;
             this.mm1.FillColor = System.Drawing.Color.White;
             this.mm1.FillHoverColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(160)))), ((int)(((byte)(255)))));
-            this.mm1.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.mm1.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.mm1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(160)))), ((int)(((byte)(255)))));
             this.mm1.ImageInterval = 0;
             this.mm1.Location = new System.Drawing.Point(352, 4);
@@ -608,7 +609,7 @@ namespace Sunny.UI
             this.h1.Cursor = System.Windows.Forms.Cursors.Hand;
             this.h1.FillColor = System.Drawing.Color.White;
             this.h1.FillHoverColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(160)))), ((int)(((byte)(255)))));
-            this.h1.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.h1.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.h1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(160)))), ((int)(((byte)(255)))));
             this.h1.ImageInterval = 0;
             this.h1.Location = new System.Drawing.Point(299, 4);
@@ -630,7 +631,7 @@ namespace Sunny.UI
             // 
             this.uiLine2.BackColor = System.Drawing.Color.Transparent;
             this.uiLine2.FillColor = System.Drawing.Color.White;
-            this.uiLine2.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.uiLine2.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.uiLine2.LineColor = System.Drawing.Color.Silver;
             this.uiLine2.LineDashStyle = Sunny.UI.UILineDashStyle.None;
             this.uiLine2.Location = new System.Drawing.Point(289, 88);
@@ -647,7 +648,7 @@ namespace Sunny.UI
             // 
             this.uiLine3.BackColor = System.Drawing.Color.Transparent;
             this.uiLine3.FillColor = System.Drawing.Color.White;
-            this.uiLine3.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.uiLine3.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.uiLine3.LineColor = System.Drawing.Color.Silver;
             this.uiLine3.LineDashStyle = Sunny.UI.UILineDashStyle.None;
             this.uiLine3.Location = new System.Drawing.Point(289, 54);
@@ -667,7 +668,7 @@ namespace Sunny.UI
             this.uiPanel1.Controls.Add(this.TopPanel);
             this.uiPanel1.Dock = System.Windows.Forms.DockStyle.Left;
             this.uiPanel1.FillColor = System.Drawing.Color.White;
-            this.uiPanel1.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.uiPanel1.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.uiPanel1.Location = new System.Drawing.Point(0, 0);
             this.uiPanel1.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.uiPanel1.MinimumSize = new System.Drawing.Size(1, 1);
@@ -737,20 +738,14 @@ namespace Sunny.UI
 
         public override void SetDPIScale()
         {
-            if (!IsScaled)
-            {
-                TopPanel.SetDPIScaleFont();
-
-                foreach (var label in this.GetControls<UILabel>())
-                {
-                    label.SetDPIScaleFont();
-                }
-
-                btnOK.SetDPIScaleFont();
-                btnCancel.SetDPIScaleFont();
-            }
-
             base.SetDPIScale();
+            if (DesignMode) return;
+            if (!UIDPIScale.NeedSetDPIFont()) return;
+
+            TopPanel.SetDPIScale();
+            btnOK.SetDPIScale();
+            btnCancel.SetDPIScale();
+            foreach (var label in this.GetControls<UILabel>()) label.SetDPIScale();
         }
 
         public void Translate()
@@ -1157,15 +1152,13 @@ namespace Sunny.UI
                 int height = p2.Height / 3;
                 int left = width * (i % 4);
                 int top = height * (i / 4);
-
-                SizeF sf = e.Graphics.MeasureString(months[i], Font);
                 if (i + 1 == Month)
                 {
-                    e.Graphics.DrawString(months[i], Font, PrimaryColor, left + (width - sf.Width) / 2, top + (height - sf.Height) / 2);
+                    e.Graphics.DrawString(months[i], Font, PrimaryColor, new Rectangle(left, top, width, height), ContentAlignment.MiddleCenter);
                 }
                 else
                 {
-                    e.Graphics.DrawString(months[i], Font, i == activeMonth ? PrimaryColor : ForeColor, left + (width - sf.Width) / 2, top + (height - sf.Height) / 2);
+                    e.Graphics.DrawString(months[i], Font, i == activeMonth ? PrimaryColor : ForeColor, new Rectangle(left, top, width, height), ContentAlignment.MiddleCenter);
                 }
             }
         }
@@ -1205,10 +1198,8 @@ namespace Sunny.UI
                 int height = p1.Height / 3;
                 int left = width * (i % 4);
                 int top = height * (i / 4);
-
-                SizeF sf = e.Graphics.MeasureString(years[i].ToString(), Font);
                 Color color = (i == 0 || i == 11) ? Color.DarkGray : ForeColor;
-                e.Graphics.DrawString(years[i].ToString(), Font, (i == activeYear || years[i] == Year) ? PrimaryColor : color, left + (width - sf.Width) / 2, top + (height - sf.Height) / 2);
+                e.Graphics.DrawString(years[i].ToString(), Font, (i == activeYear || years[i] == Year) ? PrimaryColor : color, new Rectangle(left, top, width, height), ContentAlignment.MiddleCenter);
             }
         }
 
@@ -1244,21 +1235,11 @@ namespace Sunny.UI
         {
             int width = p3.Width / 7;
             int height = (p3.Height - 30) / 6;
-
-            SizeF sf = e.Graphics.MeasureString(UILocalize.Sunday, Font);
-            e.Graphics.DrawString(UILocalize.Sunday, Font, ForeColor, width * 0 + (width - sf.Width) / 2, 4 + (19 - sf.Height) / 2);
-            sf = e.Graphics.MeasureString(UILocalize.Monday, Font);
-            e.Graphics.DrawString(UILocalize.Monday, Font, ForeColor, width * 1 + (width - sf.Width) / 2, 4 + (19 - sf.Height) / 2);
-            sf = e.Graphics.MeasureString(UILocalize.Tuesday, Font);
-            e.Graphics.DrawString(UILocalize.Tuesday, Font, ForeColor, width * 2 + (width - sf.Width) / 2, 4 + (19 - sf.Height) / 2);
-            sf = e.Graphics.MeasureString(UILocalize.Wednesday, Font);
-            e.Graphics.DrawString(UILocalize.Wednesday, Font, ForeColor, width * 3 + (width - sf.Width) / 2, 4 + (19 - sf.Height) / 2);
-            sf = e.Graphics.MeasureString(UILocalize.Thursday, Font);
-            e.Graphics.DrawString(UILocalize.Thursday, Font, ForeColor, width * 4 + (width - sf.Width) / 2, 4 + (19 - sf.Height) / 2);
-            sf = e.Graphics.MeasureString(UILocalize.Friday, Font);
-            e.Graphics.DrawString(UILocalize.Friday, Font, ForeColor, width * 5 + (width - sf.Width) / 2, 4 + (19 - sf.Height) / 2);
-            sf = e.Graphics.MeasureString(UILocalize.Saturday, Font);
-            e.Graphics.DrawString(UILocalize.Saturday, Font, ForeColor, width * 6 + (width - sf.Width) / 2, 4 + (19 - sf.Height) / 2);
+            string[] weeks = { UILocalize.Sunday, UILocalize.Monday, UILocalize.Tuesday, UILocalize.Wednesday, UILocalize.Thursday, UILocalize.Friday, UILocalize.Saturday };
+            for (int i = 0; i < weeks.Length; i++)
+            {
+                e.Graphics.DrawString(weeks[i], Font, ForeColor, new Rectangle(width * i, 4, width, 19), ContentAlignment.MiddleCenter);
+            }
 
             e.Graphics.DrawLine(Color.DarkGray, 8, 26, 268, 26);
 
@@ -1268,13 +1249,12 @@ namespace Sunny.UI
                 int left = width * (i % 7);
                 int top = height * (i / 7);
 
-                sf = e.Graphics.MeasureString(days[i].Day.ToString(), Font);
                 Color color = (days[i].Month == Month) ? ForeColor : Color.DarkGray;
                 color = (days[i].DateString() == date.DateString()) ? PrimaryColor : color;
 
                 if (!maxDrawer)
                 {
-                    e.Graphics.DrawString(days[i].Day.ToString(), Font, i == activeDay ? PrimaryColor : color, left + (width - sf.Width) / 2, top + 30 + (height - sf.Height) / 2);
+                    e.Graphics.DrawString(days[i].Day.ToString(), Font, i == activeDay ? PrimaryColor : color, new Rectangle(left, top + 30, width, height), ContentAlignment.MiddleCenter);
                 }
 
                 if (!maxDrawer && days[i].Date.Equals(DateTime.MaxValue.Date))
@@ -1285,17 +1265,10 @@ namespace Sunny.UI
 
             if (ShowToday)
             {
-                using (Font SubFont = new Font("微软雅黑", 10.5f / UIDPIScale.DPIScale()))
-                {
-                    e.Graphics.FillRectangle(p3.FillColor, p3.Width - width * 4 + 1, p3.Height - height + 1, width * 4 - 2, height - 2);
-                    e.Graphics.FillRoundRectangle(PrimaryColor, new Rectangle((int)(p3.Width - width * 4 + 6), p3.Height - height + 3, 8, height - 10), 3);
-
-                    sf = e.Graphics.MeasureString(UILocalize.Today + ": " + DateTime.Now.DateString(), SubFont);
-                    e.Graphics.DrawString(UILocalize.Today + ": " + DateTime.Now.DateString(), SubFont, isToday ? PrimaryColor : Color.DarkGray, p3.Width - width * 4 + 17, p3.Height - height - 1 + (height - sf.Height) / 2.0f);
-
-                    //sf = e.Graphics.MeasureString(DateTime.Now.DateString(), Font);
-                    //e.Graphics.DrawString(DateTime.Now.DateString(), Font, isToday ? PrimaryColor : Color.DarkGray, p3.Width - width * 4 + 55, p3.Height - height - 1 + (height - sf.Height) / 2.0f);
-                }
+                using Font SubFont = this.Font.DPIScaleFont(10.5f);
+                e.Graphics.FillRectangle(p3.FillColor, p3.Width - width * 4 + 1, p3.Height - height + 1, width * 4 - 2, height - 2);
+                e.Graphics.FillRoundRectangle(PrimaryColor, new Rectangle((int)(p3.Width - width * 4 + 6), p3.Height - height + 3, 8, height - 10), 3);
+                e.Graphics.DrawString(UILocalize.Today + ": " + DateTime.Now.DateString(), SubFont, isToday ? PrimaryColor : Color.DarkGray, new Rectangle(p3.Width - width * 4 + 17, p3.Height - height - 1, Width, height), ContentAlignment.MiddleLeft);
             }
         }
 

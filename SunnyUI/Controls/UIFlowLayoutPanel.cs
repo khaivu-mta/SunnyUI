@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -22,12 +22,21 @@
  * 2021-08-11: V3.0.5 删除点击的Focus事件
  * 2021-10-18: V3.0.8 增加Scroll事件
  * 2021-11-05: V3.0.8 修改不同DPI缩放滚动条未覆盖的问题
+ * 2022-11-03: V3.2.6 增加了可设置垂直滚动条宽度的属性
+ * 2022-11-13: V3.2.8 增加滚动条背景色调整
+ * 2022-11-13: V3.2.8 删除AddControl、RemoveControl方法
+ * 2022-11-25: V3.2.9 增加Get方法以获取控件
+ * 2023-01-11: V3.3.1 增加AutoScroll属性
+ * 2023-01-11: V3.3.1 修复只显示水平滚动条时，鼠标滚轮滚动水平滚动条不动的问题
+ * 2023-11-05: V3.5.2 重构主题
+ * 2024-01-17: V3.6.3 重写ScrollControlIntoView函数
 ******************************************************************************/
 
 using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace Sunny.UI
@@ -50,9 +59,8 @@ namespace Sunny.UI
             Panel.ControlRemoved += Panel_ControlRemoved;
             Panel.Scroll += Panel_Scroll;
             Panel.MouseWheel += Panel_MouseWheel;
-            Panel.MouseEnter += Panel_MouseEnter;
-            Panel.MouseClick += Panel_MouseClick;
             Panel.ClientSizeChanged += Panel_ClientSizeChanged;
+            Panel.BackColor = UIStyles.Blue.PlainColor;
 
             VBar.ValueChanged += VBar_ValueChanged;
             HBar.ValueChanged += HBar_ValueChanged;
@@ -62,6 +70,46 @@ namespace Sunny.UI
             timer.Interval = 100;
             timer.Tick += Timer_Tick;
             timer.Start();
+        }
+
+        [DefaultValue(true)]
+        [Browsable(true)]
+        public new bool AutoScroll
+        {
+            get => Panel.AutoScroll;
+            set => Panel.AutoScroll = value;
+        }
+
+        private int scrollBarWidth = 0;
+
+        [DefaultValue(0), Category("SunnyUI"), Description("垂直滚动条宽度，最小为原生滚动条宽度")]
+        public int ScrollBarWidth
+        {
+            get => scrollBarWidth;
+            set
+            {
+                scrollBarWidth = value;
+                SetScrollInfo();
+            }
+        }
+
+        private int scrollBarHandleWidth = 6;
+
+        [DefaultValue(6), Category("SunnyUI"), Description("垂直滚动条滑块宽度，最小为原生滚动条宽度")]
+        public int ScrollBarHandleWidth
+        {
+            get => scrollBarHandleWidth;
+            set
+            {
+                scrollBarHandleWidth = value;
+                if (VBar != null) VBar.FillWidth = value;
+            }
+        }
+
+        protected override void OnContextMenuStripChanged(EventArgs e)
+        {
+            base.OnContextMenuStripChanged(e);
+            if (Panel != null) Panel.ContextMenuStrip = ContextMenuStrip;
         }
 
         /// <summary>
@@ -169,7 +217,7 @@ namespace Sunny.UI
                 }
             }
 
-            if (Panel != null && !IsDesignMode)
+            if (Panel != null && !DesignMode)
             {
                 Add(e.Control);
             }
@@ -191,39 +239,7 @@ namespace Sunny.UI
 
         public void Add(Control control)
         {
-            if (control is IStyleInterface ctrl)
-            {
-                if (!ctrl.StyleCustomMode) ctrl.Style = Style;
-            }
-
-            if (Panel != null)
-            {
-                Panel.Controls.Add(control);
-            }
-        }
-
-        [Obsolete("此方法已优化，用Add代替")]
-        public void AddControl(Control control)
-        {
-            if (control is IStyleInterface ctrl)
-            {
-                if (!ctrl.StyleCustomMode) ctrl.Style = Style;
-            }
-
-            if (Panel != null)
-            {
-                Panel.Controls.Add(control);
-            }
-        }
-
-        [Obsolete("此方法已优化，用Remove代替")]
-        public void RemoveControl(Control control)
-        {
-            if (Panel != null)
-            {
-                if (Panel.Controls.Contains(control))
-                    Panel.Controls.Remove(control);
-            }
+            Panel?.Controls.Add(control);
         }
 
         public void Clear()
@@ -234,6 +250,39 @@ namespace Sunny.UI
             }
 
             Panel.Controls.Clear();
+        }
+
+        [Browsable(false)]
+        public ControlCollection AllControls => Panel.Controls;
+
+        public T Get<T>(string controlName) where T : Control
+        {
+            return Panel.GetControls<T>()?.Where(p => p.Name == controlName).FirstOrDefault();
+        }
+
+        public Control Get(string controlName)
+        {
+            return Panel.Controls.ContainsKey(controlName) ? Panel.Controls[controlName] : null;
+        }
+
+        public Control Get(int index)
+        {
+            return (index >= 0 && index < Panel.Controls.Count) ? Panel.Controls[index] : null;
+        }
+
+        [Browsable(false)]
+        public int ControlCount => AllControls.Count;
+
+        [Browsable(false)]
+        public Control this[string controlName]
+        {
+            get => Get(controlName);
+        }
+
+        [Browsable(false)]
+        public Control this[int index]
+        {
+            get => Get(index);
         }
 
         private void Timer_Tick(object sender, EventArgs e)
@@ -264,6 +313,12 @@ namespace Sunny.UI
         {
         }
 
+        //public override void SetInheritedStyle(UIStyle style)
+        //{
+        //    UIStyleHelper.SetChildUIStyle(this, style);
+        //    base.SetInheritedStyle(style);
+        //}
+
         /// <summary>
         /// 设置主题样式
         /// </summary>
@@ -273,8 +328,25 @@ namespace Sunny.UI
             base.SetStyleColor(uiColor);
             Panel.BackColor = uiColor.PlainColor;
 
-            HBar.FillColor = VBar.FillColor = uiColor.FlowLayoutPanelBarFillColor;
-            scrollBarColor = HBar.ForeColor = VBar.ForeColor = uiColor.FlowLayoutPanelBarForeColor;
+            if (HBar != null && HBar.Style == UIStyle.Inherited)
+            {
+                HBar.ForeColor = uiColor.GridBarForeColor;
+                HBar.HoverColor = uiColor.ButtonFillHoverColor;
+                HBar.PressColor = uiColor.ButtonFillPressColor;
+                HBar.FillColor = uiColor.GridBarFillColor;
+                scrollBarColor = uiColor.GridBarForeColor;
+                scrollBarBackColor = uiColor.GridBarFillColor;
+            }
+
+            if (VBar != null && VBar.Style == UIStyle.Inherited)
+            {
+                VBar.ForeColor = uiColor.GridBarForeColor;
+                VBar.HoverColor = uiColor.ButtonFillHoverColor;
+                VBar.PressColor = uiColor.ButtonFillPressColor;
+                VBar.FillColor = uiColor.GridBarFillColor;
+                scrollBarColor = uiColor.GridBarForeColor;
+                scrollBarBackColor = uiColor.GridBarFillColor;
+            }
         }
 
         protected override void AfterSetFillColor(Color color)
@@ -296,20 +368,52 @@ namespace Sunny.UI
             set
             {
                 scrollBarColor = value;
-                VBar.ForeColor = value;
-                HBar.ForeColor = value;
+                HBar.HoverColor = HBar.PressColor = HBar.ForeColor = value;
+                VBar.HoverColor = VBar.PressColor = VBar.ForeColor = value;
+                HBar.Style = VBar.Style = UIStyle.Custom;
                 Invalidate();
             }
         }
 
-        private void Panel_MouseClick(object sender, MouseEventArgs e)
+        private Color scrollBarBackColor = Color.FromArgb(243, 249, 255);
+
+        /// <summary>
+        /// 填充颜色，当值为背景色或透明色或空值则不填充
+        /// </summary>
+        [Description("滚动条背景颜色"), Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "243, 249, 255")]
+        public Color ScrollBarBackColor
         {
-            //Panel.Focus();
+            get => scrollBarBackColor;
+            set
+            {
+                scrollBarBackColor = value;
+                HBar.FillColor = value;
+                VBar.FillColor = value;
+                HBar.Style = VBar.Style = UIStyle.Custom;
+                Invalidate();
+            }
         }
 
-        private void Panel_MouseEnter(object sender, EventArgs e)
+        /// <summary>
+        /// 滚动条主题样式
+        /// </summary>
+        [DefaultValue(true), Description("滚动条主题样式"), Category("SunnyUI")]
+        public bool ScrollBarStyleInherited
         {
-            //Panel.Focus();
+            get => HBar != null && HBar.Style == UIStyle.Inherited;
+            set
+            {
+                if (value)
+                {
+                    if (HBar != null) HBar.Style = UIStyle.Inherited;
+                    if (VBar != null) VBar.Style = UIStyle.Inherited;
+
+                    scrollBarColor = UIStyles.Blue.GridBarForeColor;
+                    scrollBarBackColor = UIStyles.Blue.GridBarFillColor;
+                }
+
+            }
         }
 
         protected override void OnGotFocus(EventArgs e)
@@ -330,22 +434,23 @@ namespace Sunny.UI
 
         private void Panel_MouseWheel(object sender, MouseEventArgs e)
         {
-            if (e.Delta < 0)
-            {
-                if (Panel.VerticalScroll.Maximum > Panel.VerticalScroll.Value + 50)
-                    Panel.VerticalScroll.Value += 50;
-                else
-                    Panel.VerticalScroll.Value = Panel.VerticalScroll.Maximum;
-            }
-            else
-            {
-                if (Panel.VerticalScroll.Value > 50)
-                    Panel.VerticalScroll.Value -= 50;
-                else
-                    Panel.VerticalScroll.Value = 0;
-            }
+            //if (e.Delta < 0)
+            //{
+            //    if (Panel.VerticalScroll.Maximum > Panel.VerticalScroll.Value + 50)
+            //        Panel.VerticalScroll.Value += 50;
+            //    else
+            //        Panel.VerticalScroll.Value = Panel.VerticalScroll.Maximum;
+            //}
+            //else
+            //{
+            //    if (Panel.VerticalScroll.Value > 50)
+            //        Panel.VerticalScroll.Value -= 50;
+            //    else
+            //        Panel.VerticalScroll.Value = 0;
+            //}
 
             VBar.Value = Panel.VerticalScroll.Value;
+            HBar.Value = Panel.HorizontalScroll.Value;
         }
 
         private void VBar_ValueChanged(object sender, EventArgs e)
@@ -418,7 +523,7 @@ namespace Sunny.UI
             // VBar
             // 
             this.VBar.BoundsHeight = 10;
-            this.VBar.Font = new Font("微软雅黑", 12F, FontStyle.Regular, GraphicsUnit.Point);
+            this.VBar.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point);
             this.VBar.LargeChange = 10;
             this.VBar.Location = new Point(410, 5);
             this.VBar.Maximum = 100;
@@ -434,7 +539,7 @@ namespace Sunny.UI
             // HBar
             // 
             this.HBar.BoundsWidth = 10;
-            this.HBar.Font = new Font("微软雅黑", 12F, FontStyle.Regular, GraphicsUnit.Point);
+            this.HBar.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point);
             this.HBar.LargeChange = 10;
             this.HBar.Location = new Point(5, 364);
             this.HBar.Maximum = 100;
@@ -479,8 +584,9 @@ namespace Sunny.UI
                     added = Radius / 2;
                 }
 
-                VBar.Width = ScrollBarInfo.VerticalScrollBarWidth();
-                VBar.Left = Width - VBar.Width - added;
+                int barWidth = Math.Max(ScrollBarInfo.VerticalScrollBarWidth(), ScrollBarWidth);
+                VBar.Width = barWidth;
+                VBar.Left = Width - barWidth - added;
                 VBar.Top = added;
                 VBar.Height = Height - added * 2;
 
@@ -493,6 +599,11 @@ namespace Sunny.UI
                 else
                     HBar.Width = Width - added * 2;
             }
+        }
+
+        public new void ScrollControlIntoView(Control activeControl)
+        {
+            Panel.ScrollControlIntoView(activeControl);
         }
     }
 }

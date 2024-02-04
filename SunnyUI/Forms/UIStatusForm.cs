@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -19,7 +19,6 @@
  * 2020-05-05: V2.2.5 增加文件
 ******************************************************************************/
 
-using System;
 using System.ComponentModel;
 
 namespace Sunny.UI
@@ -31,6 +30,7 @@ namespace Sunny.UI
             InitializeComponent();
             Text = UILocalize.InfoTitle;
             Description = UILocalize.SystemProcessing;
+            timer1.Start();
         }
 
         public UIStatusForm(int max, string desc, int decimalPlaces = 1)
@@ -41,6 +41,7 @@ namespace Sunny.UI
             Description = desc;
             Value = 0;
             DecimalPlaces = decimalPlaces;
+            timer1.Start();
         }
 
         [DefaultValue(100)]
@@ -81,7 +82,7 @@ namespace Sunny.UI
         {
             if (MaxAutoHide && value == Maximum)
             {
-                Hide();
+                Close();
             }
         }
 
@@ -101,14 +102,6 @@ namespace Sunny.UI
         }
 
         public int DecimalPlaces
-        {
-            get => processBar.DecimalPlaces;
-            set => processBar.DecimalPlaces = value;
-        }
-
-
-        [Obsolete("请用DecimalPlaces代替。")]
-        public int DecimalCount
         {
             get => processBar.DecimalPlaces;
             set => processBar.DecimalPlaces = value;
@@ -141,6 +134,16 @@ namespace Sunny.UI
             {
                 processBar.Step = step;
                 processBar.StepIt();
+            }
+        }
+
+        private void timer1_Tick(object sender, System.EventArgs e)
+        {
+            if (UIFormServiceHelper.StatusFormServiceClose)
+            {
+                timer1.Stop();
+                UIFormServiceHelper.StatusFormServiceClose = false;
+                Close();
             }
         }
     }

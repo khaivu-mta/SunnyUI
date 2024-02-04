@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -20,6 +20,9 @@
  * 2020-08-14: V2.2.7 增加左右列表项个数变化事件
  * 2021-07-18: V3.0.5 新增两个事件，可获取左侧、右侧Item点击事件
  * 2021-08-08: V3.0.5 增加了显示多个移动的属性
+ * 2023-02-04: V3.3.1 支持鼠标框选和Shift，Ctrl多选移动
+ * 2023-05-25: V3.3.7 增加列表框字体可调整
+ * 2023-05-25: V3.3.7 增加列表框列表项高度可调整
 ******************************************************************************/
 
 using System;
@@ -48,6 +51,13 @@ namespace Sunny.UI
             l2.ItemsCountChange += L2_ItemsCountChange;
             l1.ZoomScaleDisabled = l2.ZoomScaleDisabled = true;
             b1.ZoomScaleDisabled = b2.ZoomScaleDisabled = b3.ZoomScaleDisabled = b4.ZoomScaleDisabled = true;
+        }
+
+        public override void SetDPIScale()
+        {
+            base.SetDPIScale();
+            l1.SetDPIScale();
+            l2.SetDPIScale();
         }
 
         [DefaultValue(true)]
@@ -118,54 +128,64 @@ namespace Sunny.UI
 
         private void b2_Click(object sender, EventArgs e)
         {
-            if (l1.Items.Count > 0 && l1.SelectedItem != null)
+            if (l1.Items.Count > 0 && l1.SelectedItems != null && l1.SelectedItems.Count > 0)
             {
-                int idx = l1.SelectedIndex;
-                object item = l1.SelectedItem;
-                l2.Items.Add(item);
-                ItemAdd?.Invoke(this, item);
-                l1.Items.Remove(item);
+                int idx = l1.SelectedIndices[l1.SelectedIndices.Count - 1];
+                object[] items = new object[l1.SelectedItems.Count];
+                for (int i = 0; i < l1.SelectedItems.Count; i++)
+                {
+                    items[i] = l1.SelectedItems[i];
+                }
 
+                foreach (var item in items)
+                {
+                    l2.Items.Add(item);
+                    ItemAdd?.Invoke(this, item);
+                    l1.Items.Remove(item);
+                }
+
+                l2.ClearSelected();
                 if (l2.Items.Count > 0)
                 {
                     l2.SelectedIndex = l2.Items.Count - 1;
                 }
 
-                if (idx - 1 >= 0)
-                {
-                    idx = idx - 1;
-                }
-
+                if (idx >= l1.Items.Count) idx = l1.Items.Count;
                 if (l1.Items.Count > 0)
                 {
-                    l1.SelectedIndex = idx;
+                    l1.SelectedIndex = Math.Max(0, idx - 1);
                 }
             }
         }
 
         private void b3_Click(object sender, EventArgs e)
         {
-            if (l2.Items.Count > 0 && l2.SelectedItem != null)
+            if (l2.Items.Count > 0 && l2.SelectedItems != null && l2.SelectedItems.Count > 0)
             {
-                int idx = l2.SelectedIndex;
-                object item = l2.SelectedItem;
-                l1.Items.Add(item);
-                ItemRemove?.Invoke(this, item);
-                l2.Items.Remove(item);
+                int idx = l2.SelectedIndices[l2.SelectedIndices.Count - 1];
+                object[] items = new object[l2.SelectedItems.Count];
+                for (int i = 0; i < l2.SelectedItems.Count; i++)
+                {
+                    items[i] = l2.SelectedItems[i];
+                }
 
+                foreach (var item in items)
+                {
+                    l1.Items.Add(item);
+                    ItemRemove?.Invoke(this, item);
+                    l2.Items.Remove(item);
+                }
+
+                l1.ClearSelected();
                 if (l1.Items.Count > 0)
                 {
                     l1.SelectedIndex = l1.Items.Count - 1;
                 }
 
-                if (idx - 1 >= 0)
-                {
-                    idx = idx - 1;
-                }
-
+                if (idx >= l2.Items.Count) idx = l2.Items.Count;
                 if (l2.Items.Count > 0)
                 {
-                    l2.SelectedIndex = idx;
+                    l2.SelectedIndex = Math.Max(0, idx - 1);
                 }
             }
         }
@@ -271,6 +291,30 @@ namespace Sunny.UI
         private void l2_ItemClick(object sender, EventArgs e)
         {
             ItemsRightClick?.Invoke(this, e);
+        }
+
+        protected override void OnFontChanged(EventArgs e)
+        {
+            base.OnFontChanged(e);
+            if (DefaultFontSize < 0 && l1 != null) l1.Font = this.Font;
+            if (DefaultFontSize < 0 && l2 != null) l2.Font = this.Font;
+        }
+
+        private int itemHeight = 25;
+
+        [DefaultValue(25)]
+        public int ItemHeight
+        {
+            get => itemHeight;
+            set
+            {
+                if (itemHeight != value)
+                {
+                    itemHeight = value;
+                    if (l1 == null || l2 == null) return;
+                    l1.ItemHeight = l2.ItemHeight = itemHeight;
+                }
+            }
         }
     }
 }

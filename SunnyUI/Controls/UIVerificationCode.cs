@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -17,12 +17,15 @@
  * 创建日期: 2022-06-11
  *
  * 2022-06-11: V3.1.9 增加文件说明
+ * 2023-05-16: V3.3.6 重构DrawString函数
+ * 2022-05-28: V3.3.7 修改字体缩放时显示
 ******************************************************************************/
 
 using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Windows.Forms;
 
 namespace Sunny.UI
 {
@@ -68,9 +71,8 @@ namespace Sunny.UI
         {
             base.OnPaintFill(g, path);
 
-            var bmp = CreateImage(RandomEx.RandomChars(CodeLength));
+            using var bmp = CreateImage(RandomEx.RandomChars(CodeLength));
             g.DrawImage(bmp, Width / 2 - bmp.Width / 2, 1);
-            bmp.Dispose();
         }
 
         /// <summary>
@@ -102,11 +104,12 @@ namespace Sunny.UI
         /// <param name="code">验证码表达式</param>
         private Bitmap CreateImage(string code)
         {
-            Font font = new Font(Font.Name, CodeFontSize);
+            byte gdiCharSet = UIStyles.GetGdiCharSet(Font.Name);
+            using Font font = new Font(Font.Name, CodeFontSize, FontStyle.Bold, GraphicsUnit.Point, gdiCharSet);
+            using Font fontex = font.DPIScaleFont(font.Size);
             Code = code;
-            SizeF sf = GDI.MeasureString(code, font);
-
-            Bitmap image = new Bitmap((int)sf.Width + 16, Height - 2);
+            Size sf = TextRenderer.MeasureText(code, fontex);
+            using Bitmap image = new Bitmap((int)sf.Width + 16, Height - 2);
 
             //创建画布
             Graphics g = Graphics.FromImage(image);
@@ -116,29 +119,27 @@ namespace Sunny.UI
             g.Clear(fillColor);
 
             //画图片背景线
-            for (int i = 0; i < 6; i++)
+            for (int i = 0; i < 5; i++)
             {
                 int x1 = random.Next(image.Width);
                 int x2 = random.Next(image.Width);
                 int y1 = random.Next(image.Height);
                 int y2 = random.Next(image.Height);
 
-                g.DrawLine(Pens.Black, x1, y1, x2, y2);
+                g.DrawLine(Color.Black, x1, y1, x2, y2, true);
             }
 
             //画图片的前景噪音点
-            for (int i = 0; i < 50; i++)
+            for (int i = 0; i < 30; i++)
             {
                 int x = random.Next(image.Width);
                 int y = random.Next(image.Height);
                 image.SetPixel(x, y, Color.FromArgb(random.Next()));
             }
 
-            g.DrawString(code, font, rectColor, image.Width / 2 - sf.Width / 2, image.Height / 2 - sf.Height / 2);
-            var imageex = TwistImage(image, true, 5, 5);
-            font.Dispose();
-            image.Dispose();
-            return imageex;
+            using Brush br = new SolidBrush(rectColor);
+            g.DrawString(code, fontex, br, image.Width / 2 - sf.Width / 2, image.Height / 2 - sf.Height / 2);
+            return TwistImage(image, true, 3, 5);
         }
 
         ///<summary>
@@ -154,9 +155,9 @@ namespace Sunny.UI
             Bitmap destBmp = new Bitmap(srcBmp.Width, srcBmp.Height);
 
             // 将位图背景填充为白色
-            Graphics graph = Graphics.FromImage(destBmp);
-            graph.FillRectangle(new SolidBrush(fillColor), 0, 0, destBmp.Width, destBmp.Height);
-            graph.Dispose();
+            using Graphics graph = Graphics.FromImage(destBmp);
+            using SolidBrush br = new SolidBrush(fillColor);
+            graph.FillRectangle(br, 0, 0, destBmp.Width, destBmp.Height);
             double dBaseAxisLen = bXDir ? (double)destBmp.Height : (double)destBmp.Width;
             for (int i = 0; i < destBmp.Width; i++)
             {

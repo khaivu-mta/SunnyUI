@@ -73,14 +73,13 @@ namespace Sunny.UI.Demo
             this.uiSplitContainer1.SplitterDistance = 266;
             this.uiSplitContainer1.SplitterWidth = 11;
             this.uiSplitContainer1.TabIndex = 0;
-            this.uiSplitContainer1.ZoomScaleRect = new System.Drawing.Rectangle(0, 0, 0, 0);
             // 
             // uiNavMenuEx1
             // 
             this.uiNavMenuEx1.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.uiNavMenuEx1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.uiNavMenuEx1.DrawMode = System.Windows.Forms.TreeViewDrawMode.OwnerDrawAll;
-            this.uiNavMenuEx1.Font = new System.Drawing.Font("微软雅黑", 12F);
+            this.uiNavMenuEx1.Font = new System.Drawing.Font("宋体", 12F);
             this.uiNavMenuEx1.FullRowSelect = true;
             this.uiNavMenuEx1.ItemHeight = 50;
             this.uiNavMenuEx1.Location = new System.Drawing.Point(0, 0);
@@ -107,10 +106,8 @@ namespace Sunny.UI.Demo
             treeNode7});
             this.uiNavMenuEx1.ShowLines = false;
             this.uiNavMenuEx1.Size = new System.Drawing.Size(266, 415);
-            this.uiNavMenuEx1.Style = Sunny.UI.UIStyle.Custom;
             this.uiNavMenuEx1.TabIndex = 0;
-            this.uiNavMenuEx1.TipsFont = new System.Drawing.Font("微软雅黑", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.uiNavMenuEx1.ZoomScaleRect = new System.Drawing.Rectangle(0, 0, 0, 0);
+            this.uiNavMenuEx1.TipsFont = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.uiNavMenuEx1.NodeRightSymbolClick += new Sunny.UI.UINavMenu.OnNodeRightSymbolClick(this.uiNavMenuEx1_NodeRightSymbolClick);
             // 
             // uiSplitContainer2
@@ -134,12 +131,11 @@ namespace Sunny.UI.Demo
             this.uiSplitContainer2.SplitterDistance = 244;
             this.uiSplitContainer2.SplitterWidth = 11;
             this.uiSplitContainer2.TabIndex = 0;
-            this.uiSplitContainer2.ZoomScaleRect = new System.Drawing.Rectangle(0, 0, 0, 0);
             // 
             // uiListBox1
             // 
             this.uiListBox1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.uiListBox1.Font = new System.Drawing.Font("微软雅黑", 12F);
+            this.uiListBox1.Font = new System.Drawing.Font("宋体", 12F);
             this.uiListBox1.HoverColor = System.Drawing.Color.FromArgb(((int)(((byte)(155)))), ((int)(((byte)(200)))), ((int)(((byte)(255)))));
             this.uiListBox1.ItemSelectForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(235)))), ((int)(((byte)(243)))), ((int)(((byte)(255)))));
             this.uiListBox1.Location = new System.Drawing.Point(0, 0);
@@ -151,20 +147,18 @@ namespace Sunny.UI.Demo
             this.uiListBox1.Size = new System.Drawing.Size(523, 244);
             this.uiListBox1.TabIndex = 0;
             this.uiListBox1.Text = "uiListBox1";
-            this.uiListBox1.ZoomScaleRect = new System.Drawing.Rectangle(0, 0, 0, 0);
             // 
             // uiButton1
             // 
             this.uiButton1.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.uiButton1.Font = new System.Drawing.Font("微软雅黑", 12F);
+            this.uiButton1.Font = new System.Drawing.Font("宋体", 12F);
             this.uiButton1.Location = new System.Drawing.Point(29, 29);
             this.uiButton1.MinimumSize = new System.Drawing.Size(1, 1);
             this.uiButton1.Name = "uiButton1";
             this.uiButton1.Size = new System.Drawing.Size(100, 35);
             this.uiButton1.TabIndex = 0;
             this.uiButton1.Text = "清除";
-            this.uiButton1.TipsFont = new System.Drawing.Font("微软雅黑", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.uiButton1.ZoomScaleRect = new System.Drawing.Rectangle(0, 0, 0, 0);
+            this.uiButton1.TipsFont = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.uiButton1.Click += new System.EventHandler(this.uiButton1_Click);
             // 
             // FSplitContainer

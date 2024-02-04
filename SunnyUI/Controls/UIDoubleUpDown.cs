@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -24,6 +24,12 @@
  * 2022-02-07: V3.1.0 增加圆角控制
  * 2022-02-24: V3.1.1 可以设置按钮大小和颜色
  * 2022-05-05: V3.1.8 增加禁止输入属性
+ * 2022-09-16: V3.2.4 增加是否可以双击输入属性
+ * 2022-11-12: V3.2.8 修改浮点数大小离开判断为实时输入判断
+ * 2022-11-12: V3.2.8 删除MaximumEnabled、MinimumEnabled、HasMaximum、HasMinimum属性
+ * 2023-01-28: V3.3.1 修改文本框数据输入数据变更事件为MouseLeave
+ * 2023-03-24: V3.3.3 删除ForbidInput属性，使用Inputable属性
+ * 2023-12-28: V3.6.2 修复设置Style时按钮颜色不一致
 ******************************************************************************/
 
 using System;
@@ -50,14 +56,12 @@ namespace Sunny.UI
             edit.Parent = pnlValue;
             edit.Visible = false;
             edit.BorderStyle = BorderStyle.None;
-            edit.TextChanged += Edit_TextChanged;
-            edit.Leave += Edit_Leave;
+            edit.MouseLeave += Edit_Leave;
             pnlValue.Paint += PnlValue_Paint;
-        }
 
-        [DefaultValue(false)]
-        [Description("禁止输入"), Category("SunnyUI")]
-        public bool ForbidInput { get; set; }
+            btnAdd.Style = UIStyle.Custom;
+            btnDec.Style = UIStyle.Custom;
+        }
 
         /// <summary>
         /// 需要额外设置ToolTip的控件
@@ -88,14 +92,7 @@ namespace Sunny.UI
             {
                 edit.Visible = false;
                 pnlValue.FillColor = pnlColor;
-            }
-        }
-
-        private void Edit_TextChanged(object sender, EventArgs e)
-        {
-            if (edit != null && edit.Visible)
-            {
-                Value = edit.Text.ToDouble();
+                Value = edit.DoubleValue;
             }
         }
 
@@ -106,18 +103,8 @@ namespace Sunny.UI
         protected override void OnFontChanged(EventArgs e)
         {
             base.OnFontChanged(e);
-
-            if (pnlValue != null)
-            {
-                pnlValue.IsScaled = true;
-                pnlValue.Font = Font;
-            }
-
-            if (edit != null)
-            {
-                edit.IsScaled = true;
-                edit.Font = Font;
-            }
+            if (DefaultFontSize < 0 && pnlValue != null) pnlValue.Font = this.Font;
+            if (DefaultFontSize < 0 && edit != null) edit.Font = this.Font;
         }
 
         public event OnValueChanged ValueChanged;
@@ -131,10 +118,13 @@ namespace Sunny.UI
             get => _value;
             set
             {
-                value = CheckMaxMin(value);
-                _value = value;
-                pnlValue.Text = _value.ToString("F" + decLength);
-                ValueChanged?.Invoke(this, _value);
+                value = edit.CheckMaxMin(value);
+                if (_value != value)
+                {
+                    _value = value;
+                    pnlValue.Text = _value.ToString("F" + decLength);
+                    ValueChanged?.Invoke(this, _value);
+                }
             }
         }
 
@@ -164,7 +154,6 @@ namespace Sunny.UI
 
         private void btnAdd_Click(object sender, EventArgs e)
         {
-            if (ForbidInput) return;
             if (ReadOnly) return;
 
             Value += Step;
@@ -187,118 +176,32 @@ namespace Sunny.UI
             }
         }
 
-        private double _maximum = double.MaxValue;
-        private double _minimum = double.MinValue;
-
-        [DefaultValue(double.MaxValue)]
+        [DefaultValue(typeof(double), "2147483647")]
         [Description("最大值"), Category("SunnyUI")]
         public double Maximum
         {
-            get => _maximum;
-            set
-            {
-                _maximum = value;
-                if (_maximum < _minimum)
-                    _minimum = _maximum;
-
-                Value = CheckMaxMin(Value);
-                edit.MaxValue = _maximum;
-                Invalidate();
-            }
+            get => edit.MaxValue;
+            set => edit.MaxValue = value;
         }
 
-        [DefaultValue(double.MinValue)]
+        [DefaultValue(typeof(double), "-2147483648")]
         [Description("最小值"), Category("SunnyUI")]
         public double Minimum
         {
-            get => _minimum;
-            set
-            {
-                _minimum = value;
-                if (_minimum > _maximum)
-                    _maximum = _minimum;
-
-                Value = CheckMaxMin(Value);
-                edit.MinValue = _minimum;
-                Invalidate();
-            }
+            get => edit.MinValue;
+            set => edit.MinValue = value;
         }
 
-        private double CheckMaxMin(double value)
-        {
-            if (hasMaximum)
-            {
-                if (value > _maximum)
-                    value = _maximum;
-            }
-
-            if (hasMinimum)
-            {
-                if (value < _minimum)
-                    value = _minimum;
-            }
-
-            return value;
-        }
-
-        [DefaultValue(false)]
-        [Description("是否判断最大值显示"), Category("SunnyUI")]
-        public bool MaximumEnabled
-        {
-            get => HasMaximum;
-            set => HasMaximum = value;
-        }
-
-        [DefaultValue(false)]
-        [Description("是否判断最小值显示"), Category("SunnyUI")]
-        public bool MinimumEnabled
-        {
-            get => HasMinimum;
-            set => HasMinimum = value;
-        }
-
-        private bool hasMaximum;
-        private bool hasMinimum;
-
-        [DefaultValue(false), Browsable(false)]
-        [Description("检查最大值"), Category("SunnyUI")]
-        public bool HasMaximum
-        {
-            get => hasMaximum;
-            set
-            {
-                if (hasMaximum != value)
-                {
-                    hasMaximum = value;
-                    Value = CheckMaxMin(Value);
-                    edit.HasMaxValue = value;
-                    Invalidate();
-                }
-            }
-        }
-
-        [DefaultValue(false), Browsable(false)]
-        [Description("检查最小值"), Category("SunnyUI")]
-        public bool HasMinimum
-        {
-            get => hasMinimum;
-            set
-            {
-                if (hasMinimum != value)
-                {
-                    hasMinimum = value;
-                    Value = CheckMaxMin(Value);
-                    edit.HasMinValue = value;
-                    Invalidate();
-                }
-            }
-        }
+        [DefaultValue(true)]
+        [Description("是否可以双击输入"), Category("SunnyUI")]
+        public bool Inputable { get; set; } = true;
 
         private readonly UIEdit edit = new UIEdit();
         private Color pnlColor;
         private void pnlValue_DoubleClick(object sender, EventArgs e)
         {
             if (ReadOnly) return;
+            if (!Inputable) return;
 
             edit.Left = 1;
             edit.Top = (pnlValue.Height - edit.Height) / 2;
@@ -347,12 +250,70 @@ namespace Sunny.UI
             if (Height > UIGlobal.EditorMaxHeight) Height = UIGlobal.EditorMaxHeight;
         }
 
-        protected override void AfterSetRectColor(Color color)
+        public override void SetStyleColor(UIBaseStyle uiColor)
         {
-            base.AfterSetRectColor(color);
-            if (btnAdd == null || btnDec == null) return;
-            btnAdd.FillColor = btnDec.FillColor = color;
-            btnAdd.RectColor = btnDec.RectColor = color;
+            base.SetStyleColor(uiColor);
+            btnAdd.SetStyleColor(uiColor);
+            btnDec.SetStyleColor(uiColor);
+            pnlValue.SetStyleColor(uiColor);
+            btnAdd.Invalidate();
+            btnDec.Invalidate();
+            pnlValue.Invalidate();
+        }
+
+        /// <summary>
+        /// 填充颜色，当值为背景色或透明色或空值则不填充
+        /// </summary>
+        [Description("填充颜色"), Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "80, 160, 255")]
+        public Color ButtonFillColor
+        {
+            get => btnAdd.FillColor;
+            set => btnDec.FillColor = btnAdd.FillColor = value;
+        }
+
+        /// <summary>
+        /// 鼠标移上时填充颜色
+        /// </summary>
+        [DefaultValue(typeof(Color), "115, 179, 255"), Category("SunnyUI")]
+        [Description("鼠标移上时填充颜色")]
+        public Color ButtonFillHoverColor
+        {
+            get => btnAdd.FillHoverColor;
+            set => btnDec.RectHoverColor = btnAdd.RectHoverColor = btnDec.FillHoverColor = btnAdd.FillHoverColor = value;
+        }
+
+        /// <summary>
+        /// 鼠标按下时填充颜色
+        /// </summary>
+        [DefaultValue(typeof(Color), "64, 128, 204"), Category("SunnyUI")]
+        [Description("鼠标按下时填充颜色")]
+        public Color ButtonFillPressColor
+        {
+            get => btnAdd.FillPressColor;
+            set => btnDec.RectPressColor = btnAdd.RectPressColor = btnDec.FillPressColor = btnAdd.FillPressColor = value;
+        }
+
+        /// <summary>
+        /// 字体图标颜色
+        /// </summary>
+        [Description("图标颜色"), Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "White")]
+        public Color ButtonSymbolColor
+        {
+            get => btnAdd.SymbolColor;
+            set => btnDec.SymbolColor = btnAdd.SymbolColor = value;
+        }
+
+        /// <summary>
+        /// 边框颜色
+        /// </summary>
+        [Description("边框颜色"), Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "80, 160, 255")]
+        public Color ButtonRectColor
+        {
+            get => btnAdd.RectColor;
+            set => pnlValue.RectColor = btnDec.RectColor = btnAdd.RectColor = value;
         }
 
         protected override void AfterSetFillColor(Color color)

@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -16,8 +16,9 @@
  * 当前版本: V3.1
  * 创建日期: 2020-08-29
  *
- * 2020-08-29: V2.2.7 新增水平滚动条
+ * 2020-08-29: V2.2.7 新增垂直滚动条
  * 2022-03-19: V3.1.1 重构主题配色
+ * 2022-11-03: V3.2.6 增加了可设置垂直滚动条宽度的属性
 ******************************************************************************/
 
 using System;
@@ -44,6 +45,19 @@ namespace Sunny.UI
             fillPressColor = UIStyles.Blue.ScrollBarFillPressColor;
         }
 
+        private int fillWidth = 6;
+
+        [DefaultValue(6)]
+        public int FillWidth
+        {
+            get => fillWidth;
+            set
+            {
+                fillWidth = Math.Max(6, value);
+                Invalidate();
+            }
+        }
+
         private int maximum = 100;
         [DefaultValue(100)]
         public int Maximum
@@ -51,7 +65,7 @@ namespace Sunny.UI
             get => maximum;
             set
             {
-                maximum = value.CheckLowerLimit(2);
+                maximum = value.GetLowerLimit(2);
                 Invalidate();
             }
         }
@@ -68,8 +82,8 @@ namespace Sunny.UI
             get => thisValue;
             set
             {
-                thisValue = value.CheckLowerLimit(0);
-                thisValue = value.CheckUpperLimit(Maximum - BoundsHeight);
+                thisValue = value.GetLowerLimit(0);
+                thisValue = value.GetUpperLimit(Maximum - BoundsHeight);
                 Invalidate();
             }
         }
@@ -81,7 +95,7 @@ namespace Sunny.UI
             get => boundsHeight;
             set
             {
-                boundsHeight = value.CheckLowerLimit(1);
+                boundsHeight = value.GetLowerLimit(1);
                 Invalidate();
             }
         }
@@ -117,7 +131,8 @@ namespace Sunny.UI
             int height = BoundsHeight * (Height - 32) / Maximum;
 
             g.SetHighQuality();
-            g.FillRoundRectangle(clr, new Rectangle(Width / 2 - 3, top, 6, height), 5);
+            int w = Math.Max(6, fillWidth);
+            g.FillRoundRectangle(clr, new Rectangle(Width / 2 - w / 2, top, w, height), 5);
             g.SetDefaultQuality();
         }
 
@@ -144,14 +159,14 @@ namespace Sunny.UI
 
             if (inLeftArea)
             {
-                int value = (Value - LargeChange).CheckInRange(0, Maximum - BoundsHeight);
+                int value = (Value - LargeChange).GetLimit(0, Maximum - BoundsHeight);
                 Value = value;
                 ValueChanged?.Invoke(this, EventArgs.Empty);
             }
 
             if (inRightArea)
             {
-                int value = (Value + LargeChange).CheckInRange(0, Maximum - BoundsHeight);
+                int value = (Value + LargeChange).GetLimit(0, Maximum - BoundsHeight);
                 Value = value;
                 ValueChanged?.Invoke(this, EventArgs.Empty);
             }
@@ -160,7 +175,7 @@ namespace Sunny.UI
             {
                 int y = BoundsHeight * (Height - 32) / Maximum;
                 int value = (e.Location.Y - y / 2) * maximum / (Height - 32);
-                value = value.CheckInRange(0, Maximum - BoundsHeight);
+                value = value.GetLimit(0, Maximum - BoundsHeight);
                 Value = value;
                 ValueChanged?.Invoke(this, EventArgs.Empty);
             }
@@ -208,25 +223,22 @@ namespace Sunny.UI
 
             g.FillRectangle(fillColor, isUp ? GetUpRect() : GetDownRect());
             g.SetHighQuality();
-            using (var pen = new Pen(clr_arrow, 2))
+            using var pen = new Pen(clr_arrow, 2);
+            Point pt1, pt2, pt3;
+            if (!isUp)
             {
-                Point pt1, pt2, pt3;
-                if (!isUp)
-                {
-                    pt1 = new Point(Width / 2 - 4, Height - 16 / 2 - 4);
-                    pt2 = new Point(Width / 2, Height - 16 / 2);
-                    pt3 = new Point(Width / 2 + 4, Height - 16 / 2 - 4);
-                }
-                else
-                {
-                    pt1 = new Point(Width / 2 - 4, 16 / 2 + 4 - 1);
-                    pt2 = new Point(Width / 2, 16 / 2 - 1);
-                    pt3 = new Point(Width / 2 + 4, 16 / 2 + 4 - 1);
-                }
-
-                g.DrawLines(pen, new[] { pt1, pt2, pt3 });
+                pt1 = new Point(Width / 2 - 4, Height - 16 / 2 - 4);
+                pt2 = new Point(Width / 2, Height - 16 / 2);
+                pt3 = new Point(Width / 2 + 4, Height - 16 / 2 - 4);
+            }
+            else
+            {
+                pt1 = new Point(Width / 2 - 4, 16 / 2 + 4 - 1);
+                pt2 = new Point(Width / 2, 16 / 2 - 1);
+                pt3 = new Point(Width / 2 + 4, 16 / 2 + 4 - 1);
             }
 
+            g.DrawLines(pen, new[] { pt1, pt2, pt3 });
             g.SetDefaultQuality();
         }
 
@@ -247,7 +259,7 @@ namespace Sunny.UI
             {
                 int y = BoundsHeight * (Height - 32) / Maximum;
                 int value = (e.Location.Y - y / 2) * maximum / (Height - 32);
-                value = value.CheckInRange(0, Maximum - BoundsHeight);
+                value = value.GetLimit(0, Maximum - BoundsHeight);
                 Value = value;
                 ValueChanged?.Invoke(this, EventArgs.Empty);
             }

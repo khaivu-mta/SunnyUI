@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -17,6 +17,9 @@
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
+ * 2022-11-01: V3.2.6 增加读取字符串长度到4096，增加文件编码
+ * 2023-07-07: V3.3.9 将文件版本和文件编码写入文件头部
+ * 2023-08-11: v3.4.1 增加了文件绝对路径判断和文件夹是否存在判断
 ******************************************************************************/
 
 using Sunny.UI.Win32;
@@ -42,30 +45,48 @@ namespace Sunny.UI
         [Description("文件名")]
         public string FileName { get; set; } //INI文件名
 
-
         /// <summary>
         /// Ini文件编码格式
         /// </summary>
-        public static readonly Encoding IniEncoding = Encoding.Default;
+        public Encoding IniEncoding { get; set; } = Encoding.Default;
 
         /// <summary>
         /// 类的构造函数，文件名必须是完全路径，不能是相对路径
         /// </summary>
         /// <param name="fileName">文件名</param>
-        protected IniBase(string fileName)
+        public IniBase(string fileName)
         {
+            if (!fileName.Contains(":"))
+            {
+                throw new ArgumentException("The file name must be an absolute path.");
+            }
+
             //必须是完全路径，不能是相对路径
             FileName = fileName;
+
+            FileInfo fi = new FileInfo(FileName);
+            DirEx.CreateDir(fi.DirectoryName);
+
+            if (!Directory.Exists(fi.DirectoryName))
+            {
+                throw new ArgumentException("Folder does not exist: " + fi.DirectoryName);
+            }
+
             // 判断文件是否存在
             if (!File.Exists(fileName))
             {
                 //文件不存在，建立文件
                 using (StreamWriter sw = new StreamWriter(fileName, false, IniEncoding))
                 {
-                    sw.Write(";<!--配置文件-->");
+                    sw.WriteLine(";<?ini version=\"" + UIGlobal.Version + "\" encoding=\"" + IniEncoding.BodyName + "\"?>");
                     sw.WriteLine("");
                 }
             }
+        }
+
+        public IniBase(string fileName, Encoding encoding) : this(fileName)
+        {
+            IniEncoding = encoding;
         }
 
         /// <summary>
@@ -128,7 +149,7 @@ namespace Sunny.UI
         /// <returns>结果</returns>
         public string Read(string section, string key, string Default)
         {
-            byte[] buffer = new byte[2048];
+            byte[] buffer = new byte[4096];
             if (Default == null)
             {
                 Default = "";
@@ -287,7 +308,7 @@ namespace Sunny.UI
         /// <typeparam name="T">T</typeparam>
         public void WriteStruct<T>(string section, string key, T value) where T : struct
         {
-            Write(section, key, value.StructToBytes());
+            Write(section, key, value.ToBytes());
         }
 
         /// <summary>
@@ -791,11 +812,21 @@ namespace Sunny.UI
         }
 
         /// <summary>
-        /// 构造函数
+        /// 类的构造函数，文件名必须是完全路径，不能是相对路径
         /// </summary>
         /// <param name="fileName">文件名</param>
         public IniFile(string fileName) : base(fileName)
         {
+        }
+
+        /// <summary>
+        /// 类的构造函数，文件名必须是完全路径，不能是相对路径
+        /// </summary>
+        /// <param name="fileName">文件名</param>
+        /// <param name="encoding">文件编码</param>
+        public IniFile(string fileName, Encoding encoding) : base(fileName, encoding)
+        {
+
         }
     }
 }

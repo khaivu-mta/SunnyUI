@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -21,6 +21,12 @@
  * 2020-07-30: V2.2.6 增加可收缩选项
  * 2020-09-03: V3.0.6 增加标题文字颜色
  * 2022-05-30: V3.1.9 修复Padding设置
+ * 2022-10-28: V3.2.6 箭头图标可设置颜色
+ * 2023-05-02: V3.3.6 增加了一个关闭按钮的属性，点击后隐藏控件
+ * 2023-05-12: V3.3.6 标题栏文字位置属性由TextAlign改为TextAlignment
+ * 2023-05-12: V3.3.6 重构DrawString函数
+ * 2023-07-12: V3.4.0 删除Padding设置
+ * 2023-08-07: V3.4.1 增加OnCollapsed事件
 ******************************************************************************/
 
 using System;
@@ -46,29 +52,9 @@ namespace Sunny.UI
                 if (_titleHeight != value)
                 {
                     _titleHeight = Math.Max(19, value);
-                    Padding = new Padding(Padding.Left, Math.Max(value, Padding.Top), Padding.Right, Padding.Bottom);
                     CalcSystemBoxPos();
                     Invalidate();
                 }
-            }
-        }
-
-        protected override void OnPaddingChanged(EventArgs e)
-        {
-            base.OnPaddingChanged(e);
-            if (Padding.Top != Math.Max(TitleHeight, Padding.Top))
-            {
-                Padding = new Padding(Padding.Left, Math.Max(TitleHeight, Padding.Top), Padding.Right, Padding.Bottom);
-            }
-        }
-
-        protected override void OnControlAdded(ControlEventArgs e)
-        {
-            base.OnControlAdded(e);
-
-            if (e.Control.Top < TitleHeight)
-            {
-                e.Control.Top = TitleHeight + 1;
             }
         }
 
@@ -90,6 +76,7 @@ namespace Sunny.UI
         public override void SetStyleColor(UIBaseStyle uiColor)
         {
             base.SetStyleColor(uiColor);
+            symbolColor = uiColor.ButtonForeColor;
             titleColor = uiColor.PanelTitleColor;
             titleForeColor = uiColor.PanelTitleForeColor;
         }
@@ -100,7 +87,7 @@ namespace Sunny.UI
         /// 文字对齐方向
         /// </summary>
         [DefaultValue(HorizontalAlignment.Center)]
-        [Description("文字对齐方向"), Category("SunnyUI")]
+        [Description("文字对齐方向"), Category("SunnyUI"), Browsable(false)]
         public HorizontalAlignment TextAlign
         {
             get => textAlign;
@@ -121,7 +108,6 @@ namespace Sunny.UI
             set
             {
                 titleForeColor = value;
-                _style = UIStyle.Custom;
                 Invalidate();
             }
         }
@@ -136,7 +122,6 @@ namespace Sunny.UI
             set
             {
                 titleColor = value;
-                _style = UIStyle.Custom;
                 Invalidate();
             }
         }
@@ -153,29 +138,15 @@ namespace Sunny.UI
             bool RadiusLeftTop = RadiusSides.GetValue(UICornerRadiusSides.LeftTop);
             //IsRadius为True时，显示右上圆角
             bool RadiusRightTop = RadiusSides.GetValue(UICornerRadiusSides.RightTop);
-            path = GetTitleFillPath(Radius, TitleHeight, RadiusLeftTop, RadiusRightTop);
+            using var path1 = GetTitleFillPath(Radius, TitleHeight, RadiusLeftTop, RadiusRightTop);
 
             Color color = Enabled ? TitleColor : UIDisableColor.Fill;
-            g.FillPath(color, path);
+            g.FillPath(color, path1);
             if (Height > TitleHeight)
                 g.DrawLine(RectColor, 0, TitleHeight, Width, TitleHeight);
 
             color = Enabled ? TitleForeColor : UIFontColor.Regular;
-            SizeF sf = g.MeasureString(Text, Font);
-            switch (TextAlign)
-            {
-                case HorizontalAlignment.Left:
-                    g.DrawString(Text, Font, color, _titleInterval, (TitleHeight - sf.Height) / 2.0f);
-                    break;
-
-                case HorizontalAlignment.Center:
-                    g.DrawString(Text, Font, color, (Width - sf.Width) / 2.0f, (TitleHeight - sf.Height) / 2.0f);
-                    break;
-
-                case HorizontalAlignment.Right:
-                    g.DrawString(Text, Font, color, Width - _titleInterval - sf.Width, (TitleHeight - sf.Height) / 2.0f);
-                    break;
-            }
+            g.DrawString(Text, Font, color, new Rectangle(_titleInterval, 0, Width - _titleInterval * 2 - (ShowCollapse || ShowClose ? 24 : 0), TitleHeight), TextAlignment);
 
             if (ShowCollapse)
             {
@@ -187,8 +158,42 @@ namespace Sunny.UI
                         g.FillRectangle(UIStyles.ActiveStyleColor.ButtonFillHoverColor, ControlBoxRect);
                 }
 
-                g.DrawFontImage(Collapsed ? 61703 : 61702, 24, color,
+                g.DrawFontImage(Collapsed ? 61703 : 61702, 24, SymbolColor,
                     new Rectangle(ControlBoxRect.Left + 2, ControlBoxRect.Top, ControlBoxRect.Width, ControlBoxRect.Height));
+            }
+
+            if (ShowClose)
+            {
+                if (InControlBox)
+                {
+                    if (ShowRadius)
+                        g.FillRoundRectangle(UIStyles.ActiveStyleColor.ButtonFillHoverColor, ControlBoxRect, 5);
+                    else
+                        g.FillRectangle(UIStyles.ActiveStyleColor.ButtonFillHoverColor, ControlBoxRect);
+                }
+
+                g.DrawFontImage(361453, 24, SymbolColor,
+                    new Rectangle(ControlBoxRect.Left + 2, ControlBoxRect.Top, ControlBoxRect.Width, ControlBoxRect.Height), 0, 2);
+            }
+        }
+
+        private Color symbolColor = Color.White;
+
+        /// <summary>
+        /// 字体图标颜色
+        /// </summary>
+        [Description("图标颜色"), Category("SunnyUI")]
+        [DefaultValue(typeof(Color), "White")]
+        public Color SymbolColor
+        {
+            get => symbolColor;
+            set
+            {
+                if (symbolColor != value)
+                {
+                    symbolColor = value;
+                    Invalidate();
+                }
             }
         }
 
@@ -204,7 +209,7 @@ namespace Sunny.UI
             if (inControlBox != InControlBox)
             {
                 InControlBox = inControlBox;
-                if (ShowCollapse) Invalidate();
+                if (ShowCollapse || ShowClose) Invalidate();
             }
 
             base.OnMouseMove(e);
@@ -281,6 +286,21 @@ namespace Sunny.UI
             set
             {
                 showCollapse = value;
+                showClose = false;
+                Invalidate();
+            }
+        }
+
+        private bool showClose;
+
+        [Description("是否打开关闭按钮"), Category("SunnyUI"), DefaultValue(false)]
+        public bool ShowClose
+        {
+            get => showClose;
+            set
+            {
+                showClose = value;
+                showCollapse = false;
                 Invalidate();
             }
         }
@@ -314,13 +334,21 @@ namespace Sunny.UI
 
         protected override void OnMouseClick(MouseEventArgs e)
         {
+            if (ShowClose && e.Location.InRect(ControlBoxRect))
+            {
+                this.Hide();
+            }
+
             if (ShowCollapse && e.Location.InRect(ControlBoxRect))
             {
                 Collapsed = !Collapsed;
+                OnCollapsed?.Invoke(this, e);
             }
 
             base.OnMouseClick(e);
         }
+
+        public EventHandler OnCollapsed;
 
         /// <summary>
         /// 重载控件尺寸变更
@@ -341,9 +369,21 @@ namespace Sunny.UI
             if (ShowCollapse && e.Location.Y <= TitleHeight)
             {
                 Collapsed = !Collapsed;
+                OnCollapsed?.Invoke(this, e);
             }
 
             base.OnMouseDoubleClick(e);
+        }
+
+        private void UITitlePanel_VisibleChanged(object sender, EventArgs e)
+        {
+            foreach (Control control in Controls)
+            {
+                if (control.Top < TitleHeight)
+                {
+                    control.Top = TitleHeight + 1;
+                }
+            }
         }
     }
 }

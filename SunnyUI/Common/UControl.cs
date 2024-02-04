@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -17,6 +17,7 @@
  * 创建日期: 2020-01-01
  *
  * 2020-01-01: V2.2.0 增加文件说明
+ * 2023-04-02: V3.3.4 修复关闭弹窗null的Bug
 ******************************************************************************/
 
 using System;
@@ -265,21 +266,20 @@ namespace Sunny.UI
         public static void ResetBorderColor(Message m, Control control, int width, Color color)
         {
             //根据颜色和边框像素取得一条线
-            using (Pen pen = new Pen(color, width))
+            using Pen pen = new Pen(color, width);
+
+            //得到当前的句柄
+            IntPtr hDC = (IntPtr)Win32.User.GetWindowDC(m.HWnd);
+            if (hDC.ToInt32() == 0)
             {
-                //得到当前的句柄
-                IntPtr hDC = (IntPtr)Win32.User.GetWindowDC(m.HWnd);
-                if (hDC.ToInt32() == 0)
-                {
-                    return;
-                }
-                //绘制边框
-                Graphics g = Graphics.FromHdc(hDC);
-                g.SmoothingMode = SmoothingMode.AntiAlias;
-                g.DrawRectangle(pen, 0, 0, control.Width - width, control.Height - width);
-                //释放
-                Win32.User.ReleaseDC(m.HWnd, hDC);
+                return;
             }
+            //绘制边框
+            Graphics g = Graphics.FromHdc(hDC);
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.DrawRectangle(pen, 0, 0, control.Width - width, control.Height - width);
+            //释放
+            Win32.User.ReleaseDC(m.HWnd, hDC);
         }
 
         /// <summary>
@@ -386,6 +386,19 @@ namespace Sunny.UI
             return list;
         }
 
+        internal static void HideComboDropDown(this Control ctrl)
+        {
+            var ctrls = ctrl?.FindForm()?.GetInterfaceControls("IHideDropDown", true);
+            if (ctrls == null) return;
+            foreach (var control in ctrls)
+            {
+                if (control is IHideDropDown item)
+                {
+                    item.HideDropDown();
+                }
+            }
+        }
+
         /// <summary>
         /// 查找包含接口名称的控件列表
         /// </summary>
@@ -427,8 +440,9 @@ namespace Sunny.UI
             Win32.GDI.SelectObject(compatibleDc, bitmap);
             Win32.GDI.PrintWindow(ctrl.Handle, compatibleDc, 0);
             Bitmap bmp = Image.FromHbitmap(bitmap);
-            Win32.GDI.DeleteDC(hdc);       //删除用过的对象
             Win32.GDI.DeleteDC(compatibleDc);       //删除用过的对象
+            Win32.GDI.DeleteDC(bitmap);       //删除用过的对象
+            Win32.GDI.DeleteDC(hdc);       //删除用过的对象
             return bmp;
         }
 
@@ -601,6 +615,22 @@ namespace Sunny.UI
             {
                 DragCtrlsPosition.TryRemove(ctrl.Name, out _);
                 DragCtrlsMouseDown.TryRemove(ctrl.Name, out _);
+            }
+        }
+
+        public static void ClearEvents(object instance)
+        {
+            var events = instance.GetType().GetEvents(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+            foreach (var eventInfo in events)
+            {
+                var fieldInfo = instance.GetType().GetField(eventInfo.Name, BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
+                if (fieldInfo.GetValue(instance) is Delegate eventHandler)
+                {
+                    foreach (var invocatedDelegate in eventHandler.GetInvocationList())
+                    {
+                        eventInfo.GetRemoveMethod(fieldInfo.IsPrivate).Invoke(instance, new object[] { invocatedDelegate });
+                    }
+                }
             }
         }
     }

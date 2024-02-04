@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -18,6 +18,8 @@
  *
  * 2020-06-06: V2.2.5 增加文件说明
  * 2020-09-10: V2.2.7 增加图表的边框线颜色设置
+ * 2023-05-14: V3.3.6 重构DrawString函数
+ * 2023-07-25: V3.4.1 Legend增加一种绘制直线的方法
 ******************************************************************************/
 
 using System;
@@ -39,8 +41,8 @@ namespace Sunny.UI
             Width = 400;
             Height = 300;
 
-            SubFont = UIFontColor.SubFont();
-            LegendFont = UIFontColor.SubFont();
+            SubFont = UIStyles.SubFont();
+            LegendFont = UIStyles.SubFont();
 
             tip.Parent = this;
             tip.Height = 32;
@@ -49,7 +51,7 @@ namespace Sunny.UI
             tip.Top = 1;
             tip.StyleCustomMode = true;
             tip.Style = UIStyle.Custom;
-            tip.Font = UIFontColor.SubFont();
+            tip.Font = UIStyles.SubFont();
             tip.RadiusSides = UICornerRadiusSides.None;
             tip.Visible = false;
 
@@ -63,16 +65,7 @@ namespace Sunny.UI
 
         private void Tip_VisibleChanged(object sender, EventArgs e)
         {
-            tip.IsScaled = true;
-            float size = SubFont != null ? SubFont.Size : UIFontColor.SubFontSize;
-            tip.Font = this.Font.DPIScaleFont(size);
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            base.Dispose(disposing);
-            tmpFont?.Dispose();
-            tmpLegendFont?.Dispose();
+            tip.Font = this.Font.DPIScaleFont(UIStyles.DefaultSubFontSize);
         }
 
         private void Tip_MouseEnter(object sender, EventArgs e)
@@ -199,42 +192,6 @@ namespace Sunny.UI
             DrawOption(e.Graphics);
         }
 
-        Font tmpFont;
-
-        protected Font TempFont
-        {
-            get
-            {
-                float size = SubFont != null ? SubFont.Size : UIFontColor.SubFontSize;
-
-                if (tmpFont == null || !tmpFont.Size.EqualsFloat(size / UIDPIScale.DPIScale()))
-                {
-                    tmpFont?.Dispose();
-                    tmpFont = this.Font.DPIScaleFont(size);
-                }
-
-                return tmpFont;
-            }
-        }
-
-        Font tmpLegendFont;
-
-        protected Font TempLegendFont
-        {
-            get
-            {
-                float size = LegendFont != null ? LegendFont.Size : UIFontColor.SubFontSize;
-
-                if (tmpLegendFont == null || !tmpLegendFont.Size.EqualsFloat(size / UIDPIScale.DPIScale()))
-                {
-                    tmpLegendFont?.Dispose();
-                    tmpLegendFont = this.Font.DPIScaleFont(size);
-                }
-
-                return tmpLegendFont;
-            }
-        }
-
         protected virtual void DrawOption(Graphics g)
         {
         }
@@ -267,40 +224,14 @@ namespace Sunny.UI
         protected void DrawTitle(Graphics g, UITitle title)
         {
             if (title == null) return;
-            SizeF sf = g.MeasureString(title.Text, Font);
-            float left = 0;
-            switch (title.Left)
-            {
-                case UILeftAlignment.Left: left = TextInterval; break;
-                case UILeftAlignment.Center: left = (Width - sf.Width) / 2.0f; break;
-                case UILeftAlignment.Right: left = Width - TextInterval - sf.Width; break;
-            }
+            if (!title.Text.IsValid()) return;
+            Size sf = TextRenderer.MeasureText(title.Text, Font);
+            g.DrawString(title.Text, Font, ChartStyle.ForeColor, new Rectangle(TextInterval, TextInterval, Width - TextInterval * 2, Height - TextInterval * 2), (StringAlignment)((int)title.Left), (StringAlignment)((int)title.Top));
 
-            float top = 0;
-            switch (title.Top)
-            {
-                case UITopAlignment.Top: top = TextInterval; break;
-                case UITopAlignment.Center: top = (Height - sf.Height) / 2.0f; break;
-                case UITopAlignment.Bottom: top = Height - TextInterval - sf.Height; break;
-            }
-
-            g.DrawString(title.Text, Font, ChartStyle.ForeColor, left, top);
-
-            SizeF sfs = g.MeasureString(title.SubText, TempFont);
-            switch (title.Left)
-            {
-                case UILeftAlignment.Left: left = TextInterval; break;
-                case UILeftAlignment.Center: left = (Width - sfs.Width) / 2.0f; break;
-                case UILeftAlignment.Right: left = Width - TextInterval - sf.Width; break;
-            }
-            switch (title.Top)
-            {
-                case UITopAlignment.Top: top = top + sf.Height; break;
-                case UITopAlignment.Center: top = top + sf.Height; break;
-                case UITopAlignment.Bottom: top = top - sf.Height; break;
-            }
-
-            g.DrawString(title.SubText, TempFont, ChartStyle.ForeColor, left, top);
+            if (!title.SubText.IsValid()) return;
+            using var TempFont = Font.DPIScaleFont(UIStyles.DefaultSubFontSize);
+            g.DrawString(title.SubText, TempFont, ChartStyle.ForeColor, new Rectangle(TextInterval, TextInterval, Width - TextInterval * 2, Height - TextInterval * 2),
+                (StringAlignment)((int)title.Left), (StringAlignment)((int)title.Top), 0, title.Top == UITopAlignment.Bottom ? -sf.Height : sf.Height);
         }
 
         protected void DrawLegend(Graphics g, UILegend legend)
@@ -312,9 +243,10 @@ namespace Sunny.UI
             float maxWidth = 0;
             float oneHeight = 0;
 
+            using var TempLegendFont = this.Font.DPIScaleFont(UIStyles.DefaultSubFontSize);
             foreach (var data in legend.Data)
             {
-                SizeF sf = g.MeasureString(data, TempLegendFont);
+                Size sf = TextRenderer.MeasureText(data, TempLegendFont);
                 totalHeight += sf.Height;
                 totalWidth += sf.Width;
                 totalWidth += 20;
@@ -353,7 +285,7 @@ namespace Sunny.UI
             for (int i = 0; i < legend.DataCount; i++)
             {
                 var data = legend.Data[i];
-                SizeF sf = g.MeasureString(data, TempLegendFont);
+                Size sf = TextRenderer.MeasureText(data, TempLegendFont);
                 Color color = ChartStyle.GetColor(i);
 
                 if (legend.Colors.Count > 0 && i >= 0 && i < legend.Colors.Count)
@@ -361,16 +293,24 @@ namespace Sunny.UI
 
                 if (legend.Orient == UIOrient.Horizontal)
                 {
-                    g.FillRoundRectangle(color, (int)startLeft, (int)top + 1, 18, (int)oneHeight - 2, 5);
-                    g.DrawString(data, TempLegendFont, color, startLeft + 20, top);
+                    if (legend.Style == UILegendStyle.Rectangle)
+                        g.FillRoundRectangle(color, (int)startLeft, (int)top + 1, 18, (int)oneHeight - 2, 5);
+                    if (legend.Style == UILegendStyle.Line)
+                        g.DrawLine(color, startLeft, top + oneHeight / 2, startLeft + 18, top + oneHeight / 2);
+
+                    g.DrawString(data, TempLegendFont, color, new Rectangle((int)startLeft + 18, (int)top, Width, Height), ContentAlignment.TopLeft);
                     startLeft += 22;
                     startLeft += sf.Width;
                 }
 
                 if (legend.Orient == UIOrient.Vertical)
                 {
-                    g.FillRoundRectangle(color, (int)left, (int)startTop + 1, 18, (int)oneHeight - 2, 5);
-                    g.DrawString(data, TempLegendFont, color, left + 20, startTop);
+                    if (legend.Style == UILegendStyle.Rectangle)
+                        g.FillRoundRectangle(color, (int)left, (int)startTop + 1, 18, (int)oneHeight - 2, 5);
+                    if (legend.Style == UILegendStyle.Line)
+                        g.DrawLine(color, left, startTop, left + 18, startTop + oneHeight / 2);
+
+                    g.DrawString(data, TempLegendFont, color, new Rectangle((int)left + 18, (int)startTop, Width, Height), ContentAlignment.TopLeft);
                     startTop += oneHeight;
                 }
             }

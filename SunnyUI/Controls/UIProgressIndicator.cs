@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -19,6 +19,7 @@
  * 2020-01-01: V2.2.0 增加文件说明
  * 2020-04-25: V2.2.4 更新主题配置类
  * 2022-03-19: V3.1.1 重构主题配色
+ * 2022-12-18: V3.3.0 增加Active属性，是否激活动态显示
 ******************************************************************************/
 
 using System;
@@ -42,12 +43,19 @@ namespace Sunny.UI
             timer = new Timer();
             timer.Interval = 200;
             timer.Tick += timer_Tick;
-            timer.Start();
 
             ShowText = false;
             ShowRect = false;
 
             foreColor = UIStyles.Blue.ProgressIndicatorColor;
+        }
+
+        [Description("是否激活动态显示"), Category("SunnyUI")]
+        [DefaultValue(false)]
+        public bool Active
+        {
+            get => timer.Enabled;
+            set => timer.Enabled = value;
         }
 
         protected override void Dispose(bool disposing)
@@ -94,14 +102,12 @@ namespace Sunny.UI
             if (image == null)
             {
                 image = new Bitmap(Width, Height);
-                Graphics ig = image.Graphics();
+                using Graphics ig = image.Graphics();
                 for (int i = 0; i < 8; i++)
                 {
                     Point pt = GetPoint(i, circleSize);
                     ig.FillEllipse(Color.FromArgb(192, foreColor), pt.X, pt.Y, circleSize, circleSize);
                 }
-
-                ig.Dispose();
             }
 
             g.DrawImage(image, 0, 0);
@@ -139,7 +145,10 @@ namespace Sunny.UI
         {
             Invalidate();
             Index++;
+            Tick?.Invoke(this, e);
         }
+
+        public event EventHandler Tick;
 
         private void ClearImage()
         {

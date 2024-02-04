@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -100,7 +100,10 @@ namespace Sunny.UI
         protected override void DoEnter()
         {
             base.DoEnter();
-            btnOK_Click(null, null);
+            if (!ShowCancel)
+            {
+                btnOK_Click(null, null);
+            }
         }
 
         private void btnOK_Click(object sender, EventArgs e)
@@ -125,22 +128,25 @@ namespace Sunny.UI
         {
             base.SetStyleColor(uiColor);
 
-            if (btnOK != null)
-            {
-                btnOK.FillColor = BackColor;
-                btnOK.RectColor = Color.FromArgb(36, uiColor.ButtonRectColor);
-                btnOK.ForeColor = uiColor.LabelForeColor;
-            }
-
             if (btnCancel != null)
             {
+                btnCancel.SetStyleColor(uiColor);
                 btnCancel.FillColor = BackColor;
                 btnCancel.RectColor = Color.FromArgb(36, uiColor.ButtonRectColor);
                 btnCancel.ForeColor = uiColor.LabelForeColor;
             }
 
+            if (btnOK != null)
+            {
+                btnOK.SetStyleColor(uiColor);
+                btnOK.FillColor = BackColor;
+                btnOK.RectColor = Color.FromArgb(36, uiColor.ButtonRectColor);
+                btnOK.ForeColor = uiColor.LabelForeColor;
+            }
+
             if (lbMsg != null)
             {
+                lbMsg.SetStyleColor(uiColor);
                 lbMsg.ForeColor = uiColor.LabelForeColor;
                 lbMsg.BackColor = uiColor.PlainColor;
                 lbMsg.FillColor = uiColor.PlainColor;
@@ -149,15 +155,7 @@ namespace Sunny.UI
             }
         }
 
-        private void btnOK_MouseEnter(object sender, EventArgs e)
-        {
-            //((UIButton)sender).RadiusSides = UICornerRadiusSides.All;
-        }
-
-        private void btnOK_MouseLeave(object sender, EventArgs e)
-        {
-            //((UIButton)sender).RadiusSides = UICornerRadiusSides.None;
-        }
+        public UIMessageDialogButtons DefaultButton { get; set; } = UIMessageDialogButtons.Ok;
 
         /// <summary>
         /// 显示消息提示窗体
@@ -174,6 +172,17 @@ namespace Sunny.UI
             ShowCancel = showCancel;
             //btnOK.ShowFocusLine = btnCancel.ShowFocusLine = showCancel;
             btnOK.ShowFocusColor = btnCancel.ShowFocusColor = showCancel;
+        }
+
+        private void UIMessageForm_Shown(object sender, EventArgs e)
+        {
+            if (ShowCancel)
+            {
+                if (DefaultButton == UIMessageDialogButtons.Ok)
+                    btnOK.Focus();
+                else
+                    btnCancel.Focus();
+            }
         }
     }
 }

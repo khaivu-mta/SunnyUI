@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -19,6 +19,7 @@
  * 2020-01-01: V2.2.0 增加文件说明
  * 2020-04-25: V2.2.4 更新主题配置类
  * 2022-03-19: V3.1.1 重构主题配色
+ * 2022-11-03: V3.2.6 增加了可设置垂直滚动条宽度的属性
 ******************************************************************************/
 
 using System;
@@ -64,6 +65,19 @@ namespace Sunny.UI
         private readonly Timer timer;
         private bool isScrollUp = true;
         private bool largeChange = true;
+
+        private int fillWidth = 6;
+
+        [DefaultValue(6)]
+        public int FillWidth
+        {
+            get => fillWidth;
+            set
+            {
+                fillWidth = Math.Max(6, value);
+                Invalidate();
+            }
+        }
 
         public event EventHandler ValueChanged;
 
@@ -141,7 +155,8 @@ namespace Sunny.UI
 
         private Rectangle GetValueRect()
         {
-            return new Rectangle(Width / 2 - 3, ValueToPos(scrollValue), 6, barHeight);
+            int w = Math.Min(Width - 2, FillWidth);
+            return new Rectangle(Width / 2 - w / 2, ValueToPos(scrollValue), w, barHeight);
         }
 
         private int ValueToPos(int value)
@@ -248,25 +263,22 @@ namespace Sunny.UI
 
             g.FillRectangle(fillColor, rect);
             g.SetHighQuality();
-            using (var pen = new Pen(clr_arrow, 2))
+            using var pen = new Pen(clr_arrow, 2);
+            Point pt1, pt2, pt3;
+            if (!isUp)
             {
-                Point pt1, pt2, pt3;
-                if (!isUp)
-                {
-                    pt1 = new Point(Width / 2 - 4, Height - 16 / 2 - 4);
-                    pt2 = new Point(Width / 2, Height - 16 / 2);
-                    pt3 = new Point(Width / 2 + 4, Height - 16 / 2 - 4);
-                }
-                else
-                {
-                    pt1 = new Point(Width / 2 - 4, 16 / 2 + 4 - 1);
-                    pt2 = new Point(Width / 2, 16 / 2 - 1);
-                    pt3 = new Point(Width / 2 + 4, 16 / 2 + 4 - 1);
-                }
-
-                g.DrawLines(pen, new[] { pt1, pt2, pt3 });
+                pt1 = new Point(Width / 2 - 4, Height - 16 / 2 - 4);
+                pt2 = new Point(Width / 2, Height - 16 / 2);
+                pt3 = new Point(Width / 2 + 4, Height - 16 / 2 - 4);
+            }
+            else
+            {
+                pt1 = new Point(Width / 2 - 4, 16 / 2 + 4 - 1);
+                pt2 = new Point(Width / 2, 16 / 2 - 1);
+                pt3 = new Point(Width / 2 + 4, 16 / 2 + 4 - 1);
             }
 
+            g.DrawLines(pen, new[] { pt1, pt2, pt3 });
             g.SetDefaultQuality();
         }
 

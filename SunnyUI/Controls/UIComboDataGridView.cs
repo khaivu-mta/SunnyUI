@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -22,6 +22,13 @@
  * 2022-04-16: V3.1.3 增加行多选
  * 2022-06-16: V3.2.0 增加下拉框宽度、高度
  * 2022-06-19: V3.2.0 增加FilterChanged，输出过滤文字和记录条数
+ * 2022-09-08: V3.2.3 增加过滤字异常判断
+ * 2022-11-03: V3.2.6 过滤时删除字符串前面、后面的空格
+ * 2022-11-18: V3.2.9 增加过滤框输入逐一过滤属性Filter1by1
+ * 2022-11-18: V3.2.9 过滤框输入增加回车确认
+ * 2022-11-30: V3.3.0 增加Clear方法
+ * 2023-07-25: V3.4.1 过滤输入后，按键盘下键切换至DataGridView，选中数据后按回车可快捷选中数据
+ * 2023-09-25: V3.5.0 增加ClearFilter，可以清除弹窗的搜索栏文字
 ******************************************************************************/
 
 using System;
@@ -50,6 +57,33 @@ namespace Sunny.UI
             this.PerformLayout();
         }
 
+        /// <summary> 
+        /// 必需的设计器变量。
+        /// </summary>
+        private System.ComponentModel.IContainer components = null;
+
+        /// <summary> 
+        /// 清理所有正在使用的资源。
+        /// </summary>
+        /// <param name="disposing">如果应释放托管资源，为 true；否则为 false。</param>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && (components != null))
+            {
+                components.Dispose();
+            }
+
+            item?.Dispose();
+            base.Dispose(disposing);
+        }
+
+        [DefaultValue(true), Description("过滤框输入逐一过滤"), Category("SunnyUI")]
+        public bool Filter1by1 { get; set; } = true;
+
+        [DefaultValue(false)]
+        [Description("过滤时删除字符串前面、后面的空格"), Category("SunnyUI")]
+        public bool TrimFilter { get; set; }
+
         public event OnComboDataGridViewFilterChanged FilterChanged;
 
         [DefaultValue(500)]
@@ -62,15 +96,28 @@ namespace Sunny.UI
 
         private void UIComboDataGridView_ButtonClick(object sender, EventArgs e)
         {
+            item.TrimFilter = TrimFilter;
             item.FilterColumnName = FilterColumnName;
             item.ShowFilter = ShowFilter;
             ItemForm.Size = ItemSize;
             item.ShowButtons = true;
             item.SetDPIScale();
             item.Translate();
+            item.Filter1by1 = Filter1by1;
             //ItemForm.Show(this);
             ItemForm.Show(this, new Size(DropDownWidth < Width ? Width : DropDownWidth, DropDownHeight));
             item.ComboDataGridViewFilterChanged += Item_ComboDataGridViewFilterChanged;
+        }
+
+        public override void Clear()
+        {
+            base.Clear();
+            DataGridView.DataSource = null;
+        }
+
+        public void ClearFilter()
+        {
+            item.ClearFilter();
         }
 
         private void Item_ComboDataGridViewFilterChanged(object sender, UIComboDataGridViewArgs e)
@@ -97,16 +144,6 @@ namespace Sunny.UI
         public Control ExToolTipControl()
         {
             return edit;
-        }
-
-        /// <summary>
-        /// 重载字体变更
-        /// </summary>
-        /// <param name="e">参数</param>
-        protected override void OnFontChanged(EventArgs e)
-        {
-            base.OnFontChanged(e);
-            if (item != null) item.DataGridView.Font = Font;
         }
 
         [DefaultValue(false)]

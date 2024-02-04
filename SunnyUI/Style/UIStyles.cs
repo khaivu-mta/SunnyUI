@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -21,13 +21,18 @@
  * 2021-07-18: V3.0.5 增加多彩主题，以颜色深色，文字白色为主
  * 2021-09-24: V3.0.7 修改默认字体的GdiCharSet
  * 2021-10-16: V3.0.8 增加系统DPI缩放自适应
+ * 2023-08-28: V3.4.2 修改全局字体为系统默认字体
+ * 2023-11-05: V3.5.2 重构主题
 ******************************************************************************/
 
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using static System.Drawing.FontConverter;
 
 namespace Sunny.UI
 {
@@ -36,11 +41,96 @@ namespace Sunny.UI
     /// </summary>
     public static class UIStyles
     {
+        public static bool GlobalFont { get; set; } = false;
+
+        public static bool GlobalRectangle { get; set; } = false;
+
         public static bool DPIScale { get; set; }
 
         public static bool ZoomScale { get; set; }
 
-        public static float FontSize { get; set; } = 12;
+        [Editor("System.Drawing.Design.FontNameEditor", "System.Drawing.Design.UITypeEditor")]
+        [TypeConverter(typeof(FontNameConverter))]
+        public static string GlobalFontName { get; set; } = "宋体";
+
+        public static int GlobalFontScale { get; set; } = 100;
+
+        private static readonly ConcurrentDictionary<string, byte> FontCharSets = new ConcurrentDictionary<string, byte>();
+
+        //GdiCharSet
+        //一个字节值，该值指定使用此 Font 字符集的 GDI 字符集。 默认值为 1。
+        //字符集	        值
+        //ANSI	        0
+        //DEFAULT	    1
+        //象征	        2
+        //SHIFTJIS	    128
+        //HANGEUL	    129
+        //HANGUL	    129
+        //GB2312	    134
+        //中国BIG5	    136
+        //OEM	        255
+        //JOHAB	        130
+        //希伯来语	    177
+        //阿拉伯语	    178
+        //希腊语	        161
+        //土耳其语	    162
+        //越南语	        163
+        //泰语	        222
+        //EASTEUROPE	238
+        //俄语	        204
+        //MAC	        77
+        //波罗的海	    186
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        internal class LOGFONT
+        {
+            public int lfHeight;
+            public int lfWidth;
+            public int lfEscapement;
+            public int lfOrientation;
+            public int lfWeight;
+            public byte lfItalic;
+            public byte lfUnderline;
+            public byte lfStrikeOut;
+            public byte lfCharSet;
+            public byte lfOutPrecision;
+            public byte lfClipPrecision;
+            public byte lfQuality;
+            public byte lfPitchAndFamily;
+            [MarshalAs(System.Runtime.InteropServices.UnmanagedType.ByValTStr, SizeConst = 32)]
+            public string lfFaceName;
+        }
+
+        internal static byte GetGdiCharSet(string fontName)
+        {
+            if (FontCharSets.ContainsKey(fontName)) return FontCharSets[fontName];
+            using Font font = new Font(fontName, 16);
+            LOGFONT obj = new LOGFONT();
+            font.ToLogFont(obj);
+            FontCharSets.TryAdd(fontName, obj.lfCharSet);
+            return obj.lfCharSet;
+        }
+
+        internal static float DefaultFontSize = 12;
+        internal static float DefaultSubFontSize = 9;
+
+        /// <summary>
+        /// 默认字体
+        /// </summary>
+        internal static Font Font()
+        {
+            byte gdiCharSet = GetGdiCharSet(System.Drawing.SystemFonts.DefaultFont.Name);
+            return new Font(familyName: System.Drawing.SystemFonts.DefaultFont.Name, DefaultFontSize, FontStyle.Regular, GraphicsUnit.Point, gdiCharSet);
+        }
+
+        /// <summary>
+        /// 默认二级字体
+        /// </summary>
+        internal static Font SubFont()
+        {
+            byte gdiCharSet = GetGdiCharSet(System.Drawing.SystemFonts.DefaultFont.Name);
+            return new Font(System.Drawing.SystemFonts.DefaultFont.Name, DefaultSubFontSize, FontStyle.Regular, GraphicsUnit.Point, gdiCharSet);
+        }
 
         public static List<UIStyle> PopularStyles()
         {
@@ -55,6 +145,8 @@ namespace Sunny.UI
 
             return styles;
         }
+
+        public static readonly UIBaseStyle Inherited = new UIInheritedStyle();
 
         /// <summary>
         /// 自定义
@@ -109,13 +201,14 @@ namespace Sunny.UI
         public static void InitColorful(Color styleColor, Color foreColor)
         {
             Colorful.Init(styleColor, foreColor);
-            Style = UIStyle.Colorful;
-            SetStyle(Style);
+            SetStyle(UIStyle.Colorful);
         }
 
         private static readonly ConcurrentDictionary<UIStyle, UIBaseStyle> Styles = new ConcurrentDictionary<UIStyle, UIBaseStyle>();
         private static readonly ConcurrentDictionary<Guid, UIForm> Forms = new ConcurrentDictionary<Guid, UIForm>();
         private static readonly ConcurrentDictionary<Guid, UIPage> Pages = new ConcurrentDictionary<Guid, UIPage>();
+        private static readonly ConcurrentDictionary<Guid, UIForm2> Forms2 = new ConcurrentDictionary<Guid, UIForm2>();
+
 
         /// <summary>
         /// 菜单颜色集合
@@ -124,6 +217,7 @@ namespace Sunny.UI
 
         static UIStyles()
         {
+            AddStyle(Inherited);
             AddStyle(Custom);
             AddStyle(Blue);
             AddStyle(Orange);
@@ -165,7 +259,7 @@ namespace Sunny.UI
         {
             if (!Forms.ContainsKey(guid))
             {
-                Forms.TryAddOrUpdate(guid, form);
+                Forms.Upsert(guid, form);
                 return true;
             }
 
@@ -181,7 +275,7 @@ namespace Sunny.UI
         {
             if (!Pages.ContainsKey(guid))
             {
-                Pages.TryAddOrUpdate(guid, page);
+                Pages.Upsert(guid, page);
                 return true;
             }
 
@@ -196,7 +290,22 @@ namespace Sunny.UI
         {
             if (!Forms.ContainsKey(form.Guid))
             {
-                Forms.TryAddOrUpdate(form.Guid, form);
+                Forms.Upsert(form.Guid, form);
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 注册窗体
+        /// </summary>
+        /// <param name="form">窗体</param>
+        public static bool Register(this UIForm2 form)
+        {
+            if (!Forms2.ContainsKey(form.Guid))
+            {
+                Forms2.Upsert(form.Guid, form);
                 return true;
             }
 
@@ -211,7 +320,7 @@ namespace Sunny.UI
         {
             if (!Pages.ContainsKey(page.Guid))
             {
-                Pages.TryAddOrUpdate(page.Guid, page);
+                Pages.Upsert(page.Guid, page);
                 return true;
             }
 
@@ -237,6 +346,15 @@ namespace Sunny.UI
         public static void UnRegister(this UIForm form)
         {
             Forms.TryRemove(form.Guid, out _);
+        }
+
+        /// <summary>
+        /// 反注册窗体
+        /// </summary>
+        /// <param name="form">窗体</param>
+        public static void UnRegister(this UIForm2 form)
+        {
+            Forms2.TryRemove(form.Guid, out _);
         }
 
         /// <summary>
@@ -293,7 +411,7 @@ namespace Sunny.UI
         /// <summary>
         /// 主题样式
         /// </summary>
-        public static UIStyle Style { get; private set; } = UIStyle.Blue;
+        public static UIStyle Style { get; private set; } = UIStyle.Inherited;
 
         /// <summary>
         /// 设置主题样式
@@ -301,32 +419,37 @@ namespace Sunny.UI
         /// <param name="style">主题样式</param>
         public static void SetStyle(UIStyle style)
         {
+            if (style != UIStyle.Colorful && Style == style) return;
             Style = style;
+            if (!style.IsValid()) return;
 
             foreach (var form in Forms.Values)
             {
-                form.Style = style;
+                form.SetInheritedStyle(style);
             }
 
             foreach (var page in Pages.Values)
             {
-                page.Style = style;
+                page.SetInheritedStyle(style);
             }
+        }
+
+        public static void Render()
+        {
+            SetStyle(Style);
         }
 
         public static void SetDPIScale()
         {
-            if (!DPIScale) return;
-
             foreach (var form in Forms.Values)
             {
-                if (!UIDPIScale.DPIScaleIsOne())
+                if (UIDPIScale.NeedSetDPIFont())
                     form.SetDPIScale();
             }
 
             foreach (var page in Pages.Values)
             {
-                if (!UIDPIScale.DPIScaleIsOne())
+                if (UIDPIScale.NeedSetDPIFont())
                     page.SetDPIScale();
             }
         }

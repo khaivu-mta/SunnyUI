@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  * SunnyUI 开源控件库、工具类库、扩展类库、多页面开发框架。
- * CopyRight (C) 2012-2022 ShenYongHua(沈永华).
+ * CopyRight (C) 2012-2023 ShenYongHua(沈永华).
  * QQ群：56829229 QQ：17612584 EMail：SunnyUI@QQ.Com
  *
  * Blog:   https://www.cnblogs.com/yhuse
@@ -39,7 +39,7 @@ namespace Sunny.UI
         public UIPanel()
         {
             InitializeComponent();
-            base.Font = UIFontColor.Font();
+            base.Font = UIStyles.Font();
             base.MinimumSize = new System.Drawing.Size(1, 1);
             showText = true;
             SetStyleFlags(true, false, true);
@@ -57,7 +57,7 @@ namespace Sunny.UI
             {
                 foreColor = value;
                 AfterSetForeColor(value);
-                SetStyleCustom();
+                Invalidate();
             }
         }
 
@@ -93,7 +93,7 @@ namespace Sunny.UI
         {
             foreReadOnlyColor = color;
             AfterSetForeReadOnlyColor(color);
-            SetStyleCustom();
+            Invalidate();
         }
     }
 }
